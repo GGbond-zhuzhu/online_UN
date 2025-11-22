@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校园E卡通 - 上大学Online</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+        }
+
+        :root {
+            --primary-color: #d81b60;
+            --primary-light: #f9f0ff;
+            --secondary-color: #4a90e2;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --text-dark: #333;
+            --text-light: #666;
+            --bg-light: #f8f9fa;
+            --border-color: #e0e0e0;
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 5px 15px rgba(0, 0, 0, 0.12);
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-light) 0%, #e6f7ff 100%);
+            color: var(--text-dark);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s;
+        }
+
+        li {
+            list-style: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* 顶部导航栏 */
+        .header {
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-main {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .logo-sub {
+            font-size: 14px;
+            color: var(--primary-color);
+            align-self: flex-end;
+            margin-bottom: 2px;
+        }
+
+        /* 定位和时间信息 - 集成到导航栏 */
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .location-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: var(--primary-light);
+            border-radius: 12px;
+        }
+
+        .location-info i {
+            color: var(--primary-color);
+            font-size: 10px;
+        }
+
+        .time-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .time-info i {
+            color: var(--primary-color);
+            font-size: 10px;
+        }
+
+        .user-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: var(--bg-light);
+            border-radius: 20px;
+            padding: 6px 12px;
+            width: 250px;
+        }
+
+        .search-bar input {
+            border: none;
+            background: transparent;
+            padding: 4px;
+            outline: none;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .search-bar i {
+            color: var(--text-light);
+            margin-right: 5px;
+            font-size: 12px;
+        }
+
+        /* 个人中心下拉菜单样式 */
+        .user-info-container {
+            position: relative;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 6px 12px;
+            border-radius: 16px;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .user-info:hover {
+            background: var(--primary-light);
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow-hover);
+            min-width: 160px;
+            padding: 6px 0;
+            margin-top: 6px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1001;
+        }
+
+        .dropdown-menu.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-menu::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            right: 15px;
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-bottom: 6px solid white;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 15px;
+            color: var(--text-dark);
+            transition: all 0.3s;
+            font-size: 13px;
+        }
+
+        .dropdown-item:hover {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .dropdown-item i {
+            width: 16px;
+            margin-right: 8px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        /* 主导航 */
+        .main-nav {
+            padding: 10px 0;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+        }
+
+        .nav-link {
+            color: var(--text-light);
+            font-size: 14px;
+            padding: 6px 0;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .nav-link.active {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-color);
+            transition: width 0.3s;
+        }
+
+        .nav-link.active::after,
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* 认证模态框 */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .auth-modal.active {
+            display: flex;
+        }
+
+        .auth-content {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 450px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .auth-title {
+            font-size: 20px;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+        }
+
+        .auth-subtitle {
+            color: var(--text-light);
+            font-size: 13px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            color: var(--text-dark);
+            font-size: 13px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+            cursor: pointer;
+        }
+
+        .form-text {
+            font-size: 11px;
+            color: var(--text-light);
+            margin-top: 4px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            padding: 25px 0;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            padding: 18px;
+            margin-bottom: 18px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        /* 余额卡片 */
+        .balance-card {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #c2185b 100%);
+            color: white;
+            padding: 22px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .balance-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 180px;
+            height: 180px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+        }
+
+        .balance-amount {
+            font-size: 32px;
+            font-weight: bold;
+            margin: 8px 0;
+        }
+
+        .balance-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 18px;
+        }
+
+        /* 功能网格 */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 18px;
+            margin: 25px 0;
+        }
+
+        .feature-card {
+            text-align: center;
+            padding: 22px 12px;
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-light);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 12px;
+            font-size: 24px;
+            color: var(--primary-color);
+            transition: transform 0.3s;
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: scale(1.05);
+        }
+
+        .feature-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .feature-desc {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        /* 交易记录 */
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .transaction-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .transaction-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        }
+
+        .transaction-details {
+            flex: 1;
+        }
+
+        .transaction-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .transaction-meta {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .transaction-amount {
+            font-weight: bold;
+            text-align: right;
+            font-size: 14px;
+        }
+
+        .amount-positive {
+            color: var(--success-color);
+        }
+
+        .amount-negative {
+            color: var(--primary-color);
+        }
+
+        /* 二维码区域 */
+        .qrcode-section {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            margin: 25px 0;
+        }
+
+        .qrcode-display {
+            width: 160px;
+            height: 160px;
+            background: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .qrcode-display i {
+            font-size: 70px;
+            color: var(--primary-color);
+        }
+
+        .qrcode-info {
+            flex: 1;
+        }
+
+        .qrcode-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 8px 0;
+            font-size: 13px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success-color);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        /* 消费统计 */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 18px;
+            margin: 25px 0;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 18px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 8px 0;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        /* 游客界面样式 */
+        .guest-interface {
+            display: none;
+        }
+
+        .guest-interface.active {
+            display: block;
+        }
+
+        .temp-card-form {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin: 18px 0;
+            box-shadow: var(--shadow);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        /* 悬浮球样式 */
+        .floating-ball {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            z-index: 1000;
+        }
+
+        .floating-main {
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #c2185b 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(216, 27, 96, 0.3);
+            transition: all 0.3s;
+            font-size: 22px;
+        }
+
+        .floating-main:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(216, 27, 96, 0.4);
+        }
+
+        .floating-menu {
+            position: absolute;
+            bottom: 60px;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            padding: 8px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            min-width: 150px;
+            display: none;
+            flex-direction: column;
+        }
+
+        .floating-menu.active {
+            display: flex;
+        }
+
+        .floating-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            color: #333;
+            transition: all 0.3s;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+
+        .floating-item:last-child {
+            border-bottom: none;
+        }
+
+        .floating-item:hover {
+            background: #f9f0ff;
+            color: var(--primary-color);
+            padding-left: 15px;
+        }
+
+        .floating-item i {
+            margin-right: 6px;
+            width: 14px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        /* 页脚 */
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 35px 0 18px;
+            margin-top: 45px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .footer-section h3 {
+            color: white;
+            margin-bottom: 18px;
+            font-size: 16px;
+        }
+
+        .footer-logo {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: #bdc3c7;
+            display: block;
+            margin-bottom: 8px;
+            transition: color 0.3s;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .contact-info {
+            color: #bdc3c7;
+            line-height: 1.6;
+            font-size: 13px;
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 25px;
+            margin-top: 25px;
+            border-top: 1px solid #34495e;
+            color: #bdc3c7;
+            font-size: 12px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .header-top {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .header-info {
+                order: 3;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .search-bar {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .qrcode-section {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .balance-actions {
+                flex-direction: column;
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            }
+
+            .floating-ball {
+                bottom: 18px;
+                right: 18px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-links {
+                gap: 8px;
+            }
+
+            .nav-link {
+                font-size: 12px;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+
+            .floating-main {
+                width: 45px;
+                height: 45px;
+                font-size: 18px;
+            }
+
+            .floating-menu {
+                min-width: 130px;
+            }
+
+            .header-info {
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="header">
+        <div class="container">
+            <div class="header-top">
+                <div class="logo">
+                    <span class="logo-main">上大学</span>
+                    <span class="logo-sub">Online</span>
+                </div>
+
+                <!-- 集成定位和时间信息 -->
+                <div class="header-info">
+                    <div class="location-info" id="headerLocation">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span id="locationText">定位中...</span>
+                        <div class="status-indicator unauthorized" id="authIndicator"></div>
+                    </div>
+                    <div class="time-info" id="headerTime">
+                        <i class="fas fa-clock"></i>
+                        <span id="currentTime">--:--:--</span>
+                    </div>
+                </div>
+
+                <div class="user-actions">
+                    <div class="search-bar">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="搜索校园服务...">
+                    </div>
+                    <div class="user-info-container">
+                        <div class="user-info" id="userInfo">
+                            <div class="user-avatar" id="userAvatar">?</div>
+                            <span id="userName">未登录</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <a href="index.html" class="dropdown-item">
+                                <i class="fas fa-home"></i>
+                                <span>返回首页</span>
+                            </a>
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-user"></i>
+                                <span>个人中心</span>
+                            </a>
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-comment"></i>
+                                <span>我的消息</span>
+                            </a>
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-cog"></i>
+                                <span>设置</span>
+                            </a>
+                            <a href="login.html" class="dropdown-item">
+                                <i class="fas fa-sign-out-alt"></i>
+                                <span>退出登录</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="main-nav">
+                <nav class="nav-links">
+                    <a href="index.html" class="nav-link">首页</a>
+                    <a href="e-card.html" class="nav-link active">校园E卡通</a>
+                    <a href="second-hand.html" class="nav-link">二手交易</a>
+                    <a href="part-time.html" class="nav-link">兼职服务</a>
+                    <a href="schedule.html" class="nav-link">行程管理</a>
+                    <a href="security.html" class="nav-link">安全保障</a>
+                    <a href="help.html" class="nav-link">使用帮助</a>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- 认证模态框 -->
+    <div class="auth-modal" id="authModal">
+        <div class="auth-content">
+            <div class="auth-header">
+                <h2 class="auth-title">校园身份认证</h2>
+                <p class="auth-subtitle">请选择您的身份类型并填写相关信息</p>
+            </div>
+            <form id="authForm">
+                <div class="form-group">
+                    <label class="form-label">身份类型</label>
+                    <select class="form-select" id="userRole" required>
+                        <option value="">请选择身份</option>
+                        <option value="student">在校学生</option>
+                        <option value="teacher">教职工</option>
+                        <option value="visitor">访客/临时用户</option>
+                    </select>
+                </div>
+
+                <div class="form-group" id="studentFields" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">学号</label>
+                            <input type="text" class="form-control" id="studentId" placeholder="请输入学号">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">姓名</label>
+                            <input type="text" class="form-control" id="studentName" placeholder="请输入姓名">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">所在学院</label>
+                        <input type="text" class="form-control" id="studentCollege" placeholder="请输入学院">
+                    </div>
+                </div>
+
+                <div class="form-group" id="teacherFields" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">工号</label>
+                            <input type="text" class="form-control" id="teacherId" placeholder="请输入工号">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">姓名</label>
+                            <input type="text" class="form-control" id="teacherName" placeholder="请输入姓名">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">所在部门</label>
+                        <input type="text" class="form-control" id="teacherDepartment" placeholder="请输入部门">
+                    </div>
+                </div>
+
+                <div class="form-group" id="visitorFields" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label">手机号码</label>
+                        <input type="tel" class="form-control" id="visitorPhone" placeholder="请输入手机号码">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">身份证号</label>
+                        <input type="text" class="form-control" id="visitorIdCard" placeholder="请输入身份证号">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">来访事由</label>
+                        <textarea class="form-control" id="visitorReason" placeholder="请简要说明来访事由" rows="2"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">所在校区</label>
+                    <select class="form-select" id="campusLocation" required>
+                        <option value="">请选择校区</option>
+                        <option value="main">主校区</option>
+                        <option value="east">东校区</option>
+                        <option value="west">西校区</option>
+                        <option value="south">南校区</option>
+                        <option value="north">北校区</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="fas fa-check-circle"></i>
+                    确认认证
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 正常用户界面 -->
+        <div class="main-content" id="mainInterface">
+            <!-- 余额卡片 -->
+            <div class="card balance-card">
+                <div>
+                    <div>账户余额</div>
+                    <div class="balance-amount">¥ 328.50</div>
+                    <div>上次充值：2024-01-10</div>
+                </div>
+                <div class="balance-actions">
+                    <button class="btn btn-primary"><i class="fas fa-plus"></i> 立即充值</button>
+                    <button class="btn btn-outline"><i class="fas fa-exchange-alt"></i> 交易记录</button>
+                </div>
+            </div>
+
+            <!-- 功能网格 -->
+            <div class="features-grid">
+                <div class="card feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    <h3 class="feature-title">扫码支付</h3>
+                    <p class="feature-desc">校园消费一键支付，安全便捷</p>
+                </div>
+                <div class="card feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <h3 class="feature-title">智能定位</h3>
+                    <p class="feature-desc">多源融合定位，室内外无缝切换</p>
+                </div>
+                <div class="card feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="feature-title">安全加密</h3>
+                    <p class="feature-desc">AES加密存储，保障交易安全</p>
+                </div>
+                <div class="card feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <h3 class="feature-title">消费记录</h3>
+                    <p class="feature-desc">详细记录每一笔消费，随时查看</p>
+                </div>
+            </div>
+
+            <!-- 消费统计 -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">本月消费统计</h2>
+                    <a href="#">查看详情 <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-value">¥ 245.80</div>
+                        <div class="stat-label">本月消费</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">28 笔</div>
+                        <div class="stat-label">交易次数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">食堂 65%</div>
+                        <div class="stat-label">消费占比</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">¥ 8.78</div>
+                        <div class="stat-label">日均消费</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 二维码区域 -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">我的付款码</h2>
+                    <div class="qrcode-status">
+                        <div class="status-indicator"></div>
+                        <span>动态更新中</span>
+                    </div>
+                </div>
+                <div class="qrcode-section">
+                    <div class="qrcode-display">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    <div class="qrcode-info">
+                        <h3>动态付款码</h3>
+                        <p>此二维码每分钟自动更新，保障账户安全。支持校园消费、门禁通行、图书借阅等场景。</p>
+                        <div class="qrcode-status">
+                            <div class="status-indicator"></div>
+                            <span>GPS+WiFi定位已开启</span>
+                        </div>
+                        <p>有效期：<span id="code-validity">59秒</span></p>
+                        <p>当前位置：<span id="current-location">第一食堂附近</span></p>
+                        <div style="margin-top: 12px;">
+                            <button class="btn btn-primary" id="refreshQrCode"><i class="fas fa-sync-alt"></i>
+                                刷新二维码</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 最近交易 -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">最近交易</h2>
+                    <a href="#">查看全部 <i class="fas fa-arrow-right"></i></a>
+                </div>
+                <div class="transaction-list">
+                    <div class="transaction-item">
+                        <div class="transaction-info">
+                            <div class="transaction-icon" style="background: #4caf50;">
+                                <i class="fas fa-utensils"></i>
+                            </div>
+                            <div class="transaction-details">
+                                <div class="transaction-title">第一食堂消费</div>
+                                <div class="transaction-meta">2024-01-15 12:30 · 午餐</div>
+                            </div>
+                        </div>
+                        <div class="transaction-amount amount-negative">-¥15.80</div>
+                    </div>
+                    <div class="transaction-item">
+                        <div class="transaction-info">
+                            <div class="transaction-icon" style="background: #2196f3;">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="transaction-details">
+                                <div class="transaction-title">校园超市购物</div>
+                                <div class="transaction-meta">2024-01-15 18:45 · 日用品</div>
+                            </div>
+                        </div>
+                        <div class="transaction-amount amount-negative">-¥42.50</div>
+                    </div>
+                    <div class="transaction-item">
+                        <div class="transaction-info">
+                            <div class="transaction-icon" style="background: #ff9800;">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="transaction-details">
+                                <div class="transaction-title">图书馆借书</div>
+                                <div class="transaction-meta">2024-01-14 16:20 · 图书借阅</div>
+                            </div>
+                        </div>
+                        <div class="transaction-amount">¥0.00</div>
+                    </div>
+                    <div class="transaction-item">
+                        <div class="transaction-info">
+                            <div class="transaction-icon" style="background: #9c27b0;">
+                                <i class="fas fa-door-open"></i>
+                            </div>
+                            <div class="transaction-details">
+                                <div class="transaction-title">宿舍门禁通行</div>
+                                <div class="transaction-meta">2024-01-14 22:15 · 3号宿舍楼</div>
+                            </div>
+                        </div>
+                        <div class="transaction-amount">¥0.00</div>
+                    </div>
+                    <div class="transaction-item">
+                        <div class="transaction-info">
+                            <div class="transaction-icon" style="background: #4caf50;">
+                                <i class="fas fa-plus-circle"></i>
+                            </div>
+                            <div class="transaction-details">
+                                <div class="transaction-title">账户充值</div>
+                                <div class="transaction-meta">2024-01-10 09:15 · 微信支付</div>
+                            </div>
+                        </div>
+                        <div class="transaction-amount amount-positive">+¥200.00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游客界面 -->
+        <div class="guest-interface" id="guestInterface">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">临时校园卡申请</h2>
+                </div>
+                <div class="temp-card-form">
+                    <form id="tempCardForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">姓名</label>
+                                <input type="text" class="form-control" id="tempName" placeholder="请输入真实姓名" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">手机号码</label>
+                                <input type="tel" class="form-control" id="tempPhone" placeholder="请输入手机号码" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">身份证号</label>
+                                <input type="text" class="form-control" id="tempIdCard" placeholder="请输入身份证号" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">来访事由</label>
+                                <select class="form-select" id="tempReason" required>
+                                    <option value="">请选择来访事由</option>
+                                    <option value="visit">参观访问</option>
+                                    <option value="business">商务合作</option>
+                                    <option value="exam">考试</option>
+                                    <option value="other">其他</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">预计停留时间</label>
+                            <select class="form-select" id="tempDuration" required>
+                                <option value="">请选择停留时间</option>
+                                <option value="1">1天</option>
+                                <option value="3">3天</option>
+                                <option value="7">7天</option>
+                                <option value="30">30天</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">初始充值金额</label>
+                            <input type="number" class="form-control" id="tempAmount" placeholder="请输入充值金额" min="10"
+                                max="1000" value="100" required>
+                            <div class="form-text">最低充值10元，最高1000元</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-block">
+                            <i class="fas fa-credit-card"></i>
+                            申请临时校园卡
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 临时卡功能区域 -->
+            <div class="card balance-card" id="tempCardInfo" style="display: none;">
+                <div>
+                    <div>临时卡余额</div>
+                    <div class="balance-amount" id="tempBalance">¥ 0.00</div>
+                    <div>有效期至：<span id="tempExpiry">--</span></div>
+                </div>
+                <div class="balance-actions">
+                    <button class="btn btn-primary" id="tempRecharge"><i class="fas fa-plus"></i> 立即充值</button>
+                    <button class="btn btn-outline" id="tempRecords"><i class="fas fa-exchange-alt"></i> 交易记录</button>
+                </div>
+            </div>
+
+            <!-- 临时卡二维码 -->
+            <div class="card" id="tempQrCode" style="display: none;">
+                <div class="card-header">
+                    <h2 class="card-title">临时卡付款码</h2>
+                    <div class="qrcode-status">
+                        <div class="status-indicator"></div>
+                        <span>动态更新中</span>
+                    </div>
+                </div>
+                <div class="qrcode-section">
+                    <div class="qrcode-display">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    <div class="qrcode-info">
+                        <h3>临时卡动态付款码</h3>
+                        <p>此二维码每分钟自动更新，仅限在授权区域内使用。</p>
+                        <div class="qrcode-status">
+                            <div class="status-indicator"></div>
+                            <span>临时卡状态：正常</span>
+                        </div>
+                        <p>有效期：<span id="temp-code-validity">59秒</span></p>
+                        <p>剩余金额：<span id="temp-remaining">¥ 0.00</span></p>
+                        <div style="margin-top: 12px;">
+                            <button class="btn btn-primary" id="refreshTempQrCode"><i class="fas fa-sync-alt"></i>
+                                刷新二维码</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 临时卡交易记录 -->
+            <div class="card" id="tempTransactions" style="display: none;">
+                <div class="card-header">
+                    <h2 class="card-title">临时卡交易记录</h2>
+                </div>
+                <div class="transaction-list" id="tempTransactionList">
+                    <!-- 交易记录将通过JavaScript动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">上大学Online</div>
+                    <p class="contact-info">我们致力于构建安全、便捷的校园E卡通服务，让校园生活更简单。</p>
+                </div>
+                <div class="footer-section">
+                    <h3>联系我们</h3>
+                    <div class="contact-info">
+                        <p>服务热线：400-123-4567</p>
+                        <p>E卡通客服：ecard@campus.edu.cn</p>
+                        <p>问题反馈：feedback@campus.edu.cn</p>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>快速链接</h3>
+                    <div class="footer-links">
+                        <a href="index.html">首页</a>
+                        <a href="help.html">使用指南</a>
+                        <a href="security.html">安全提示</a>
+                        <a href="help.html">常见问题</a>
+                    </div>
+                </div>
+            </div>
+            <div class="copyright">
+                © 2024 上大学Online校园综合服务平台 版权所有 | 让校园生活更简单
+            </div>
+        </div>
+    </footer>
+
+    <!-- 悬浮球 -->
+    <div class="floating-ball" id="floatingBall">
+        <div class="floating-menu" id="floatingMenu">
+            <a href="index.html" class="floating-item">
+                <i class="fas fa-home"></i>
+                <span>返回首页</span>
+            </a>
+            <a href="#" class="floating-item">
+                <i class="fas fa-user"></i>
+                <span>个人中心</span>
+            </a>
+            <a href="#" class="floating-item">
+                <i class="fas fa-comment"></i>
+                <span>消息中心</span>
+            </a>
+            <a href="#" class="floating-item">
+                <i class="fas fa-qrcode"></i>
+                <span>我的付款码</span>
+            </a>
+            <a href="#" class="floating-item">
+                <i class="fas fa-history"></i>
+                <span>交易记录</span>
+            </a>
+            <a href="#" class="floating-item">
+                <i class="fas fa-cog"></i>
+                <span>设置</span>
+            </a>
+        </div>
+        <div class="floating-main" id="floatingMain">
+            <i class="fas fa-plus"></i>
+        </div>
+    </div>
+
+    <script>
+        // 用户状态管理
+        let userState = {
+            isAuthenticated: false,
+            userType: null,
+            userInfo: null,
+            locationVerified: false,
+            tempCard: null
+        };
+
+        // 模拟定位数据
+        const campusLocations = [
+            { name: "主校区", lat: 39.9042, lng: 116.4074 },
+            { name: "东校区", lat: 39.9042, lng: 116.4074 },
+            { name: "西校区", lat: 39.9042, lng: 116.4074 },
+            { name: "南校区", lat: 39.9042, lng: 116.4074 },
+            { name: "北校区", lat: 39.9042, lng: 116.4074 }
+        ];
+
+        // 实时时间更新
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('zh-CN');
+            const dateString = now.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long'
+            });
+
+            document.getElementById('currentTime').textContent = timeString;
+        }
+
+        // 模拟定位检测
+        function simulateLocationCheck() {
+            // 模拟定位结果 - 50%概率在校区内
+            const isInCampus = Math.random() > 0.5;
+            const campusName = isInCampus ? campusLocations[Math.floor(Math.random() * campusLocations.length)].name : "校外区域";
+
+            document.getElementById('locationText').textContent = campusName;
+
+            if (isInCampus) {
+                document.getElementById('authIndicator').className = 'status-indicator';
+                userState.locationVerified = true;
+
+                // 如果用户已认证，显示主界面
+                if (userState.isAuthenticated) {
+                    showMainInterface();
+                } else {
+                    // 显示认证模态框
+                    setTimeout(() => {
+                        document.getElementById('authModal').classList.add('active');
+                    }, 1000);
+                }
+            } else {
+                document.getElementById('authIndicator').className = 'status-indicator unauthorized';
+                userState.locationVerified = false;
+                showGuestInterface();
+            }
+        }
+
+        // 显示主界面
+        function showMainInterface() {
+            document.getElementById('mainInterface').style.display = 'block';
+            document.getElementById('guestInterface').classList.remove('active');
+        }
+
+        // 显示游客界面
+        function showGuestInterface() {
+            document.getElementById('mainInterface').style.display = 'none';
+            document.getElementById('guestInterface').classList.add('active');
+        }
+
+        // 认证表单处理
+        function initAuthForm() {
+            const authForm = document.getElementById('authForm');
+            const userRole = document.getElementById('userRole');
+            const studentFields = document.getElementById('studentFields');
+            const teacherFields = document.getElementById('teacherFields');
+            const visitorFields = document.getElementById('visitorFields');
+            const authModal = document.getElementById('authModal');
+
+            // 根据身份类型显示不同字段
+            userRole.addEventListener('change', function () {
+                studentFields.style.display = 'none';
+                teacherFields.style.display = 'none';
+                visitorFields.style.display = 'none';
+
+                if (this.value === 'student') {
+                    studentFields.style.display = 'block';
+                } else if (this.value === 'teacher') {
+                    teacherFields.style.display = 'block';
+                } else if (this.value === 'visitor') {
+                    visitorFields.style.display = 'block';
+                }
+            });
+
+            authForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const role = userRole.value;
+                const campus = document.getElementById('campusLocation').value;
+
+                if (!role || !campus) {
+                    alert('请填写完整的认证信息');
+                    return;
+                }
+
+                // 保存用户信息
+                userState.isAuthenticated = true;
+                userState.userType = role;
+
+                if (role === 'student') {
+                    userState.userInfo = {
+                        name: document.getElementById('studentName').value,
+                        id: document.getElementById('studentId').value,
+                        college: document.getElementById('studentCollege').value
+                    };
+                    document.getElementById('userName').textContent = userState.userInfo.name;
+                    document.getElementById('userAvatar').textContent = userState.userInfo.name.charAt(0);
+                } else if (role === 'teacher') {
+                    userState.userInfo = {
+                        name: document.getElementById('teacherName').value,
+                        id: document.getElementById('teacherId').value,
+                        department: document.getElementById('teacherDepartment').value
+                    };
+                    document.getElementById('userName').textContent = userState.userInfo.name;
+                    document.getElementById('userAvatar').textContent = userState.userInfo.name.charAt(0);
+                } else if (role === 'visitor') {
+                    userState.userInfo = {
+                        name: '访客用户',
+                        phone: document.getElementById('visitorPhone').value,
+                        reason: document.getElementById('visitorReason').value
+                    };
+                    document.getElementById('userName').textContent = '访客用户';
+                    document.getElementById('userAvatar').textContent = '访';
+                }
+
+                // 关闭模态框
+                authModal.classList.remove('active');
+
+                // 显示主界面
+                showMainInterface();
+
+                // 显示成功提示
+                showMessage('认证成功！欢迎使用校园E卡通服务');
+            });
+
+            // 点击模态框外部关闭
+            authModal.addEventListener('click', function (e) {
+                if (e.target === authModal) {
+                    authModal.classList.remove('active');
+                }
+            });
+        }
+
+        // 临时卡申请处理
+        function initTempCardForm() {
+            const tempCardForm = document.getElementById('tempCardForm');
+
+            tempCardForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const name = document.getElementById('tempName').value;
+                const phone = document.getElementById('tempPhone').value;
+                const idCard = document.getElementById('tempIdCard').value;
+                const reason = document.getElementById('tempReason').value;
+                const duration = document.getElementById('tempDuration').value;
+                const amount = document.getElementById('tempAmount').value;
+
+                // 创建临时卡
+                userState.tempCard = {
+                    name: name,
+                    phone: phone,
+                    idCard: idCard,
+                    reason: reason,
+                    duration: parseInt(duration),
+                    balance: parseFloat(amount),
+                    expiryDate: new Date(Date.now() + parseInt(duration) * 24 * 60 * 60 * 1000)
+                };
+
+                // 更新显示
+                document.getElementById('tempBalance').textContent = `¥ ${userState.tempCard.balance.toFixed(2)}`;
+                document.getElementById('tempExpiry').textContent = userState.tempCard.expiryDate.toLocaleDateString();
+                document.getElementById('temp-remaining').textContent = `¥ ${userState.tempCard.balance.toFixed(2)}`;
+
+                // 显示临时卡功能
+                document.getElementById('tempCardInfo').style.display = 'block';
+                document.getElementById('tempQrCode').style.display = 'block';
+                document.getElementById('tempTransactions').style.display = 'block';
+
+                // 生成初始交易记录
+                generateTempTransactions();
+
+                // 隐藏表单
+                tempCardForm.style.display = 'none';
+
+                showMessage('临时校园卡申请成功！');
+            });
+        }
+
+        // 生成临时卡交易记录
+        function generateTempTransactions() {
+            const transactions = [
+                { type: '充值', amount: parseFloat(document.getElementById('tempAmount').value), location: '在线充值', time: new Date() }
+            ];
+
+            const transactionList = document.getElementById('tempTransactionList');
+            transactionList.innerHTML = '';
+
+            transactions.forEach(transaction => {
+                const item = document.createElement('div');
+                item.className = 'transaction-item';
+                item.innerHTML = `
+                    <div class="transaction-info">
+                        <div class="transaction-icon" style="background: #4caf50;">
+                            <i class="fas fa-plus-circle"></i>
+                        </div>
+                        <div class="transaction-details">
+                            <div class="transaction-title">临时卡充值</div>
+                            <div class="transaction-meta">${transaction.time.toLocaleString()} · ${transaction.location}</div>
+                        </div>
+                    </div>
+                    <div class="transaction-amount amount-positive">+¥${transaction.amount.toFixed(2)}</div>
+                `;
+                transactionList.appendChild(item);
+            });
+        }
+
+        // 显示消息提示
+        function showMessage(message) {
+            const msg = document.createElement('div');
+            msg.textContent = message;
+            msg.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--success-color);
+                color: white;
+                padding: 10px 18px;
+                border-radius: 6px;
+                z-index: 10000;
+                box-shadow: var(--shadow-hover);
+                animation: slideIn 0.3s ease;
+            `;
+            document.body.appendChild(msg);
+
+            setTimeout(() => {
+                document.body.removeChild(msg);
+            }, 3000);
+        }
+
+        // 个人中心下拉菜单功能
+        function initDropdownMenu() {
+            const userInfo = document.getElementById('userInfo');
+            const dropdownMenu = document.getElementById('dropdownMenu');
+
+            userInfo.addEventListener('click', function (e) {
+                e.stopPropagation();
+                dropdownMenu.classList.toggle('active');
+            });
+
+            document.addEventListener('click', function () {
+                dropdownMenu.classList.remove('active');
+            });
+
+            dropdownMenu.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+        }
+
+        // 二维码有效期倒计时
+        let countdownInterval;
+        let countdownValue = 59;
+
+        function startCountdown() {
+            const codeValidity = document.getElementById('code-validity');
+            const tempCodeValidity = document.getElementById('temp-code-validity');
+            countdownValue = 59;
+
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            countdownInterval = setInterval(() => {
+                countdownValue--;
+                if (countdownValue < 0) {
+                    countdownValue = 59;
+                    document.querySelectorAll('.status-indicator').forEach(indicator => {
+                        indicator.style.animation = 'none';
+                        setTimeout(() => {
+                            indicator.style.animation = 'pulse 2s infinite';
+                        }, 10);
+                    });
+                }
+                if (codeValidity) codeValidity.textContent = countdownValue + '秒';
+                if (tempCodeValidity) tempCodeValidity.textContent = countdownValue + '秒';
+            }, 1000);
+        }
+
+        // 刷新二维码功能
+        function initQrCodeRefresh() {
+            const refreshButton = document.getElementById('refreshQrCode');
+            const refreshTempButton = document.getElementById('refreshTempQrCode');
+
+            function refreshQrCode() {
+                countdownValue = 60;
+                document.getElementById('code-validity').textContent = countdownValue + '秒';
+                startCountdown();
+
+                const qrCodeIcon = document.querySelector('.qrcode-display i');
+                qrCodeIcon.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    qrCodeIcon.style.transform = 'scale(1)';
+                }, 300);
+
+                showMessage('二维码已刷新！');
+            }
+
+            function refreshTempQrCode() {
+                countdownValue = 60;
+                document.getElementById('temp-code-validity').textContent = countdownValue + '秒';
+                startCountdown();
+
+                const tempQrCodeIcon = document.querySelector('#tempQrCode .qrcode-display i');
+                tempQrCodeIcon.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    tempQrCodeIcon.style.transform = 'scale(1)';
+                }, 300);
+
+                showMessage('临时卡二维码已刷新！');
+            }
+
+            if (refreshButton) {
+                refreshButton.addEventListener('click', refreshQrCode);
+            }
+            if (refreshTempButton) {
+                refreshTempButton.addEventListener('click', refreshTempQrCode);
+            }
+        }
+
+        // 悬浮球功能
+        function initFloatingBall() {
+            const floatingBall = document.getElementById('floatingBall');
+            const floatingMain = document.getElementById('floatingMain');
+            const floatingMenu = document.getElementById('floatingMenu');
+
+            floatingMain.addEventListener('click', function (e) {
+                e.stopPropagation();
+                floatingMenu.classList.toggle('active');
+            });
+
+            document.addEventListener('click', function () {
+                floatingMenu.classList.remove('active');
+            });
+
+            floatingMenu.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function () {
+            // 初始化时间显示
+            updateTime();
+            setInterval(updateTime, 1000);
+
+            // 模拟定位检测
+            setTimeout(simulateLocationCheck, 500);
+
+            // 初始化认证表单
+            initAuthForm();
+
+            // 初始化临时卡表单
+            initTempCardForm();
+
+            // 初始化其他功能
+            initDropdownMenu();
+            startCountdown();
+            initQrCodeRefresh();
+            initFloatingBall();
+
+            // 为所有按钮添加点击效果
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function () {
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
+
+            // 模拟定位信息更新
+            const locations = ['第一食堂附近', '图书馆入口', '3号教学楼', '体育场东门', '学生活动中心'];
+            setInterval(() => {
+                const randomLocation = locations[Math.floor(Math.random() * locations.length)];
+                const locationElement = document.getElementById('current-location');
+                if (locationElement) {
+                    locationElement.textContent = randomLocation;
+                }
+            }, 10000);
+
+            // 点击定位状态打开认证模态框
+            document.getElementById('headerLocation').addEventListener('click', function () {
+                if (!userState.isAuthenticated) {
+                    document.getElementById('authModal').classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
