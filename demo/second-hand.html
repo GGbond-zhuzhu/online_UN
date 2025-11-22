@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二手交易 - 上大学Online</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        a {
+            text-decoration: none;
+            color: #444;
+            transition: all 0.3s;
+        }
+
+        a:hover {
+            color: #d81b60;
+        }
+
+        li {
+            list-style: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 15px;
+        }
+
+        /* 顶部导航栏 */
+        .header {
+            background-color: #fff;
+            padding: 10px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-bottom: 2px solid #d81b60;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #d81b60;
+            display: flex;
+            align-items: center;
+        }
+
+        .logo i {
+            margin-right: 8px;
+            font-size: 28px;
+        }
+
+        .search-bar {
+            flex: 1;
+            max-width: 500px;
+            margin: 0 20px;
+            position: relative;
+        }
+
+        .search-bar input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #d81b60;
+            border-radius: 25px;
+            font-size: 16px;
+            outline: none;
+            box-shadow: 0 2px 5px rgba(216, 27, 96, 0.2);
+        }
+
+        .search-bar i {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #d81b60;
+        }
+
+        .user-actions {
+            display: flex;
+            align-items: center;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 16px;
+            margin-left: 15px;
+            cursor: pointer;
+            color: #333;
+            display: flex;
+            align-items: center;
+            padding: 8px 15px;
+            border-radius: 20px;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background: #f9f0ff;
+            color: #d81b60;
+        }
+
+        .action-btn i {
+            margin-right: 5px;
+        }
+
+        /* 主导航菜单 */
+        .main-nav {
+            background: white;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .nav-link {
+            font-size: 16px;
+            color: #666;
+            padding: 8px 0;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .nav-link.active {
+            color: #d81b60;
+            font-weight: bold;
+        }
+
+        .nav-link:hover {
+            color: #d81b60;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: #d81b60;
+            transition: width 0.3s;
+        }
+
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 100%;
+        }
+
+        /* 筛选栏 */
+        .filter-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-label {
+            font-size: 14px;
+            color: #666;
+            white-space: nowrap;
+        }
+
+        .filter-select,
+        .filter-input {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            font-size: 14px;
+        }
+
+        .filter-input {
+            width: 100px;
+        }
+
+        .price-range {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .filter-actions {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .confirm-btn {
+            background: #d81b60;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .confirm-btn:hover {
+            background: #c2185b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(216, 27, 96, 0.3);
+        }
+
+        .reset-btn {
+            background: #f5f5f5;
+            color: #666;
+            border: 1px solid #ddd;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .reset-btn:hover {
+            background: #e0e0e0;
+        }
+
+        /* 主要内容区域 */
+        .main-content {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .product-list {
+            flex: 1;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 30px;
+        }
+
+        .no-results i {
+            font-size: 60px;
+            color: #d81b60;
+            margin-bottom: 20px;
+        }
+
+        .no-results h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .no-results p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        /* 猜你喜欢区域 */
+        .recommendation-section {
+            margin-top: 30px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title i {
+            color: #d81b60;
+            margin-right: 8px;
+        }
+
+        .recommendation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(216, 27, 96, 0.2);
+        }
+
+        .product-image {
+            height: 150px;
+            background: #f5f5f5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .product-image i {
+            font-size: 50px;
+            color: #d81b60;
+        }
+
+        .product-info {
+            padding: 10px;
+        }
+
+        .product-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .product-desc {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .product-price {
+            font-size: 16px;
+            font-weight: bold;
+            color: #d81b60;
+        }
+
+        .product-tag {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: #d81b60;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+
+        .seller-info {
+            display: flex;
+            align-items: center;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .seller-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #ddd;
+            margin-right: 5px;
+        }
+
+        .seller-rating {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+        }
+
+        .seller-rating i {
+            color: #ffc107;
+            font-size: 10px;
+            margin-right: 2px;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: 300px;
+        }
+
+        .sidebar-widget {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .widget-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            color: #d81b60;
+        }
+
+        .category-list {
+            list-style: none;
+        }
+
+        .category-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #f5f5f5;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .category-item:hover {
+            color: #d81b60;
+        }
+
+        .category-item:last-child {
+            border-bottom: none;
+        }
+
+        .quick-action {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .action-button {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .action-button:hover {
+            background: #f9f0ff;
+            color: #d81b60;
+        }
+
+        .action-button i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+
+        /* 页脚 */
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 50px 0 20px;
+            margin-top: 60px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 40px;
+            margin-bottom: 30px;
+        }
+
+        .footer-section h3 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .footer-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #d81b60;
+            margin-bottom: 15px;
+        }
+
+        .footer-links a {
+            color: #bdc3c7;
+            display: block;
+            margin-bottom: 10px;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: #d81b60;
+        }
+
+        .contact-info {
+            color: #bdc3c7;
+            line-height: 1.8;
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 30px;
+            margin-top: 30px;
+            border-top: 1px solid #34495e;
+            color: #bdc3c7;
+            font-size: 14px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+            }
+
+            .recommendation-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .search-bar {
+                margin: 0;
+                order: 3;
+                width: 100%;
+            }
+
+            .filter-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .filter-actions {
+                margin-left: 0;
+                width: 100%;
+                justify-content: center;
+                margin-top: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-links {
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .recommendation-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-input {
+                width: 80px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo"><i class="fas fa-university"></i>上大学Online</div>
+                <div class="search-bar">
+                    <input type="text" placeholder="搜索二手商品..." id="searchInput">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="user-actions">
+                    <a href="publish-item.html" class="action-btn"><i class="fas fa-plus"></i> 发布闲置</a>
+                    <a href="messages.html" class="action-btn"><i class="fas fa-comment"></i> 消息</a>
+                    <a href="profile.html" class="action-btn"><i class="fas fa-user"></i> 个人中心</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主导航菜单 -->
+    <div class="main-nav">
+        <div class="container">
+            <nav class="nav-links">
+                <a href="index.html" class="nav-link">首页</a>
+                <a href="e-card.html" class="nav-link">校园E卡通</a>
+                <a href="second-hand.html" class="nav-link active">二手交易</a>
+                <a href="part-time.html" class="nav-link">兼职服务</a>
+                <a href="schedule.html" class="nav-link">行程管理</a>
+                <a href="security.html" class="nav-link">安全保障</a>
+                <a href="help.html" class="nav-link">使用帮助</a>
+            </nav>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 筛选栏 -->
+        <section class="filter-section">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <span class="filter-label">品类：</span>
+                    <select class="filter-select" id="categorySelect">
+                        <option value="all">全部品类</option>
+                        <option value="books">教材书籍</option>
+                        <option value="digital">数码产品</option>
+                        <option value="clothing">服饰鞋包</option>
+                        <option value="daily">生活用品</option>
+                        <option value="sports">运动户外</option>
+                        <option value="others">其他</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">成色：</span>
+                    <select class="filter-select" id="conditionSelect">
+                        <option value="all">全部成色</option>
+                        <option value="new">全新</option>
+                        <option value="90">9成新</option>
+                        <option value="80">8成新</option>
+                        <option value="70">7成新</option>
+                        <option value="60">6成及以下</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">价格：</span>
+                    <div class="price-range">
+                        <input type="number" class="filter-input" id="minPrice" placeholder="最低价" min="0">
+                        <span>-</span>
+                        <input type="number" class="filter-input" id="maxPrice" placeholder="最高价" min="0">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">校区：</span>
+                    <select class="filter-select" id="campusSelect">
+                        <option value="all">全部校区</option>
+                        <option value="main">主校区</option>
+                        <option value="east">东校区</option>
+                        <option value="west">西校区</option>
+                    </select>
+                </div>
+                <div class="filter-actions">
+                    <button class="confirm-btn" id="confirmFilter">确定筛选</button>
+                    <button class="reset-btn" id="resetFilter">重置</button>
+                </div>
+            </div>
+        </section>
+
+        <div class="main-content">
+            <!-- 商品列表区域 -->
+            <div class="product-list">
+                <!-- 无结果提示 -->
+                <div class="no-results">
+                    <i class="fas fa-search"></i>
+                    <h2>上大学没有找到你想要的宝贝~</h2>
+                    <p>减少筛选内容试试</p>
+                </div>
+
+                <!-- 猜你喜欢 -->
+                <div class="recommendation-section">
+                    <h2 class="section-title"><i class="fas fa-heart"></i> 猜你喜欢</h2>
+                    <div class="recommendation-grid" id="recommendationGrid">
+                        <!-- 推荐商品将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 侧边栏 -->
+            <div class="sidebar">
+                <div class="sidebar-widget">
+                    <h3 class="widget-title">热门分类</h3>
+                    <ul class="category-list">
+                        <li class="category-item" data-category="books">教材书籍</li>
+                        <li class="category-item" data-category="digital">数码产品</li>
+                        <li class="category-item" data-category="clothing">服饰鞋包</li>
+                        <li class="category-item" data-category="daily">生活用品</li>
+                        <li class="category-item" data-category="sports">运动户外</li>
+                        <li class="category-item" data-category="appliance">电器家具</li>
+                        <li class="category-item" data-category="beauty">美妆个护</li>
+                        <li class="category-item" data-category="others">其他</li>
+                    </ul>
+                </div>
+
+                <div class="sidebar-widget">
+                    <h3 class="widget-title">快捷操作</h3>
+                    <div class="quick-action">
+                        <a href="publish-item.html" class="action-button">
+                            <i class="fas fa-plus-circle"></i>
+                            <span>发布闲置</span>
+                        </a>
+                        <a href="messages.html" class="action-button">
+                            <i class="fas fa-comments"></i>
+                            <span>我的消息</span>
+                        </a>
+                        <a href="browse-history.html" class="action-button">
+                            <i class="fas fa-history"></i>
+                            <span>浏览记录</span>
+                        </a>
+                        <a href="favorites.html" class="action-button">
+                            <i class="fas fa-heart"></i>
+                            <span>我的收藏</span>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="sidebar-widget">
+                    <h3 class="widget-title">交易提示</h3>
+                    <div class="safety-tips">
+                        <p>1. 选择平台认证的卖家</p>
+                        <p>2. 线下交易注意安全</p>
+                        <p>3. 仔细检查商品质量</p>
+                        <p>4. 保留交易凭证</p>
+                        <p>5. 遇到问题及时反馈</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">上大学Online</div>
+                    <p class="contact-info">我们致力于构建安全、便捷的校园二手交易生态，促进资源循环利用，丰富校园生活。</p>
+                </div>
+                <div class="footer-section">
+                    <h3>联系我们</h3>
+                    <div class="contact-info">
+                        <p>服务热线：400-123-4567</p>
+                        <p>二手交易客服：secondhand@campus.edu.cn</p>
+                        <p>问题反馈：feedback@campus.edu.cn</p>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>快速链接</h3>
+                    <div class="footer-links">
+                        <a href="index.html">首页</a>
+                        <a href="publish-guide.html">发布指南</a>
+                        <a href="security-tips.html">安全提示</a>
+                        <a href="dispute-resolution.html">纠纷处理</a>
+                    </div>
+                </div>
+            </div>
+            <div class="copyright">
+                © 2024 上大学Online校园综合服务平台 版权所有 | 让校园生活更简单
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 模拟推荐商品数据
+        const recommendedProducts = [
+            {
+                id: 1,
+                title: "高等数学教材",
+                desc: "第七版上下册",
+                price: "¥25",
+                priceValue: 25,
+                tag: "9成新",
+                icon: "fas fa-book",
+                seller: "张同学",
+                rating: 4.5,
+                category: "books",
+                condition: "90",
+                campus: "main"
+            },
+            {
+                id: 2,
+                title: "联想笔记本电脑",
+                desc: "i5处理器轻薄本",
+                price: "¥2200",
+                priceValue: 2200,
+                tag: "8成新",
+                icon: "fas fa-laptop",
+                seller: "李同学",
+                rating: 4.0,
+                category: "digital",
+                condition: "80",
+                campus: "main"
+            },
+            {
+                id: 3,
+                title: "山地自行车",
+                desc: "24速变速送锁",
+                price: "¥380",
+                priceValue: 380,
+                tag: "7成新",
+                icon: "fas fa-bicycle",
+                seller: "王同学",
+                rating: 4.8,
+                category: "sports",
+                condition: "70",
+                campus: "east"
+            },
+            {
+                id: 4,
+                title: "校庆纪念卫衣",
+                desc: "L码全新未拆",
+                price: "¥89",
+                priceValue: 89,
+                tag: "全新",
+                icon: "fas fa-tshirt",
+                seller: "赵同学",
+                rating: 4.2,
+                category: "clothing",
+                condition: "new",
+                campus: "west"
+            },
+            {
+                id: 5,
+                title: "静音增氧泵",
+                desc: "W/12W可调气量",
+                price: "¥89",
+                priceValue: 89,
+                tag: "全新转让",
+                icon: "fas fa-fan",
+                seller: "刘同学",
+                rating: 4.7,
+                category: "daily",
+                condition: "new",
+                campus: "main"
+            },
+            {
+                id: 6,
+                title: "苹果17手机壳",
+                desc: "全包防摔",
+                price: "¥25",
+                priceValue: 25,
+                tag: "热卖",
+                icon: "fas fa-mobile",
+                seller: "陈同学",
+                rating: 4.3,
+                category: "digital",
+                condition: "new",
+                campus: "main"
+            },
+            {
+                id: 7,
+                title: "电动车挡风被",
+                desc: "加厚冬季款",
+                price: "¥45",
+                priceValue: 45,
+                tag: "新品",
+                icon: "fas fa-motorcycle",
+                seller: "孙同学",
+                rating: 4.9,
+                category: "daily",
+                condition: "new",
+                campus: "east"
+            },
+            {
+                id: 8,
+                title: "儿童羽绒服",
+                desc: "90%白鸭绒",
+                price: "¥120",
+                priceValue: 120,
+                tag: "包邮",
+                icon: "fas fa-tshirt",
+                seller: "周同学",
+                rating: 4.1,
+                category: "clothing",
+                condition: "new",
+                campus: "west"
+            }
+        ];
+
+        // 生成推荐商品卡片
+        function generateRecommendationCards(products = recommendedProducts) {
+            const grid = document.getElementById('recommendationGrid');
+            grid.innerHTML = '';
+
+            if (products.length === 0) {
+                grid.innerHTML = '<div class="no-results"><i class="fas fa-search"></i><h2>没有找到符合条件的商品~</h2><p>尝试调整筛选条件</p></div>';
+                return;
+            }
+
+            products.forEach(product => {
+                const card = document.createElement('div');
+                card.className = 'product-card';
+
+                // 生成星星评分
+                let starsHtml = '';
+                const fullStars = Math.floor(product.rating);
+                const hasHalfStar = product.rating % 1 !== 0;
+
+                for (let i = 0; i < 5; i++) {
+                    if (i < fullStars) {
+                        starsHtml += '<i class="fas fa-star"></i>';
+                    } else if (i === fullStars && hasHalfStar) {
+                        starsHtml += '<i class="fas fa-star-half-alt"></i>';
+                    } else {
+                        starsHtml += '<i class="far fa-star"></i>';
+                    }
+                }
+
+                card.innerHTML = `
+                    <div class="product-image">
+                        <i class="${product.icon}"></i>
+                        <div class="product-tag">${product.tag}</div>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-title">${product.title}</div>
+                        <div class="product-desc">${product.desc}</div>
+                        <div class="product-price">${product.price}</div>
+                        <div class="seller-info">
+                            <div class="seller-avatar"></div>
+                            <span>${product.seller}</span>
+                            <div class="seller-rating">
+                                ${starsHtml}
+                                <span>${product.rating}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // 添加卡片点击事件
+            const productCards = document.querySelectorAll('.product-card');
+            productCards.forEach(card => {
+                card.addEventListener('click', function () {
+                    const productId = this.getAttribute('data-id');
+                    if (productId) {
+                        window.location.href = `product-detail.html?id=${productId}`;
+                    }
+                });
+            });
+        }
+
+        // 筛选商品
+        function filterProducts() {
+            const category = document.getElementById('categorySelect').value;
+            const condition = document.getElementById('conditionSelect').value;
+            const minPrice = document.getElementById('minPrice').value;
+            const maxPrice = document.getElementById('maxPrice').value;
+            const campus = document.getElementById('campusSelect').value;
+
+            const filteredProducts = recommendedProducts.filter(product => {
+                // 品类筛选
+                if (category !== 'all' && product.category !== category) {
+                    return false;
+                }
+
+                // 成色筛选
+                if (condition !== 'all' && product.condition !== condition) {
+                    return false;
+                }
+
+                // 价格筛选
+                if (minPrice && product.priceValue < parseInt(minPrice)) {
+                    return false;
+                }
+
+                if (maxPrice && product.priceValue > parseInt(maxPrice)) {
+                    return false;
+                }
+
+                // 校区筛选
+                if (campus !== 'all' && product.campus !== campus) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            generateRecommendationCards(filteredProducts);
+        }
+
+        // 重置筛选条件
+        function resetFilters() {
+            document.getElementById('categorySelect').value = 'all';
+            document.getElementById('conditionSelect').value = 'all';
+            document.getElementById('minPrice').value = '';
+            document.getElementById('maxPrice').value = '';
+            document.getElementById('campusSelect').value = 'all';
+
+            generateRecommendationCards(recommendedProducts);
+        }
+
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function () {
+            generateRecommendationCards();
+
+            // 搜索功能
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('keyup', function (e) {
+                if (e.key === 'Enter') {
+                    const searchTerm = this.value.trim();
+                    if (searchTerm) {
+                        const filteredProducts = recommendedProducts.filter(product =>
+                            product.title.includes(searchTerm) ||
+                            product.desc.includes(searchTerm)
+                        );
+                        generateRecommendationCards(filteredProducts);
+                    } else {
+                        generateRecommendationCards(recommendedProducts);
+                    }
+                }
+            });
+
+            // 筛选确定按钮
+            const confirmBtn = document.getElementById('confirmFilter');
+            confirmBtn.addEventListener('click', filterProducts);
+
+            // 重置按钮
+            const resetBtn = document.getElementById('resetFilter');
+            resetBtn.addEventListener('click', resetFilters);
+
+            // 侧边栏分类点击事件
+            const categoryItems = document.querySelectorAll('.category-item');
+            categoryItems.forEach(item => {
+                item.addEventListener('click', function () {
+                    const category = this.getAttribute('data-category');
+                    filterProductsByCategory(category);
+                });
+            });
+
+            // 分类筛选函数
+            function filterProductsByCategory(category) {
+                const filteredProducts = recommendedProducts.filter(product =>
+                    product.category === category
+                );
+                generateRecommendationCards(filteredProducts);
+            }
+        });
+    </script>
+</body>
+
+</html>

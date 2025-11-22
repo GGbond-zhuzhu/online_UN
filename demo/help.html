@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上大学Online - 帮助中心</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+        }
+
+        :root {
+            --primary-color: #e91e63;
+            --secondary-color: #ec407a;
+            --primary-light: #fce4ec;
+            --text-dark: #333;
+            --text-light: #666;
+            --bg-light: #f8f9fa;
+            --border-color: #e0e0e0;
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 5px 15px rgba(0, 0, 0, 0.12);
+        }
+
+        body {
+            background-color: #fff;
+            color: var(--text-dark);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s;
+        }
+
+        li {
+            list-style: none;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* 顶部导航栏 */
+        .header {
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-main {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .logo-sub {
+            font-size: 16px;
+            color: var(--primary-color);
+            align-self: flex-end;
+            margin-bottom: 3px;
+        }
+
+        .search-bar {
+            display: flex;
+            align-items: center;
+            background: var(--bg-light);
+            border-radius: 20px;
+            padding: 8px 15px;
+            width: 300px;
+        }
+
+        .search-bar input {
+            border: none;
+            background: transparent;
+            padding: 5px;
+            outline: none;
+            width: 100%;
+        }
+
+        .search-bar i {
+            color: var(--text-light);
+            margin-right: 5px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-primary:hover,
+        .btn-outline:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .icon-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .icon-btn:hover {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        /* 主导航 */
+        .main-nav {
+            padding: 12px 0;
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .nav-link {
+            color: var(--text-light);
+            font-size: 16px;
+            padding: 8px 0;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        .nav-link.active {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-color);
+            transition: width 0.3s;
+        }
+
+        .nav-link.active::after,
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* 主内容区域 */
+        .main-content {
+            padding: 40px 0;
+        }
+
+        /* 搜索区域 */
+        .search-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: var(--shadow);
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .search-title {
+            font-size: 32px;
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+
+        .search-subtitle {
+            font-size: 18px;
+            color: var(--text-light);
+            margin-bottom: 30px;
+        }
+
+        .search-box {
+            display: flex;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #ddd;
+            border-radius: 8px 0 0 8px;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+
+        .search-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        /* 页面标题 */
+        .page-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .page-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .page-subtitle {
+            font-size: 18px;
+            color: var(--text-light);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* 帮助特性 */
+        .help-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin: 50px 0;
+        }
+
+        .feature-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--primary-light);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+            color: var(--primary-color);
+        }
+
+        .feature-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
+        .feature-desc {
+            color: var(--text-light);
+            line-height: 1.6;
+        }
+
+        /* 分类导航 */
+        .category-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: var(--shadow);
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .category-card {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 30px 20px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .category-card:hover {
+            background: #f0f0f0;
+            transform: translateY(-5px);
+        }
+
+        .category-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+
+        .category-card h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .category-card p {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* 使用指南 */
+        .usage-guide {
+            background: var(--primary-light);
+            border-radius: 12px;
+            padding: 40px;
+            margin: 50px 0;
+        }
+
+        .guide-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .step-item {
+            text-align: center;
+            padding: 20px;
+            flex: 1;
+        }
+
+        .step-number {
+            width: 50px;
+            height: 50px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 0 auto 15px;
+        }
+
+        .step-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--text-dark);
+        }
+
+        .step-desc {
+            color: var(--text-light);
+            font-size: 14px;
+        }
+
+        /* 快速入门 */
+        .quick-start {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            padding: 40px;
+            margin: 50px 0;
+        }
+
+        .start-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .start-option {
+            padding: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .start-option:hover {
+            border-color: var(--primary-color);
+            box-shadow: var(--shadow);
+        }
+
+        .option-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-light);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+
+        .option-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--text-dark);
+        }
+
+        .option-desc {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        /* 热门问题区域 */
+        .hot-questions {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: var(--shadow);
+            margin-bottom: 40px;
+        }
+
+        .questions-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .question-item {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .question-item:hover {
+            background: #f0f0f0;
+        }
+
+        .question-item h4 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .question-item p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        /* 帮助文章区域 */
+        .articles-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: var(--shadow);
+            margin-bottom: 40px;
+        }
+
+        .article-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .article-card {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 25px;
+            transition: all 0.3s;
+        }
+
+        .article-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .article-card h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .article-card p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 15px;
+        }
+
+        .read-more {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .read-more:hover {
+            text-decoration: underline;
+        }
+
+        /* 常见问题 */
+        .faq-section {
+            margin: 50px 0;
+        }
+
+        .faq-list {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 20px;
+            background: var(--bg-light);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .faq-answer {
+            padding: 0 20px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .faq-item.active .faq-answer {
+            padding: 20px;
+            max-height: 500px;
+        }
+
+        .faq-item.active .faq-question i {
+            transform: rotate(180deg);
+        }
+
+        /* 联系方式 */
+        .contact-section {
+            background: var(--primary-light);
+            border-radius: 12px;
+            padding: 40px;
+            margin: 50px 0;
+            width: 90%;
+            max-width: 1000px;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .contact-methods {
+            width: 100%;
+            margin: 0 -15px;
+        }
+
+        .contact-method {
+            float: left;
+            width: 25%;
+            padding: 0 15px;
+            box-sizing: border-box;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .contact-method-inner {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            padding: 20px 15px;
+            height: 100%;
+        }
+
+        .contact-method-inner:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .contact-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            color: white;
+            font-size: 24px;
+        }
+
+        .contact-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--text-dark);
+        }
+
+        .contact-desc {
+            color: var(--text-light);
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .contact-link {
+            color: var(--primary-color);
+            font-weight: bold;
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+
+        .contact-link:hover {
+            background: rgba(233, 30, 99, 0.1);
+        }
+
+        /* 清除浮动 */
+        .clearfix::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        /* 页脚 */
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 40px 0 20px;
+            margin-top: 50px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .footer-section h3 {
+            color: white;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+
+        .footer-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .footer-links a {
+            color: #bdc3c7;
+            display: block;
+            margin-bottom: 10px;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .contact-info {
+            color: #bdc3c7;
+            line-height: 1.8;
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 30px;
+            margin-top: 30px;
+            border-top: 1px solid #34495e;
+            color: #bdc3c7;
+            font-size: 14px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 968px) {
+            .header-top {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .search-bar {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .page-title {
+                font-size: 28px;
+            }
+
+            .help-features {
+                grid-template-columns: 1fr;
+            }
+
+            .category-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .guide-steps {
+                flex-direction: column;
+            }
+
+            .step-item {
+                margin-bottom: 30px;
+                width: 100%;
+            }
+
+            .start-options {
+                grid-template-columns: 1fr;
+            }
+
+            .questions-list {
+                grid-template-columns: 1fr;
+            }
+
+            .article-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .contact-method {
+                width: 50%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .search-title {
+                font-size: 28px;
+            }
+
+            .category-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .article-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-input {
+                border-radius: 8px;
+                margin-bottom: 10px;
+            }
+
+            .search-btn {
+                border-radius: 8px;
+            }
+
+            .contact-method {
+                width: 100%;
+                float: none;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="header">
+        <div class="container">
+            <div class="header-top">
+                <div class="logo">
+                    <span class="logo-main">上大学</span>
+                    <span class="logo-sub">Online</span>
+                </div>
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="搜索帮助内容...">
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-primary"><i class="fas fa-question-circle"></i> 在线客服</button>
+                    <a href="#" class="icon-btn">
+                        <i class="fas fa-bell"></i>
+                        <span>消息</span>
+                    </a>
+                    <a href="#" class="icon-btn">
+                        <i class="fas fa-user"></i>
+                        <span>个人中心</span>
+                    </a>
+                </div>
+            </div>
+            <div class="main-nav">
+                <nav class="nav-links">
+                    <a href="index.html" class="nav-link">首页</a>
+                    <a href="e-card.html" class="nav-link">校园E卡通</a>
+                    <a href="second-hand.html" class="nav-link">二手交易</a>
+                    <a href="part-time.html" class="nav-link">兼职服务</a>
+                    <a href="schedule.html" class="nav-link">行程管理</a>
+                    <a href="security.html" class="nav-link">安全保障</a>
+                    <a href="help.html" class="nav-link active">使用帮助</a>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要内容区域 -->
+    <div class="container">
+        <div class="main-content">
+            <!-- 搜索区域 -->
+            <div class="search-section">
+                <h1 class="search-title">如何为您提供帮助？</h1>
+                <p class="search-subtitle">请输入您的问题关键词，我们将为您找到最相关的解决方案</p>
+                <div class="search-box">
+                    <input type="text" class="search-input" placeholder="请输入您的问题关键词...">
+                    <button class="search-btn">搜索</button>
+                </div>
+            </div>
+
+            <!-- 页面标题 -->
+            <div class="page-header">
+                <h1 class="page-title">使用帮助</h1>
+                <p class="page-subtitle">为您提供全面的使用指南和问题解答，让您轻松掌握平台功能</p>
+            </div>
+
+            <!-- 帮助特性 -->
+            <div class="help-features">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <h3 class="feature-title">详细使用指南</h3>
+                    <p class="feature-desc">提供从入门到精通的完整教程，涵盖平台所有功能模块的使用方法。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <h3 class="feature-title">视频教程</h3>
+                    <p class="feature-desc">直观的视频演示，帮助您快速掌握复杂功能的操作步骤。</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h3 class="feature-title">在线客服支持</h3>
+                    <p class="feature-desc">7×24小时在线客服，随时为您解答使用过程中遇到的问题。</p>
+                </div>
+            </div>
+
+            <!-- 分类导航 -->
+            <div class="category-section">
+                <h2 class="section-title">常见问题分类</h2>
+                <div class="category-grid">
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <h3>账户问题</h3>
+                        <p>注册、登录、密码找回等</p>
+                    </div>
+
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h3>App使用</h3>
+                        <p>下载、安装、功能使用等</p>
+                    </div>
+
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <h3>支付问题</h3>
+                        <p>充值、支付、退款等</p>
+                    </div>
+
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h3>安全保障</h3>
+                        <p>账号安全、隐私保护等</p>
+                    </div>
+
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-exchange-alt"></i>
+                        </div>
+                        <h3>交易问题</h3>
+                        <p>二手交易、兼职服务等</p>
+                    </div>
+
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h3>课程管理</h3>
+                        <p>课表、考试、作业等</p>
+                    </div>
+
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <h3>社交功能</h3>
+                        <p>好友、消息、活动等</p>
+                    </div>
+
+                    <div class="category-card">
+                        <div class="category-icon">
+                            <i class="fas fa-question-circle"></i>
+                        </div>
+                        <h3>其他问题</h3>
+                        <p>无法归类的其他问题</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 使用指南 -->
+            <div class="usage-guide">
+                <h2 class="section-title">快速上手指南</h2>
+                <div class="guide-steps">
+                    <div class="step-item">
+                        <div class="step-number">1</div>
+                        <h3 class="step-title">注册登录</h3>
+                        <p class="step-desc">使用学号完成实名认证，创建您的个人账户。</p>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">2</div>
+                        <h3 class="step-title">功能探索</h3>
+                        <p class="step-desc">浏览各功能模块，了解平台提供的服务。</p>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">3</div>
+                        <h3 class="step-title">个性化设置</h3>
+                        <p class="step-desc">根据个人需求调整账户和通知设置。</p>
+                    </div>
+                    <div class="step-item">
+                        <div class="step-number">4</div>
+                        <h3 class="step-title">开始使用</h3>
+                        <p class="step-desc">体验各项功能，享受便捷的校园生活服务。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快速入门 -->
+            <div class="quick-start">
+                <h2 class="section-title">功能快速入门</h2>
+                <div class="start-options">
+                    <div class="start-option">
+                        <div class="option-icon">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <h3 class="option-title">校园E卡通</h3>
+                        <p class="option-desc">学习如何充值、消费和查看交易记录。</p>
+                    </div>
+                    <div class="start-option">
+                        <div class="option-icon">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <h3 class="option-title">二手交易</h3>
+                        <p class="option-desc">掌握发布商品、沟通交易和评价流程。</p>
+                    </div>
+                    <div class="start-option">
+                        <div class="option-icon">
+                            <i class="fas fa-briefcase"></i>
+                        </div>
+                        <h3 class="option-title">兼职服务</h3>
+                        <p class="option-desc">了解如何寻找、申请和管理兼职工作。</p>
+                    </div>
+                    <div class="start-option">
+                        <div class="option-icon">
+                            <i class="fas fa-calendar-alt"></i>
+                        </div>
+                        <h3 class="option-title">行程管理</h3>
+                        <p class="option-desc">学习创建、共享和提醒行程安排。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 热门问题区域 -->
+            <div class="hot-questions">
+                <h2 class="section-title">热门问题</h2>
+                <div class="questions-list">
+                    <div class="question-item">
+                        <h4>如何注册上大学Online账号？</h4>
+                        <p>您可以使用手机号或邮箱进行注册，注册后需要完成邮箱或手机验证。</p>
+                    </div>
+
+                    <div class="question-item">
+                        <h4>忘记密码怎么办？</h4>
+                        <p>在登录页面点击"忘记密码"，按照提示操作即可重置密码。</p>
+                    </div>
+
+                    <div class="question-item">
+                        <h4>如何下载手机App？</h4>
+                        <p>您可以在官网下载页面或各大应用商店搜索"上大学Online"下载。</p>
+                    </div>
+
+                    <div class="question-item">
+                        <h4>如何查看课程表？</h4>
+                        <p>登录后进入"我的课程"页面即可查看完整课程表。</p>
+                    </div>
+
+                    <div class="question-item">
+                        <h4>如何发布二手物品？</h4>
+                        <p>在"二手交易"板块点击"发布"按钮，填写物品信息即可。</p>
+                    </div>
+
+                    <div class="question-item">
+                        <h4>如何申请兼职？</h4>
+                        <p>在"兼职服务"板块浏览岗位，点击"申请"按钮提交申请。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 帮助文章区域 -->
+            <div class="articles-section">
+                <h2 class="section-title">帮助文章</h2>
+                <div class="article-grid">
+                    <div class="article-card">
+                        <h3>新手指南：快速上手上大学Online</h3>
+                        <p>本文为您介绍上大学Online的基本功能和使用方法，帮助您快速熟悉平台。</p>
+                        <a href="#" class="read-more">阅读全文</a>
+                    </div>
+
+                    <div class="article-card">
+                        <h3>校园E卡通使用指南</h3>
+                        <p>详细介绍校园E卡通的功能和使用方法，包括支付、门禁等功能。</p>
+                        <a href="#" class="read-more">阅读全文</a>
+                    </div>
+
+                    <div class="article-card">
+                        <h3>安全保障措施说明</h3>
+                        <p>了解上大学Online为保护您的账号安全所采取的各项措施。</p>
+                        <a href="#" class="read-more">阅读全文</a>
+                    </div>
+
+                    <div class="article-card">
+                        <h3>二手交易规则与注意事项</h3>
+                        <p>了解二手交易的基本规则，确保交易安全顺利进行。</p>
+                        <a href="#" class="read-more">阅读全文</a>
+                    </div>
+
+                    <div class="article-card">
+                        <h3>兼职服务使用指南</h3>
+                        <p>如何通过上大学平台找到合适的兼职工作，保障权益。</p>
+                        <a href="#" class="read-more">阅读全文</a>
+                    </div>
+
+                    <div class="article-card">
+                        <h3>课程管理功能详解</h3>
+                        <p>全面介绍课程表、考试提醒、作业提交等课程管理功能。</p>
+                        <a href="#" class="read-more">阅读全文</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 常见问题 -->
+            <div class="faq-section">
+                <h2 class="section-title">常见问题解答</h2>
+                <div class="faq-list">
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>如何重置登录密码？</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>在登录页面点击"忘记密码"，按照提示输入注册时使用的手机号或邮箱，系统将发送验证码，验证成功后即可设置新密码。</p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>E卡通充值后未到账怎么办？</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>首先检查支付是否成功，如支付成功但余额未更新，请等待5-10分钟。若仍未到账，请联系客服并提供支付凭证。</p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>如何举报不当内容或用户？</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>在相关内容或用户页面点击举报按钮，选择举报原因并提交。平台将在24小时内处理您的举报。</p>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <div class="faq-question">
+                            <span>行程提醒没有收到怎么办？</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>请检查手机通知权限是否开启，并确保App在后台运行。您也可以在设置中调整提醒方式和频率。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 联系方式 -->
+            <div class="contact-section">
+                <h2 class="section-title">联系我们</h2>
+                <div class="contact-methods clearfix">
+                    <div class="contact-method">
+                        <div class="contact-method-inner">
+                            <div class="contact-icon">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <h3 class="contact-title">客服热线</h3>
+                            <p class="contact-desc">7×24小时人工服务</p>
+                            <a href="tel:400-123-4567" class="contact-link">400-123-4567</a>
+                        </div>
+                    </div>
+                    <div class="contact-method">
+                        <div class="contact-method-inner">
+                            <div class="contact-icon">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <h3 class="contact-title">电子邮件</h3>
+                            <p class="contact-desc">工作日内24小时回复</p>
+                            <a href="mailto:help@campus.edu.cn" class="contact-link">help@campus.edu.cn</a>
+                        </div>
+                    </div>
+                    <div class="contact-method">
+                        <div class="contact-method-inner">
+                            <div class="contact-icon">
+                                <i class="fas fa-comments"></i>
+                            </div>
+                            <h3 class="contact-title">在线客服</h3>
+                            <p class="contact-desc">即时沟通解决问题</p>
+                            <a href="#" class="contact-link">立即咨询</a>
+                        </div>
+                    </div>
+                    <div class="contact-method">
+                        <div class="contact-method-inner">
+                            <div class="contact-icon">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <h3 class="contact-title">线下服务点</h3>
+                            <p class="contact-desc">校园内多个服务网点</p>
+                            <a href="#" class="contact-link">查看位置</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">上大学Online</div>
+                    <p class="contact-info">我们致力于提供全面、贴心的使用帮助服务，确保每位用户都能轻松掌握平台功能。</p>
+                </div>
+                <div class="footer-section">
+                    <h3>帮助中心</h3>
+                    <div class="footer-links">
+                        <a href="#">新手指南</a>
+                        <a href="#">功能教程</a>
+                        <a href="#">常见问题</a>
+                        <a href="#">更新日志</a>
+                    </div>
+                </div>
+                <div class="footer-section">
+                    <h3>联系我们</h3>
+                    <div class="contact-info">
+                        <p>服务热线：400-123-4567</p>
+                        <p>帮助邮箱：help@campus.edu.cn</p>
+                        <p>问题反馈：feedback@campus.edu.cn</p>
+                    </div>
+                </div>
+            </div>
+            <div class="copyright">
+                © 2024 上大学Online校园综合服务平台 版权所有 | 让校园生活更简单
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // 搜索功能
+        document.querySelector('.search-btn').addEventListener('click', function () {
+            const searchTerm = document.querySelector('.search-input').value.trim();
+            if (searchTerm) {
+                alert('搜索关键词: ' + searchTerm + '\n搜索功能即将开放，敬请期待！');
+            } else {
+                alert('请输入搜索关键词');
+            }
+        });
+
+        // 分类卡片点击事件
+        document.querySelectorAll('.category-card').forEach(card => {
+            card.addEventListener('click', function () {
+                const categoryName = this.querySelector('h3').textContent;
+                alert('您选择了分类: ' + categoryName);
+            });
+        });
+
+        // 问题项点击事件
+        document.querySelectorAll('.question-item').forEach(item => {
+            item.addEventListener('click', function () {
+                const question = this.querySelector('h4').textContent;
+                alert('问题: ' + question + '\n详细解答即将显示...');
+            });
+        });
+
+        // 常见问题展开/收起功能
+        document.addEventListener('DOMContentLoaded', function () {
+            const faqItems = document.querySelectorAll('.faq-item');
+
+            faqItems.forEach(item => {
+                const question = item.querySelector('.faq-question');
+
+                question.addEventListener('click', function () {
+                    // 关闭其他展开的问题
+                    faqItems.forEach(otherItem => {
+                        if (otherItem !== item && otherItem.classList.contains('active')) {
+                            otherItem.classList.remove('active');
+                        }
+                    });
+
+                    // 切换当前问题状态
+                    item.classList.toggle('active');
+                });
+            });
+
+            // 为所有按钮添加点击效果
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function () {
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = '';
+                    }, 150);
+                });
+            });
+
+            // 快速入门选项点击效果
+            const startOptions = document.querySelectorAll('.start-option');
+            startOptions.forEach(option => {
+                option.addEventListener('click', function () {
+                    const title = this.querySelector('.option-title').textContent;
+                    alert(`即将跳转到${title}详细教程页面`);
+                });
+            });
+        });
+
+        // 添加滚动动画
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = 1;
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        // 观察需要动画的元素
+        const animatedElements = document.querySelectorAll('.feature-card, .category-card, .step-item, .start-option, .question-item, .article-card, .faq-item, .contact-method');
+        animatedElements.forEach(el => {
+            el.style.opacity = 0;
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+
+</html>
