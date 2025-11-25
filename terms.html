@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上大学Online - 服务条款</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+        }
+
+        /* 统一粉色色调变量 */
+        :root {
+            --primary-pink: #e91e63;
+            --secondary-pink: #ec407a;
+            --light-pink: #f8bbd9;
+            --light-pink-2: #fce4ec;
+            --pink-gradient: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
+        }
+
+        body {
+            background: var(--pink-gradient);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* 顶部导航栏 - 与隐私协议保持一致 */
+        .header {
+            background: white;
+            padding: 15px 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-pink);
+            text-decoration: none;
+        }
+
+        .header-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .header-links a {
+            text-decoration: none;
+            color: #666;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .header-links a:hover {
+            color: var(--primary-pink);
+        }
+
+        .header-links a.active {
+            color: var(--primary-pink);
+            font-weight: bold;
+        }
+
+        /* 登录状态样式 */
+        .login-status {
+            margin-left: 20px;
+            padding-left: 20px;
+            border-left: 1px solid #eee;
+        }
+
+        .not-logged-in {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .login-link {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .login-link:hover {
+            color: var(--primary-pink);
+        }
+
+        /* 登录后用户菜单 */
+        .logged-in {
+            position: relative;
+            display: none;
+        }
+
+        .user-menu {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .user-name {
+            color: #666;
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .user-name:hover {
+            background-color: var(--light-pink-2);
+            color: var(--primary-pink);
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            min-width: 120px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .user-dropdown a {
+            display: block;
+            padding: 10px 15px;
+            color: #666;
+            text-decoration: none;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s;
+        }
+
+        .user-dropdown a:hover {
+            background-color: var(--light-pink-2);
+            color: var(--primary-pink);
+        }
+
+        .user-dropdown a:last-child {
+            border-bottom: none;
+        }
+
+        .user-menu:hover .user-dropdown {
+            display: block;
+        }
+
+        /* 主要内容区域 */
+        .main-content {
+            flex: 1;
+            padding: 40px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* 服务条款标题区域 */
+        .terms-hero {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .terms-title {
+            font-size: 32px;
+            color: var(--primary-pink);
+            margin-bottom: 20px;
+        }
+
+        .terms-subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .update-info {
+            display: inline-block;
+            background: var(--light-pink-2);
+            color: var(--primary-pink);
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* 服务条款内容区域 - 左右布局 */
+        .terms-container {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        /* 左侧目录导航 */
+        .toc-sidebar {
+            flex: 0 0 280px;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+            position: sticky;
+            top: 30px;
+        }
+
+        .toc-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary-pink);
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--light-pink-2);
+        }
+
+        .toc-list {
+            list-style: none;
+        }
+
+        .toc-item {
+            margin-bottom: 10px;
+        }
+
+        .toc-link {
+            display: block;
+            padding: 10px 15px;
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            border-radius: 8px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .toc-link:hover {
+            background-color: var(--light-pink-2);
+            color: var(--primary-pink);
+            transform: translateX(5px);
+        }
+
+        .toc-link.active {
+            background-color: var(--light-pink-2);
+            color: var(--primary-pink);
+            font-weight: bold;
+        }
+
+        .toc-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--primary-pink);
+            border-radius: 2px;
+        }
+
+        /* 右侧内容区域 */
+        .terms-content {
+            flex: 1;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .section-title {
+            font-size: 24px;
+            color: var(--primary-pink);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .terms-article {
+            max-width: 100%;
+        }
+
+        .terms-section {
+            margin-bottom: 40px;
+            scroll-margin-top: 30px;
+        }
+
+        .terms-section h2 {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light-pink-2);
+        }
+
+        .terms-section p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+
+        .terms-section ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .terms-section li {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .highlight-box {
+            background: var(--light-pink-2);
+            border-left: 4px solid var(--primary-pink);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .highlight-box p {
+            margin: 0;
+            font-style: italic;
+        }
+
+        /* 同意按钮区域 */
+        .agreement-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .agreement-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .agree-btn {
+            padding: 12px 30px;
+            background: var(--primary-pink);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .agree-btn:hover {
+            background: #d81b60;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(233, 30, 99, 0.3);
+        }
+
+        .disagree-btn {
+            padding: 12px 30px;
+            background: #f5f5f5;
+            color: #666;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .disagree-btn:hover {
+            background: #e0e0e0;
+        }
+
+        /* 多功能悬浮球 */
+        .floating-ball {
+            position: fixed;
+            right: 30px;
+            bottom: 30px;
+            z-index: 1000;
+        }
+
+        .ball-main {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-pink) 0%, var(--secondary-pink) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(233, 30, 99, 0.3);
+            transition: all 0.3s ease;
+            font-size: 20px;
+        }
+
+        .ball-main:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(233, 30, 99, 0.4);
+        }
+
+        .ball-menu {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .menu-item {
+            width: 45px;
+            height: 45px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-pink);
+            text-decoration: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            transform: scale(0);
+            opacity: 0;
+        }
+
+        .menu-item:hover {
+            transform: scale(1.1);
+            background: var(--light-pink-2);
+        }
+
+        .floating-ball.active .ball-main {
+            transform: rotate(45deg);
+        }
+
+        .floating-ball.active .ball-menu {
+            display: flex;
+        }
+
+        .floating-ball.active .menu-item {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        /* 菜单项动画延迟 */
+        .floating-ball.active .menu-item:nth-child(1) {
+            transition-delay: 0.1s;
+        }
+
+        .floating-ball.active .menu-item:nth-child(2) {
+            transition-delay: 0.2s;
+        }
+
+        .floating-ball.active .menu-item:nth-child(3) {
+            transition-delay: 0.3s;
+        }
+
+        .floating-ball.active .menu-item:nth-child(4) {
+            transition-delay: 0.4s;
+        }
+
+        .floating-ball.active .menu-item:nth-child(5) {
+            transition-delay: 0.5s;
+        }
+
+        /* 底部 */
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px 0;
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 15px 0;
+        }
+
+        .footer-links a {
+            color: #666;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: #ec407a;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 968px) {
+            .terms-container {
+                flex-direction: column;
+            }
+
+            .toc-sidebar {
+                flex: 0 0 auto;
+                position: static;
+                margin-bottom: 30px;
+            }
+
+            .header {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .header-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .agreement-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .floating-ball {
+                right: 20px;
+                bottom: 20px;
+            }
+
+            .ball-main {
+                width: 50px;
+                height: 50px;
+                font-size: 18px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .terms-title {
+                font-size: 28px;
+            }
+
+            .terms-content,
+            .agreement-section {
+                padding: 30px 20px;
+            }
+
+            .toc-sidebar {
+                padding: 20px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- 顶部导航栏 -->
+    <div class="header">
+        <a href="index.html" class="header-logo">上大学Online</a>
+        <div class="header-links">
+            <a href="index.html">首页</a>
+            <a href="app-download.html">手机App下载</a>
+            <a href="client-download.html">电脑客户端</a>
+            <a href="security.html">安全保障</a>
+            <a href="help_center.html">使用帮助</a>
+            <a href="feedback.html">问题反馈</a>
+            <a href="about.html">关于我们</a>
+            <a href="privacy.html">隐私协议</a>
+            <a href="terms.html" class="active">服务条款</a>
+
+            <!-- 登录状态区域 -->
+            <div class="login-status" id="loginStatus">
+                <!-- 未登录时显示 -->
+                <div class="not-logged-in">
+                    <a href="login.html" class="login-link">登录</a>
+                </div>
+                <!-- 登录后显示 -->
+                <div class="logged-in">
+                    <div class="user-menu">
+                        <span class="user-name" id="userName">用户</span>
+                        <div class="user-dropdown">
+                            <a href="profile.html">个人中心</a>
+                            <a href="settings.html">账户设置</a>
+                            <a href="login.html" id="logoutBtn">退出登录</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要内容区域 -->
+    <div class="main-content">
+        <!-- 服务条款标题区域 -->
+        <div class="terms-hero">
+            <h1 class="terms-title">服务条款</h1>
+            <p class="terms-subtitle">请仔细阅读以下服务条款，使用我们的服务即表示您同意遵守这些条款</p>
+            <div class="update-info">
+                <i class="fas fa-clock"></i> 最后更新日期：2023年10月15日
+            </div>
+        </div>
+
+        <!-- 服务条款内容区域 - 左右布局 -->
+        <div class="terms-container">
+            <!-- 左侧目录导航 -->
+            <div class="toc-sidebar">
+                <h2 class="toc-title">目录</h2>
+                <ul class="toc-list">
+                    <li class="toc-item"><a href="#section1" class="toc-link active">1. 服务说明</a></li>
+                    <li class="toc-item"><a href="#section2" class="toc-link">2. 账户注册</a></li>
+                    <li class="toc-item"><a href="#section3" class="toc-link">3. 用户行为规范</a></li>
+                    <li class="toc-item"><a href="#section4" class="toc-link">4. 知识产权</a></li>
+                    <li class="toc-item"><a href="#section5" class="toc-link">5. 服务变更与终止</a></li>
+                    <li class="toc-item"><a href="#section6" class="toc-link">6. 免责声明</a></li>
+                    <li class="toc-item"><a href="#section7" class="toc-link">7. 责任限制</a></li>
+                    <li class="toc-item"><a href="#section8" class="toc-link">8. 法律适用</a></li>
+                    <li class="toc-item"><a href="#section9" class="toc-link">9. 联系我们</a></li>
+                </ul>
+            </div>
+
+            <!-- 右侧内容区域 -->
+            <div class="terms-content">
+                <h2 class="section-title">服务条款详情</h2>
+
+                <div class="terms-article">
+                    <div class="terms-section" id="section1">
+                        <h2>1. 服务说明</h2>
+                        <p>欢迎使用上大学Online！上大学Online（以下简称"本平台"）是由苏州天富数字科技有限公司（以下简称"我们"）开发和运营的在线教育服务平台。本平台通过网站、移动应用程序和电脑客户端为大学生提供课程管理、学习资源、校园社交等服务。
+                        </p>
+                        <p>本服务条款（以下简称"本条款"）是您与我们之间就使用本平台服务所订立的协议。请您在使用本平台服务前，仔细阅读并理解本条款的全部内容。</p>
+
+                        <div class="highlight-box">
+                            <p><strong>重要提示：</strong>
+                                当您完成注册程序或开始使用本平台服务时，即表示您已充分阅读、理解并接受本条款的所有内容。如果您不同意本条款的任何内容，请立即停止使用本平台服务。</p>
+                        </div>
+                    </div>
+
+                    <div class="terms-section" id="section2">
+                        <h2>2. 账户注册</h2>
+                        <p>为使用本平台的服务，您需要注册一个上大学Online账户：</p>
+
+                        <h3>2.1 注册资格</h3>
+                        <ul>
+                            <li>您必须是具有完全民事行为能力的自然人，或依法成立并有效存续的法人或其他组织。</li>
+                            <li>如果您是未成年人，请在法定监护人的陪同下阅读和判断是否同意本条款，并在监护人的指导下使用本平台服务。</li>
+                            <li>您保证在注册时提供的信息真实、准确、完整，并及时更新。</li>
+                        </ul>
+
+                        <h3>2.2 账户安全</h3>
+                        <ul>
+                            <li>您应对您的账户和密码的安全负全部责任，并对通过您的账户进行的所有活动承担责任。</li>
+                            <li>您同意在发现任何未经授权的账户使用行为时立即通知我们。</li>
+                            <li>我们保留在发现异常使用情况时暂停或终止为您提供服务的权利。</li>
+                        </ul>
+
+                        <h3>2.3 账户注销</h3>
+                        <p>您可以通过平台提供的注销功能或联系客服申请注销账户。账户注销后，我们将根据相关法律法规处理您的个人信息。</p>
+                    </div>
+
+                    <div class="terms-section" id="section3">
+                        <h2>3. 用户行为规范</h2>
+                        <p>在使用本平台服务时，您同意遵守以下行为规范：</p>
+
+                        <h3>3.1 禁止行为</h3>
+                        <p>您不得利用本平台服务从事以下行为：</p>
+                        <ul>
+                            <li>发布、传播违反国家法律法规、社会主义制度、中国共产党领导、国家主权和领土完整等内容；</li>
+                            <li>发布、传播淫秽、色情、赌博、暴力、凶杀、恐怖或者教唆犯罪的内容；</li>
+                            <li>发布、传播侮辱或者诽谤他人，侵害他人合法权益的内容；</li>
+                            <li>发布、传播虚假、骚扰性、中伤性、辱骂性、恐吓性、伤害性、庸俗或淫秽的信息；</li>
+                            <li>从事任何干扰或破坏本平台服务或与本平台服务相连的服务器和网络的活动；</li>
+                            <li>未经我们明确授权，使用本平台的名称、商标、标识等；</li>
+                            <li>其他违反法律法规、社会公德和公序良俗的行为。</li>
+                        </ul>
+
+                        <h3>3.2 内容责任</h3>
+                        <p>您应对您在本平台上发布、传播的所有内容承担全部责任。我们有权对您发布的内容进行审核，但不对内容的真实性、准确性、完整性承担任何责任。</p>
+
+                        <h3>3.3 违规处理</h3>
+                        <p>如果我们发现或收到他人举报您违反本条款，我们有权进行独立判断并采取技术手段予以删除、屏蔽或断开链接。同时，我们有权视用户的行为性质，采取包括但不限于暂停、终止部分或全部服务、限制、冻结或终止账户使用、追究法律责任等措施。
+                        </p>
+                    </div>
+
+                    <div class="terms-section" id="section4">
+                        <h2>4. 知识产权</h2>
+                        <p>本平台服务中包含的全部知识产权，以及与本平台服务相关的所有信息内容，均受著作权法、商标法、专利法等法律法规保护。</p>
+
+                        <h3>4.1 平台知识产权</h3>
+                        <ul>
+                            <li>我们拥有本平台的著作权、商标权、专利权等所有知识产权；</li>
+                            <li>未经我们书面同意，您不得为任何商业或非商业目的自行或许可任何第三方实施、利用、转让上述知识产权；</li>
+                            <li>本平台展示的课程内容、学习资料等，其知识产权归内容提供方或我们所有。</li>
+                        </ul>
+
+                        <h3>4.2 用户内容授权</h3>
+                        <p>您在本平台上传、发布或传输的内容，您授予我们及其关联公司全球范围内、免费、非独家、可再许可的许可，使我们能够使用、托管、存储、复制、修改、创建衍生作品、传播、出版、公开演示、公开展示和分发此类内容。
+                        </p>
+
+                        <h3>4.3 第三方内容</h3>
+                        <p>本平台可能包含指向第三方网站或资源的链接。我们不对这些网站或资源的可用性负责，也不认可这些网站或资源上提供的任何内容、产品、服务或其他材料。</p>
+                    </div>
+
+                    <div class="terms-section" id="section5">
+                        <h2>5. 服务变更与终止</h2>
+                        <p>我们始终在不断更改和改进我们提供的服务。我们可能会增加或删除功能，也可能暂停或彻底停止某项服务。</p>
+
+                        <h3>5.1 服务变更</h3>
+                        <p>我们可以自行决定随时变更服务内容，或中止、终止向您提供服务。服务变更、中止或终止前，我们将尽可能通过适当方式向您发出通知。</p>
+
+                        <h3>5.2 服务终止</h3>
+                        <p>在下列情况下，我们有权终止向您提供服务：</p>
+                        <ul>
+                            <li>您违反相关法律法规或本条款的规定；</li>
+                            <li>按照法律规定或有权机关的要求；</li>
+                            <li>出于安全原因或其他必要的情形；</li>
+                            <li>本平台停止运营。</li>
+                        </ul>
+
+                        <h3>5.3 终止后果</h3>
+                        <p>服务终止后，您使用本平台服务的权利立即终止，我们无法继续向您提供任何信息或为您提供任何服务。</p>
+                    </div>
+
+                    <div class="terms-section" id="section6">
+                        <h2>6. 免责声明</h2>
+                        <p>您理解并同意，本平台服务是按现状提供的，我们不提供任何形式的保证：</p>
+
+                        <ul>
+                            <li><strong>服务可用性：</strong> 我们不保证服务不会中断，也不保证服务的及时性、安全性、准确性；</li>
+                            <li><strong>内容准确性：</strong> 我们不保证通过本平台服务获得的任何信息内容的准确性、真实性、适用性；</li>
+                            <li><strong>用户行为：</strong> 您应对使用本平台服务过程中接触到的内容自行加以判断，并承担因使用内容而引起的所有风险；</li>
+                            <li><strong>不可抗力：</strong> 对于因不可抗力或我们不能控制的原因造成的服务中断或其他缺陷，我们不承担任何责任。</li>
+                        </ul>
+
+                        <div class="highlight-box">
+                            <p><strong>重要提示：</strong> 您理解并同意，使用本平台服务涉及到互联网服务，可能会受到各个环节不稳定因素的影响，存在一定的风险。</p>
+                        </div>
+                    </div>
+
+                    <div class="terms-section" id="section7">
+                        <h2>7. 责任限制</h2>
+                        <p>在法律允许的最大范围内，我们不对任何间接的、惩罚性的、偶然的、特殊的、后果性的损失承担责任：</p>
+
+                        <ul>
+                            <li>因使用或无法使用本平台服务而引起的任何损害赔偿；</li>
+                            <li>因通过本平台服务购买或获取任何商品、服务、信息等而引起的损害赔偿；</li>
+                            <li>未经授权的访问或更改您的传输或数据；</li>
+                            <li>任何第三方的声明或行为与本平台服务相关。</li>
+                        </ul>
+
+                        <p>在任何情况下，我们的全部责任，无论是基于合同、侵权（包括过失）或其他原因，均不超过您使用本平台服务而向我们支付的费用总额。</p>
+                    </div>
+
+                    <div class="terms-section" id="section8">
+                        <h2>8. 法律适用</h2>
+                        <p>本条款的订立、执行和解释及争议的解决均应适用中华人民共和国法律。</p>
+
+                        <h3>8.1 争议解决</h3>
+                        <p>如双方就本条款内容或其执行发生任何争议，双方应尽量友好协商解决；协商不成时，任何一方均可向被告所在地有管辖权的人民法院提起诉讼。</p>
+
+                        <h3>8.2 条款可分性</h3>
+                        <p>如本条款中的任何条款无论因何种原因完全或部分无效或不具有执行力，本条款的其余条款仍应有效并且有约束力。</p>
+
+                        <h3>8.3 标题解释</h3>
+                        <p>本条款各条的标题仅为方便参考而设，不具法律效力，不能作为对本条款进行解释的依据。</p>
+                    </div>
+
+                    <div class="terms-section" id="section9">
+                        <h2>9. 联系我们</h2>
+                        <p>如果您对本服务条款有任何疑问、意见或建议，请通过以下方式联系我们：</p>
+
+                        <ul>
+                            <li><strong>客服热线：</strong> 400-123-4567（工作日 9:00-18:00）</li>
+                            <li><strong>电子邮件：</strong> terms@shangdaxue.com</li>
+                            <li><strong>邮寄地址：</strong> 北京市海淀区中关村大街科技园区A座1001室 上大学Online服务条款办公室（邮编：100000）</li>
+                        </ul>
+
+                        <p>我们将尽快审核所涉问题，并在验证您的用户身份后的15个工作日内予以回复。</p>
+
+                        <div class="highlight-box">
+                            <p><strong>再次提醒：</strong>
+                                在您开始使用上大学Online服务之前，请仔细阅读本服务条款。如果您对本服务条款的任何条款表示异议，您可以选择不使用上大学Online服务；使用则意味着您对本服务条款的完全接受。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 同意按钮区域 -->
+        <div class="agreement-section">
+            <h2 class="section-title">确认协议</h2>
+            <p>请仔细阅读以上服务条款内容，确认您已理解并同意条款中的所有内容</p>
+
+            <div class="agreement-buttons">
+                <button class="agree-btn" id="agreeBtn">同意并继续</button>
+                <button class="disagree-btn" id="disagreeBtn">不同意</button>
+            </div>
+
+            <p class="agreement-hint">点击"同意并继续"表示您已阅读、理解并接受上大学Online的服务条款</p>
+        </div>
+    </div>
+
+    <!-- 多功能悬浮球 -->
+    <div class="floating-ball" id="floatingBall">
+        <div class="ball-main">
+            <i class="fas fa-plus"></i>
+        </div>
+        <div class="ball-menu">
+            <a href="index.html" class="menu-item" title="首页">
+                <i class="fas fa-home"></i>
+            </a>
+            <a href="profile.html" class="menu-item" title="个人中心">
+                <i class="fas fa-user"></i>
+            </a>
+            <a href="help.html" class="menu-item" title="使用帮助">
+                <i class="fas fa-question"></i>
+            </a>
+            <a href="#" class="menu-item" id="backToTop" title="返回顶部">
+                <i class="fas fa-arrow-up"></i>
+            </a>
+            <a href="privacy.html" class="menu-item" title="隐私协议">
+                <i class="fas fa-user-shield"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <div class="footer">
+        <div>苏州天富数字科技有限公司 版权所有 苏ICP备12046592号 经营许可证：苏B2-20170388</div>
+        <div class="footer-links">
+            <a href="privacy.html">隐私协议</a>
+            <a href="terms.html">服务条款</a>
+            <a href="about.html">关于我们</a>
+            <a href="contact.html">联系我们</a>
+            <a href="help_center.html">帮助中心</a>
+            <a href="feedback.html">问题反馈</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 登录状态管理
+            function checkLoginStatus() {
+                const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+                const userName = localStorage.getItem('userName') || '用户';
+
+                const notLoggedIn = document.querySelector('.not-logged-in');
+                const loggedIn = document.querySelector('.logged-in');
+                const userNameElement = document.getElementById('userName');
+
+                if (isLoggedIn) {
+                    notLoggedIn.style.display = 'none';
+                    loggedIn.style.display = 'block';
+                    userNameElement.textContent = userName;
+                } else {
+                    notLoggedIn.style.display = 'flex';
+                    loggedIn.style.display = 'none';
+                }
+            }
+
+            // 登出功能
+            function handleLogout() {
+                localStorage.setItem('isLoggedIn', 'false');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userEmail');
+                checkLoginStatus();
+            }
+
+            // 初始化登录状态
+            checkLoginStatus();
+
+            // 登出按钮事件
+            document.getElementById('logoutBtn')?.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (confirm('确定要退出登录吗？')) {
+                    handleLogout();
+                }
+            });
+
+            // 目录导航点击事件和滚动高亮
+            const tocLinks = document.querySelectorAll('.toc-link');
+            const sections = document.querySelectorAll('.terms-section');
+
+            // 点击目录链接平滑滚动到对应章节
+            tocLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+
+                    if (targetElement) {
+                        // 移除所有active类
+                        tocLinks.forEach(l => l.classList.remove('active'));
+                        // 添加active类到当前点击的链接
+                        this.classList.add('active');
+
+                        // 平滑滚动到目标元素
+                        window.scrollTo({
+                            top: targetElement.offsetTop - 100,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+
+            // 滚动时高亮当前章节对应的目录链接
+            function highlightCurrentSection() {
+                let currentSection = '';
+
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.clientHeight;
+
+                    if (window.scrollY >= (sectionTop - 150)) {
+                        currentSection = section.getAttribute('id');
+                    }
+                });
+
+                tocLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${currentSection}`) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+
+            // 监听滚动事件
+            window.addEventListener('scroll', highlightCurrentSection);
+
+            // 初始化高亮
+            highlightCurrentSection();
+
+            // 同意按钮事件
+            document.getElementById('agreeBtn').addEventListener('click', function () {
+                // 记录用户同意服务条款
+                localStorage.setItem('termsAgreed', 'true');
+                localStorage.setItem('termsAgreedTime', new Date().toISOString());
+
+                alert('感谢您同意我们的服务条款！将为您跳转到首页。');
+                window.location.href = 'index.html';
+            });
+
+            // 不同意按钮事件
+            document.getElementById('disagreeBtn').addEventListener('click', function () {
+                if (confirm('您需要同意服务条款才能使用上大学Online服务。确定要离开吗？')) {
+                    window.history.back();
+                }
+            });
+
+            // 检查是否已同意服务条款
+            function checkTermsAgreement() {
+                const termsAgreed = localStorage.getItem('termsAgreed') === 'true';
+
+                // 如果用户已登录但未同意服务条款，显示同意区域
+                if (localStorage.getItem('isLoggedIn') === 'true' && !termsAgreed) {
+                    document.querySelector('.agreement-section').style.display = 'block';
+                } else {
+                    document.querySelector('.agreement-section').style.display = 'none';
+                }
+            }
+
+            // 初始化服务条款检查
+            checkTermsAgreement();
+
+            // 悬浮球功能
+            const floatingBall = document.getElementById('floatingBall');
+            const ballMain = floatingBall.querySelector('.ball-main');
+            const backToTopBtn = document.getElementById('backToTop');
+
+            // 切换悬浮球菜单
+            ballMain.addEventListener('click', function (e) {
+                e.stopPropagation();
+                floatingBall.classList.toggle('active');
+            });
+
+            // 返回顶部功能
+            backToTopBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+                floatingBall.classList.remove('active');
+            });
+
+            // 点击页面其他区域关闭菜单
+            document.addEventListener('click', function () {
+                floatingBall.classList.remove('active');
+            });
+
+            // 阻止菜单内部的点击事件冒泡
+            floatingBall.querySelector('.ball-menu').addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+        });
+    </script>
+</body>
+
+</html>

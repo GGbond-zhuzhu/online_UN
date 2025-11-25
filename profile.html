@@ -1,0 +1,2320 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - 上大学Online</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+        }
+
+        :root {
+            --primary-color: #d81b60;
+            --primary-light: #f9f0ff;
+            --secondary-color: #0288d1;
+            --text-color: #333;
+            --text-light: #666;
+            --bg-color: #f9f9f9;
+            --card-bg: #ffffff;
+            --border-color: #f0f0f0;
+            --success-color: #4caf50;
+            --warning-color: #ff9800;
+            --danger-color: #f44336;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        /* 顶部导航栏 */
+        .profile-header {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-main {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .logo-sub {
+            font-size: 14px;
+            color: var(--primary-color);
+            align-self: flex-end;
+            margin-bottom: 3px;
+        }
+
+        .back-to-home {
+            color: var(--text-light);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.3s;
+        }
+
+        .back-to-home:hover {
+            color: var(--primary-color);
+        }
+
+        /* 主内容区域 */
+        .profile-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+            display: flex;
+            gap: 20px;
+        }
+
+        /* 左侧边栏 */
+        .profile-sidebar {
+            flex: 0 0 300px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .user-card {
+            padding: 30px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #c2185b 100%);
+            color: white;
+        }
+
+        .user-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .user-name {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .user-role {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 15px;
+        }
+
+        .user-school {
+            display: inline-block;
+            padding: 5px 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            font-size: 13px;
+        }
+
+        .user-stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 20px 0;
+            background: var(--card-bg);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .profile-nav {
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .nav-item.active {
+            background: var(--primary-light);
+            color: var(--primary-color);
+            border-left-color: var(--primary-color);
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* 右侧内容区 */
+        .profile-content {
+            flex: 1;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .content-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .content-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .content-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #c2185b;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary-light);
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+        }
+
+        .btn-warning:hover {
+            background: #f57c00;
+        }
+
+        .content-body {
+            padding: 30px;
+        }
+
+
+        /* 搜索框样式 */
+        .search-box {
+            display: flex;
+            margin-bottom: 20px;
+            gap: 10px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .search-btn {
+            padding: 10px 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        /* 个人信息卡片 */
+        .info-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 13px;
+            color: var(--text-light);
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 15px;
+            color: var(--text-color);
+            font-weight: 500;
+        }
+
+        .verification-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #e8f5e9;
+            color: var(--success-color);
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .verification-badge.warning {
+            background: #fff3e0;
+            color: var(--warning-color);
+        }
+
+        .verification-badge.pending {
+            background: #e3f2fd;
+            color: var(--secondary-color);
+        }
+
+        /* 功能卡片网格 */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .feature-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(216, 27, 96, 0.15);
+        }
+
+        .feature-icon {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-light);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 24px;
+            color: var(--primary-color);
+        }
+
+        .feature-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: var(--text-color);
+        }
+
+        .feature-desc {
+            font-size: 13px;
+            color: var(--text-light);
+            line-height: 1.4;
+        }
+
+        /* 设置表单 */
+        .settings-form {
+            max-width: 600px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(216, 27, 96, 0.1);
+            outline: none;
+        }
+
+        /* 消息列表 */
+        .message-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message-item {
+            display: flex;
+            padding: 15px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s;
+        }
+
+        .message-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .message-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: var(--primary-color);
+            flex-shrink: 0;
+        }
+
+        .message-content {
+            flex: 1;
+        }
+
+        .message-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--text-color);
+        }
+
+        .message-text {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .message-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        /* 订单列表 */
+        .order-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .order-item {
+            display: flex;
+            padding: 15px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s;
+            align-items: center;
+        }
+
+        .order-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .order-type {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .order-type.market {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .order-type.job {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .order-info {
+            flex: 1;
+        }
+
+        .order-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--text-color);
+        }
+
+        .order-desc {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .order-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        /* 浏览记录 */
+        .browse-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .browse-item {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.3s;
+            border: 1px solid var(--border-color);
+        }
+
+        .browse-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .browse-image {
+            width: 100%;
+            height: 120px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ccc;
+            font-size: 40px;
+        }
+
+        .browse-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .browse-desc {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-bottom: 10px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .browse-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--text-light);
+        }
+
+        /* 申请列表 */
+        .application-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .application-item {
+            display: flex;
+            padding: 15px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s;
+        }
+
+        .application-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .application-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: var(--primary-color);
+            flex-shrink: 0;
+        }
+
+        .application-content {
+            flex: 1;
+        }
+
+        .application-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--text-color);
+        }
+
+        .application-text {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .application-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-icon {
+            font-size: 60px;
+            color: #e0e0e0;
+            margin-bottom: 20px;
+        }
+
+        .empty-text {
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        /* 筛选标签 */
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 8px 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .filter-tab.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        /* 毕业提醒 */
+        .graduation-alert {
+            background: #fff3e0;
+            border: 1px solid #ffb74d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .graduation-icon {
+            width: 40px;
+            height: 40px;
+            background: #ff9800;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .graduation-content {
+            flex: 1;
+        }
+
+        .graduation-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #e65100;
+        }
+
+        .graduation-text {
+            font-size: 14px;
+            color: #f57c00;
+            margin-bottom: 8px;
+        }
+
+        .graduation-actions {
+            display: flex;
+            gap: 10px;
+        }
+        /* 学号修改申请表单 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-light);
+        }
+        .modal-body {
+            padding: 20px;
+        }
+
+        .modal-footer {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        /* 悬浮球样式 */
+        .float-ball {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9999;
+        }
+
+        .ball-main {
+            width: 60px;
+            height: 60px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(216, 27, 96, 0.3);
+            transition: all 0.3s;
+            position: relative;
+            z-index: 10000;
+        }
+
+        .ball-main:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(216, 27, 96, 0.4);
+        }
+
+        .ball-menu {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 10px;
+            min-width: 150px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s;
+        }
+
+        .ball-menu.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .ball-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: var(--text-color);
+            text-decoration: none;
+        }
+
+        .ball-item:hover {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .ball-item i {
+            width: 20px;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+
+        .ball-item span {
+            font-size: 14px;
+        }
+
+        .ball-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 992px) {
+            .profile-container {
+                flex-direction: column;
+            }
+
+            .profile-sidebar {
+                flex: none;
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-container {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .browse-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .float-ball {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .browse-list {
+                grid-template-columns: 1fr;
+            }
+
+            .content-body {
+                padding: 20px 15px;
+            }
+
+            .user-stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .float-ball {
+                bottom: 15px;
+                right: 15px;
+            }
+
+            .ball-main {
+                width: 50px;
+                height: 50px;
+                font-size: 18px;
+            }
+
+            .ball-menu {
+                min-width: 140px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 顶部导航栏 -->
+    <header class="profile-header">
+        <div class="header-container">
+            <div class="logo">
+                <span class="logo-main">上大学</span>
+                <span class="logo-sub">Online</span>
+            </div>
+            <a href="index.html" class="back-to-home">
+                <i class="fas fa-arrow-left"></i> 返回首页
+            </a>
+        </div>
+    </header>
+
+    <!-- 主内容区域 -->
+    <div class="profile-container">
+        <!-- 左侧边栏 -->
+        <div class="profile-sidebar">
+            <!-- 用户信息卡片 -->
+            <div class="user-card">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h2 class="user-name" id="userName">张三</h2>
+                <div class="user-role" id="userRole">学生</div>
+                <div class="user-school" id="userSchool">北京大学</div>
+            </div>
+
+            <!-- 用户数据统计 -->
+            <div class="user-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="orderCount">12</div>
+                    <div class="stat-label">我的订单</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="favoriteCount">8</div>
+                    <div class="stat-label">我的收藏</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="pointCount">256</div>
+                    <div class="stat-label">积分</div>
+                </div>
+            </div>
+
+            <!-- 导航菜单 -->
+            <div class="profile-nav">
+                <div class="nav-item active" data-tab="overview">
+                    <i class="fas fa-user-circle"></i>
+                    <span>个人信息概览</span>
+                </div>
+                <div class="nav-item" data-tab="profile">
+                    <i class="fas fa-id-card"></i>
+                    <span>个人资料</span>
+                </div>
+                <div class="nav-item" data-tab="security">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>账户安全</span>
+                </div>
+                <div class="nav-item" data-tab="studentId">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>学号管理</span>
+                </div>
+                <div class="nav-item" data-tab="orders">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>我的订单</span>
+                </div>
+                <div class="nav-item" data-tab="favorites">
+                    <i class="fas fa-heart"></i>
+                    <span>我的收藏</span>
+                </div>
+                <div class="nav-item" data-tab="browse">
+                    <i class="fas fa-history"></i>
+                    <span>浏览记录</span>
+                </div>
+                <div class="nav-item" data-tab="messages">
+                    <i class="fas fa-envelope"></i>
+                    <span>消息中心</span>
+                </div>
+                <div class="nav-item" data-tab="applications">
+                    <i class="fas fa-file-alt"></i>
+                    <span>我的申请</span>
+                </div>
+                <div class="nav-item" data-tab="settings">
+                    <i class="fas fa-cog"></i>
+                    <span>系统设置</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧内容区 -->
+        <div class="profile-content">
+            <!-- 个人信息概览 -->
+            <div class="content-section" id="overview-section">
+                <div class="content-header">
+                    <h2 class="content-title">个人信息概览</h2>
+                    <div class="content-actions">
+                        <button class="btn" id="editProfileBtn">编辑资料</button>
+                    </div>
+                </div>
+                <div class="content-body">
+                    <!-- 毕业提醒 -->
+                    <div class="graduation-alert" id="graduationAlert" style="display: none;">
+                        <div class="graduation-icon">
+                            <i class="fas fa-graduation-cap"></i>
+                        </div>
+                        <div class="graduation-content">
+                            <div class="graduation-title">毕业提醒</div>
+                            <div class="graduation-text" id="graduationText">您的学籍即将到期，学号将无法修改。如需升学或变更学籍信息，请及时申请重新认证。</div>
+                            <div class="graduation-actions">
+                                <button class="btn btn-warning" id="applyReauthBtn">申请重新认证</button>
+                                <button class="btn btn-secondary" id="dismissAlertBtn">稍后提醒</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 基本信息卡片 -->
+                    <div class="info-card">
+                        <h3 class="card-title">基本信息</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">姓名</div>
+                                <div class="info-value" id="basicName">张三</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">学号/工号</div>
+                                <div class="info-value" id="basicId">2023012345</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">身份类型</div>
+                                <div class="info-value" id="basicRole">学生</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">所属高校</div>
+                                <div class="info-value" id="basicSchool">北京大学</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">院系专业</div>
+                                <div class="info-value" id="basicMajor">计算机科学与技术</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">入学年份</div>
+                                <div class="info-value" id="basicYear">2023年</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">预计毕业时间</div>
+                                <div class="info-value" id="basicGraduation">2027年6月</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">学籍状态</div>
+                                <div class="info-value">
+                                    在读
+                                    <span class="verification-badge">
+                                        <i class="fas fa-check-circle"></i> 正常
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 账户状态卡片 -->
+                    <div class="info-card">
+                        <h3 class="card-title">账户状态</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">身份认证</div>
+                                <div class="info-value">
+                                    已认证
+                                    <span class="verification-badge">
+                                        <i class="fas fa-check-circle"></i> 已验证
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">E卡通状态</div>
+                                <div class="info-value">
+                                    正常使用
+                                    <span class="verification-badge">
+                                        <i class="fas fa-check-circle"></i> 已激活
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">账户安全等级</div>
+                                <div class="info-value">
+                                    高
+                                    <span class="verification-badge">
+                                        <i class="fas fa-shield-alt"></i> 安全
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">信用积分</div>
+                                <div class="info-value" id="creditScore">98/100</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 快捷功能 -->
+                    <div class="info-card">
+                        <h3 class="card-title">快捷功能</h3>
+                        <div class="features-grid">
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-qrcode"></i>
+                                </div>
+                                <div class="feature-title">校园码</div>
+                                <div class="feature-desc">出示二维码用于校园消费、门禁等</div>
+                            </div>
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                                <div class="feature-title">课程表</div>
+                                <div class="feature-desc">查看今日课程与上课地点</div>
+                            </div>
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </div>
+                                <div class="feature-title">余额充值</div>
+                                <div class="feature-desc">为校园卡、钱包等账户充值</div>
+                            </div>
+                            <div class="feature-card">
+                                <div class="feature-icon">
+                                    <i class="fas fa-history"></i>
+                                </div>
+                                <div class="feature-title">消费记录</div>
+                                <div class="feature-desc">查看最近的消费明细</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 个人资料 -->
+            <div class="content-section" id="profile-section" style="display: none;">
+                <div class="content-header">
+                    <h2 class="content-title">个人资料</h2>
+                    <div class="content-actions">
+                        <button class="btn" id="saveProfileBtn">保存更改</button>
+                        <button class="btn btn-secondary" id="cancelProfileBtn">取消</button>
+                    </div>
+                </div>
+                <div class="content-body">
+                    <div class="info-card">
+                        <h3 class="card-title">基本信息</h3>
+                        <div class="settings-form">
+                            <div class="form-group">
+                                <label class="form-label">姓名</label>
+                                <input type="text" class="form-control" id="profileName" value="张三">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">学号/工号</label>
+                                <input type="text" class="form-control" id="profileId" value="2023012345" disabled>
+                                <span class="input-hint" id="studentIdHint" title="点击查看学号修改说明">
+                                    <i class="fas fa-info-circle"></i>
+                                </span>
+                                <small style="color: #999;">学号注册后不可直接修改，如需变更请申请重新认证</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">院系专业</label>
+                                <input type="text" class="form-control" id="profileMajor" value="计算机科学与技术">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">入学年份</label>
+                                <select class="form-control" id="profileYear">
+                                    <option>2020年</option>
+                                    <option>2021年</option>
+                                    <option>2022年</option>
+                                    <option selected>2023年</option>
+                                    <option>2024年</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">预计毕业时间</label>
+                                <input type="text" class="form-control" id="profileGraduation" value="2027年6月" disabled>
+                                <small style="color: #999;">根据入学年份和学制自动计算</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">联系电话</label>
+                                <input type="tel" class="form-control" id="profilePhone" value="138****5678">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">电子邮箱</label>
+                                <input type="email" class="form-control" id="profileEmail" value="zhangsan@example.com">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 学号管理 -->
+            <div class="content-section" id="studentId-section" style="display: none;">
+                <div class="content-header">
+                    <h2 class="content-title">学号管理</h2>
+                    <div class="content-actions">
+                        <button class="btn" id="applyStudentIdChange">申请学号变更</button>
+                    </div>
+                </div>
+                <div class="content-body">
+                    <div class="info-card">
+                        <h3 class="card-title">学号信息</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">当前学号</div>
+                                <div class="info-value">2023012345</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">学号状态</div>
+                                <div class="info-value">
+                                    有效
+                                    <span class="verification-badge">
+                                        <i class="fas fa-check-circle"></i> 已验证
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">认证时间</div>
+                                <div class="info-value">2023-09-01</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">有效期至</div>
+                                <div class="info-value">2027-06-30</div>
+                            </div>
+                        </div>
+                    </div>
+            
+                    <div class="info-card">
+                        <h3 class="card-title">学号修改说明</h3>
+                        <div class="message-list">
+                            <div class="message-item">
+                                <div class="message-icon">
+                                    <i class="fas fa-info-circle"></i>
+                                </div>
+                                <div class="message-content">
+                                    <div class="message-title">学号修改政策</div>
+                                    <div class="message-text">学号一经认证后通常不可修改，仅在特定情况下可申请变更：升学、转学、学籍信息更正等特殊情况。</div>
+                                </div>
+                            </div>
+                            <div class="message-item">
+                                <div class="message-icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div class="message-content">
+                                    <div class="message-title">重要提醒</div>
+                                    <div class="message-text">大学期间学号关联所有学术记录和校园服务，请谨慎处理学号变更申请。</div>
+                                </div>
+                            </div>
+                            <div class="message-item">
+                                <div class="message-icon">
+                                    <i class="fas fa-graduation-cap"></i>
+                                </div>
+                                <div class="message-content">
+                                    <div class="message-title">毕业前提醒</div>
+                                    <div class="message-text">毕业前6个月将暂停学号变更申请，请提前规划。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            
+                    <div class="info-card">
+                        <h3 class="card-title">学号变更记录</h3>
+                        <div class="application-list">
+                            <div class="application-item">
+                                <div class="application-icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="application-content">
+                                    <div class="application-title">初始学号认证</div>
+                                    <div class="application-text">完成学号2023012345的初始认证</div>
+                                    <div class="application-meta">
+                                        <span>状态: <span class="verification-badge">已通过</span></span>
+                                        <span>2023-09-01</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="application-item">
+                                <div class="application-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="application-content">
+                                    <div class="application-title">学号变更申请（升学）</div>
+                                    <div class="application-text">因升学至研究生院申请学号变更</div>
+                                    <div class="application-meta">
+                                        <span>状态: <span class="verification-badge pending">审核中</span></span>
+                                        <span>2024-05-20</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 账户安全 -->
+            <div class="content-section" id="security-section" style="display: none;">
+                <div class="content-header">
+                    <h2 class="content-title">账户安全</h2>
+                </div>
+                <div class="content-body">
+                    <div class="info-card">
+                        <h3 class="card-title">安全设置</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">登录密码</div>
+                                <div class="info-value">••••••••</div>
+                                <button class="btn" style="margin-top: 10px;">修改密码</button>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">手机绑定</div>
+                                <div class="info-value">138****5678</div>
+                                <span class="verification-badge">
+                                    <i class="fas fa-check-circle"></i> 已验证
+                                </span>
+                                <button class="btn btn-secondary" style="margin-top: 10px;">更换手机</button>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">邮箱绑定</div>
+                                <div class="info-value">zhangsan@example.com</div>
+                                <span class="verification-badge">
+                                    <i class="fas fa-check-circle"></i> 已验证
+                                </span>
+                                <button class="btn btn-secondary" style="margin-top: 10px;">更换邮箱</button>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">登录设备</div>
+                                <div class="info-value">3台设备</div>
+                                <button class="btn btn-secondary" style="margin-top: 10px;">管理设备</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h3 class="card-title">安全提醒</h3>
+                        <div class="message-list">
+                            <div class="message-item">
+                                <div class="message-icon">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div class="message-content">
+                                    <div class="message-title">账户安全等级：高</div>
+                                    <div class="message-text">您的账户安全设置较为完善，建议定期更换密码以增强安全性。</div>
+                                    <div class="message-meta">
+                                        <span>系统检测</span>
+                                        <span>今天</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="message-item">
+                                <div class="message-icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                                <div class="message-content">
+                                    <div class="message-title">异地登录提醒</div>
+                                    <div class="message-text">检测到您的账户在 北京市 有新的登录记录，如非本人操作请立即修改密码。</div>
+                                    <div class="message-meta">
+                                        <span>安全中心</span>
+                                        <span>2天前</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 我的订单 -->
+            <div class="content-section" id="orders-section" style="display: none;">
+                <div class="content-header">
+                    <h2 class="content-title">我的订单</h2>
+                    <div class="content-actions">
+                        <div class="filter-tabs">
+                            <div class="filter-tab active" data-filter="all">全部订单</div>
+                            <div class="filter-tab" data-filter="market">二手市场</div>
+                            <div class="filter-tab" data-filter="job">兼职收藏</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="content-body">
+                    <div class="search-box">
+                        <input type="text" class="search-input" placeholder="搜索订单..." id="orderSearch">
+                        <button class="search-btn">搜索</button>
+                    </div>
+                    <div class="order-list">
+                        <div class="order-item" data-type="market">
+                            <span class="order-type market">二手市场</span>
+                            <div class="order-info">
+                                <div class="order-title">二手教材《数据结构与算法》</div>
+                                <div class="order-desc">九成新，有少量笔记，价格实惠</div>
+                                <div class="order-meta">
+                                    <span>订单号: 20240520001</span>
+                                    <span>2024-05-20</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-small">查看详情</button>
+                        </div>
+                        <div class="order-item" data-type="job">
+                            <span class="order-type job">兼职收藏</span>
+                            <div class="order-info">
+                                <div class="order-title">校园图书馆助理</div>
+                                <div class="order-desc">工作时间灵活，适合学生兼职</div>
+                                <div class="order-meta">
+                                    <span>收藏时间: 2024-05-18</span>
+                                    <span>状态: 已收藏</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-small">查看详情</button>
+                        </div>
+                        <div class="order-item" data-type="market">
+                            <span class="order-type market">二手市场</span>
+                            <div class="order-info">
+                                <div class="order-title">二手笔记本电脑</div>
+                                <div class="order-desc">配置良好，运行流畅，适合学习使用</div>
+                                <div class="order-meta">
+                                    <span>订单号: 20240515002</span>
+                                    <span>2024-05-15</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-small">查看详情</button>
+                        </div>
+                        <div class="order-item" data-type="job">
+                            <span class="order-type job">兼职收藏</span>
+                            <div class="order-info">
+                                <div class="order-title">校园活动策划助理</div>
+                                <div class="order-desc">协助组织校园文化活动，积累经验</div>
+                                <div class="order-meta">
+                                    <span>收藏时间: 2024-05-10</span>
+                                    <span>状态: 已收藏</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-small">查看详情</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 我的收藏 -->
+            <div class="content-section" id="favorites-section" style="display: none;">
+                <div class="content-header">
+                    <h2 class="content-title">我的收藏</h2>
+                </div>
+                <div class="content-body">
+                    <div class="search-box">
+                        <input type="text" class="search-input" placeholder="搜索收藏内容..." id="favoriteSearch">
+                        <button class="search-btn">搜索</button>
+                    </div>
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-heart"></i>
+                        </div>
+                        <div class="empty-text">您还没有任何收藏</div>
+                        <p>在浏览商品或服务时，点击心形图标即可收藏</p>
+                        <button class="btn" style="margin-top: 20px;">去发现</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 浏览记录 -->
+            <div class="content-section" id="browse-section" style="display: none;">
+                <div class="content-header">
+                    <h2 class="content-title">浏览记录</h2>
+                    <div class="content-actions">
+                        <button class="btn btn-secondary">清空记录</button>
+                    </div>
+                </div>
+                <div class="content-body">
+                    <div class="search-box">
+                        <input type="text" class="search-input" placeholder="搜索浏览记录..." id="browseSearch">
+                        <button class="search-btn">搜索</button>
+                    </div>
+                    <div class="browse-list">
+                        <div class="browse-item">
+                            <div class="browse-image">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <div class="browse-title">二手教材《Java编程思想》</div>
+                            <div class="browse-desc">经典编程教材，九成新，无笔记</div>
+                            <div class="browse-meta">
+                                <span>二手市场</span>
+                                <span>今天 10:30</span>
+                            </div>
+                        </div>
+                        <div class="browse-item">
+                            <div class="browse-image">
+                                <i class="fas fa-briefcase"></i>
+                            </div>
+                            <div class="browse-title">校园咖啡厅兼职</div>
+                            <div class="browse-desc">工作时间灵活，提供培训，适合学生</div>
+                            <div class="browse-meta">
+                                <span>兼职招聘</span>
+                                <span>昨天 15:20</span>
+                            </div>
+                        </div>
+                        <div class="browse-item">
+                            <div class="browse-image">
+                                <i class="fas fa-laptop"></i>
+                            </div>
+                            <div class="browse-title">二手MacBook Pro</div>
+                            <div class="browse-desc">2019款，16GB内存，512GB SSD</div>
+                            <div class="browse-meta">
+                                <span>二手市场</span>
+                                <span>昨天 09:15</span>
+                            </div>
+                        </div>
+                        <div class="browse-item">
+                            <div class="browse-image">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                            </div>
+                            <div class="browse-title">高中数学家教</div>
+                            <div class="browse-desc">时薪优厚，周末工作，要求数学专业</div>
+                            <div class="browse-meta">
+                                <span>兼职招聘</span>
+                                <span>2天前</span>
+                            </div>
+                        </div>
+                        <div class="browse-item">
+                            <div class="browse-image">
+                                <i class="fas fa-bicycle"></i>
+                            </div>
+                            <div class="browse-title">二手山地自行车</div>
+                            <div class="browse-desc">九成新，变速流畅，适合校园骑行</div>
+                            <div class="browse-meta">
+                                <span>二手市场</span>
+                                <span>3天前</span>
+                            </div>
+                        </div>
+                        <div class="browse-item">
+                            <div class="browse-image">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div class="browse-title">校园超市收银员</div>
+                            <div class="browse-desc">晚班兼职，时薪制，工作轻松</div>
+                            <div class="browse-meta">
+                                <span>兼职招聘</span>
+                                <span>3天前</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 消息中心 -->
+            <div class="content-section" id="messages-section" style="display: none;">
+                <div class="content-header">
+                    <h2 class="content-title">消息中心</h2>
+                    <div class="content-actions">
+                        <div class="filter-tabs">
+                            <div class="filter-tab active" data-filter="all">全部消息</div>
+                            <div class="filter-tab" data-filter="transaction">二手交易</div>
+                            <div class="filter-tab" data-filter="job">兼职交流</div>
+                        </div>
+                        <button class="btn">全部已读</button>
+                    </div>
+                </div>
+                <div class="content-body">
+                    <div class="search-box">
+                        <input type="text" class="search-input" placeholder="搜索消息..." id="messageSearch">
+                        <button class="search-btn">搜索</button>
+                    </div>
+                    <div class="message-list">
+                        <div class="message-item" data-type="transaction">
+                            <div class="message-icon">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="message-content">
+                                <div class="message-title">交易提醒：订单已发货</div>
+                                <div class="message-text">您购买的《数据结构与算法》教材已发货，预计明天送达。</div>
+                                <div class="message-meta">
+                                    <span>二手交易</span>
+                                    <span>2小时前</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="message-item" data-type="job">
+                            <div class="message-icon">
+                                <i class="fas fa-briefcase"></i>
+                            </div>
+                            <div class="message-content">
+                                <div class="message-title">兼职申请状态更新</div>
+                                <div class="message-text">您申请的校园图书馆助理职位已通过初审，请等待面试通知。</div>
+                                <div class="message-meta">
+                                    <span>兼职交流</span>
+                                    <span>1天前</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="message-item" data-type="transaction">
+                            <div class="message-icon">
+                                <i class="fas fa-comment-dots"></i>
+                            </div>
+                            <div class="message-content">
+                                <div class="message-title">新消息：关于商品咨询</div>
+                                <div class="message-text">有用户对您发布的二手笔记本电脑感兴趣，并发送了咨询消息。</div>
+                                <div class="message-meta">
+                                    <span>二手交易</span>
+                                    <span>2天前</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="message-item" data-type="job">
+                            <div class="message-icon">
+                                <i class="fas fa-user-tie"></i>
+                            </div>
+                            <div class="message-content">
+                                <div class="message-title">兼职面试邀请</div>
+                                <div class="message-text">校园咖啡厅邀请您参加本周五下午3点的兼职面试。</div>
+                                <div class="message-meta">
+                                    <span>兼职交流</span>
+                                    <span>3天前</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 我的申请 -->
+            <div class="content-section" id="applications-section" style="display: none;">
+                <div class="content-header">
+                    <h2 class="content-title">我的申请</h2>
+                    <div class="content-actions">
+                        <div class="filter-tabs">
+                            <div class="filter-tab active" data-filter="all">全部申请</div>
+                            <div class="filter-tab" data-filter="verification">身份认证</div>
+                            <div class="filter-tab" data-filter="job">兼职申请</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="content-body">
+                    <div class="search-box">
+                        <input type="text" class="search-input" placeholder="搜索申请..." id="applicationSearch">
+                        <button class="search-btn">搜索</button>
+                    </div>
+                    <div class="application-list">
+                        <div class="application-item" data-type="verification">
+                            <div class="application-icon">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <div class="application-content">
+                                <div class="application-title">学生身份认证</div>
+                                <div class="application-text">申请验证学生身份，享受校园专属服务</div>
+                                <div class="application-meta">
+                                    <span>状态: <span class="verification-badge">已通过</span></span>
+                                    <span>2024-05-10</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="application-item" data-type="job">
+                            <div class="application-icon">
+                                <i class="fas fa-briefcase"></i>
+                            </div>
+                            <div class="application-content">
+                                <div class="application-title">校园图书馆助理</div>
+                                <div class="application-text">申请图书馆助理兼职岗位</div>
+                                <div class="application-meta">
+                                    <span>状态: <span class="verification-badge pending">审核中</span></span>
+                                    <span>2024-05-18</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="application-item" data-type="job">
+                            <div class="application-icon">
+                                <i class="fas fa-coffee"></i>
+                            </div>
+                            <div class="application-content">
+                                <div class="application-title">校园咖啡厅兼职</div>
+                                <div class="application-text">申请咖啡师助理兼职岗位</div>
+                                <div class="application-meta">
+                                    <span>状态: <span class="verification-badge warning">已拒绝</span></span>
+                                    <span>2024-04-25</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="application-item" data-type="verification">
+                            <div class="application-icon">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div class="application-content">
+                                <div class="application-title">商家身份认证</div>
+                                <div class="application-text">申请校园商家身份，发布商品和服务</div>
+                                <div class="application-meta">
+                                    <span>状态: <span class="verification-badge">已通过</span></span>
+                                    <span>2024-03-15</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系统设置 -->
+            <div class="content-section" id="settings-section" style="display: none;">
+                <div class="content-header">
+                    <h2 class="content-title">系统设置</h2>
+                    <div class="content-actions">
+                        <button class="btn" id="saveSettingsBtn">保存设置</button>
+                    </div>
+                </div>
+                <div class="content-body">
+                    <div class="info-card">
+                        <h3 class="card-title">通知设置</h3>
+                        <div class="settings-form">
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <input type="checkbox" checked> 课程提醒
+                                </label>
+                                <small style="color: #999;">在上课前提醒您即将开始的课程</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <input type="checkbox" checked> 交易通知
+                                </label>
+                                <small style="color: #999;">当有新的订单或交易状态变更时通知您</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <input type="checkbox"> 活动推送
+                                </label>
+                                <small style="color: #999;">向您推送校园活动、讲座等信息</small>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <input type="checkbox" checked> 系统公告
+                                </label>
+                                <small style="color: #999;">接收平台更新、维护等重要通知</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <h3 class="card-title">隐私设置</h3>
+                        <div class="settings-form">
+                            <div class="form-group">
+                                <label class="form-label">谁可以看到我的个人信息</label>
+                                <select class="form-control">
+                                    <option>仅自己</option>
+                                    <option selected>同校用户</option>
+                                    <option>所有用户</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">允许通过手机号找到我</label>
+                                <select class="form-control">
+                                    <option selected>同校用户</option>
+                                    <option>所有用户</option>
+                                    <option>不允许</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">个性化推荐</label>
+                                <select class="form-control">
+                                    <option selected>开启</option>
+                                    <option>关闭</option>
+                                </select>
+                                <small style="color: #999;">根据您的兴趣和行为推荐相关内容</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- 学号修改申请模态框 -->
+    <div class="modal" id="studentIdModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">学号变更申请</h3>
+                <button class="modal-close" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">变更原因</label>
+                    <select class="form-control" id="changeReason">
+                        <option value="">请选择变更原因</option>
+                        <option value="升学">升学（本科升硕士/博士）</option>
+                        <option value="转学">转学至其他院校</option>
+                        <option value="学籍更正">学籍信息更正</option>
+                        <option value="其他">其他特殊情况</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">新学号（如已知）</label>
+                    <input type="text" class="form-control" id="newStudentId" placeholder="请输入新学号">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">申请说明</label>
+                    <textarea class="form-control" id="applicationDesc" rows="4" placeholder="请详细说明变更原因和情况"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">证明材料</label>
+                    <input type="file" class="form-control" id="supportDocs" accept=".pdf,.jpg,.png">
+                    <small style="color: #999;">请上传相关证明文件（如录取通知书、转学证明等）</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelApply">取消</button>
+                <button class="btn" id="submitApply">提交申请</button>
+            </div>
+        </div>
+    </div>
+    <!-- 悬浮球 -->
+    <div class="float-ball" id="floatBall">
+        <div class="ball-main" id="ballMain">
+            <i class="fas fa-plus"></i>
+            <div class="ball-badge" id="messageBadge">3</div>
+        </div>
+        <div class="ball-menu" id="ballMenu">
+            <a href="login.html" class="ball-item" id="ballHome">
+                <i class="fas fa-home"></i>
+                <span>返回首页</span>
+            </a>
+            <a href="profile.html" class="ball-item" id="ballProfile">
+                <i class="fas fa-user"></i>
+                <span>个人中心</span>
+            </a>
+            <a href="#" class="ball-item" id="ballMessage">
+                <i class="fas fa-envelope"></i>
+                <span>消息中心</span>
+                <div class="ball-badge">3</div>
+            </a>
+            <a href="#" class="ball-item" id="ballCart">
+                <i class="fas fa-shopping-cart"></i>
+                <span>购物车</span>
+            </a>
+            <a href="#" class="ball-item" id="ballScan">
+                <i class="fas fa-qrcode"></i>
+                <span>扫一扫</span>
+            </a>
+            <a href="help.html" class="ball-item" id="ballHelp">
+                <i class="fas fa-question-circle"></i>
+                <span>帮助中心</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 获取用户信息（在实际应用中，这里应该从后端API获取）
+            const userInfo = {
+                name: '张三',
+                role: 'student',
+                roleText: '学生',
+                school: '北京大学',
+                id: '2023012345',
+                major: '计算机科学与技术',
+                year: '2023年',
+                phone: '138****5678',
+                email: 'zhangsan@example.com',
+                orderCount: 12,
+                favoriteCount: 8,
+                pointCount: 256,
+                creditScore: 98
+            };
+
+            // 更新页面用户信息
+            function updateUserInfo() {
+                document.getElementById('userName').textContent = userInfo.name;
+                document.getElementById('userRole').textContent = userInfo.roleText;
+                document.getElementById('userSchool').textContent = userInfo.school;
+
+                document.getElementById('orderCount').textContent = userInfo.orderCount;
+                document.getElementById('favoriteCount').textContent = userInfo.favoriteCount;
+                document.getElementById('pointCount').textContent = userInfo.pointCount;
+
+                document.getElementById('basicName').textContent = userInfo.name;
+                document.getElementById('basicId').textContent = userInfo.id;
+                document.getElementById('basicRole').textContent = userInfo.roleText;
+                document.getElementById('basicSchool').textContent = userInfo.school;
+                document.getElementById('basicMajor').textContent = userInfo.major;
+                document.getElementById('basicYear').textContent = userInfo.year;
+                document.getElementById('creditScore').textContent = `${userInfo.creditScore}/100`;
+
+                // 更新个人资料表单
+                document.getElementById('profileName').value = userInfo.name;
+                document.getElementById('profileId').value = userInfo.id;
+                document.getElementById('profileMajor').value = userInfo.major;
+                document.getElementById('profileYear').value = userInfo.year;
+                document.getElementById('profilePhone').value = userInfo.phone;
+                document.getElementById('profileEmail').value = userInfo.email;
+                
+                // 检查毕业提醒
+                checkGraduationAlert();
+            }
+            // 检查毕业提醒
+            function checkGraduationAlert() {
+                const now = new Date();
+                const timeDiff = userInfo.graduationDate.getTime() - now.getTime();
+                const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                const alertElement = document.getElementById('graduationAlert');
+                const alertText = document.getElementById('graduationText');
+
+                if (daysDiff <= 180) { // 毕业前6个月内显示提醒
+                    alertElement.style.display = 'flex';
+
+                    if (daysDiff <= 0) {
+                        alertText.textContent = '您已毕业，学号将无法修改。如需继续使用校园服务，请申请校友认证。';
+                        userInfo.canModifyStudentId = false;
+                    } else if (daysDiff <= 90) {
+                        alertText.textContent = `您将在${daysDiff}天后毕业，学号修改功能即将关闭。如需变更请尽快申请。`;
+                    } else {
+                        alertText.textContent = '您的学籍即将到期，学号将无法修改。如需升学或变更学籍信息，请及时申请重新认证。';
+                    }
+                } else {
+                    alertElement.style.display = 'none';
+                }
+            }
+            // 标签切换功能
+            const navItems = document.querySelectorAll('.nav-item');
+            const contentSections = document.querySelectorAll('.content-section');
+
+            navItems.forEach(item => {
+                item.addEventListener('click', function () {
+                    // 移除所有active类
+                    navItems.forEach(nav => nav.classList.remove('active'));
+                    contentSections.forEach(section => section.style.display = 'none');
+
+                    // 添加active类到当前项
+                    this.classList.add('active');
+
+                    // 显示对应的内容区域
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(`${tabId}-section`).style.display = 'block';
+                });
+            });
+            // 学号提示信息
+            document.getElementById('studentIdHint').addEventListener('click', function () {
+                alert('学号修改说明：\n\n1. 学号注册后通常不可修改\n2. 仅在升学、转学等特殊情况可申请变更\n3. 需提供相关证明材料\n4. 毕业前6个月暂停变更申请');
+            });
+
+            // 申请学号变更
+            document.getElementById('applyStudentIdChange').addEventListener('click', function () {
+                if (!userInfo.canModifyStudentId) {
+                    alert('当前无法申请学号变更：\n\n您已毕业或即将毕业，学号变更功能已关闭。\n如需帮助请联系教务处。');
+                    return;
+                }
+                document.getElementById('studentIdModal').style.display = 'flex';
+            });
+
+            // 申请重新认证
+            document.getElementById('applyReauthBtn').addEventListener('click', function () {
+                document.getElementById('studentIdModal').style.display = 'flex';
+            });
+
+            // 关闭提醒
+            document.getElementById('dismissAlertBtn').addEventListener('click', function () {
+                document.getElementById('graduationAlert').style.display = 'none';
+            });
+
+            // 模态框控制
+            document.getElementById('closeModal').addEventListener('click', function () {
+                document.getElementById('studentIdModal').style.display = 'none';
+            });
+
+            document.getElementById('cancelApply').addEventListener('click', function () {
+                document.getElementById('studentIdModal').style.display = 'none';
+            });
+
+            document.getElementById('submitApply').addEventListener('click', function () {
+                const reason = document.getElementById('changeReason').value;
+                const newId = document.getElementById('newStudentId').value;
+                const desc = document.getElementById('applicationDesc').value;
+
+                if (!reason) {
+                    alert('请选择变更原因');
+                    return;
+                }
+
+                if (!desc) {
+                    alert('请填写申请说明');
+                    return;
+                }
+
+                // 模拟提交申请
+                alert('学号变更申请已提交！\n\n我们将审核您的申请，审核结果将通过消息中心通知您。');
+                document.getElementById('studentIdModal').style.display = 'none';
+
+                // 清空表单
+                document.getElementById('changeReason').value = '';
+                document.getElementById('newStudentId').value = '';
+                document.getElementById('applicationDesc').value = '';
+                document.getElementById('supportDocs').value = '';
+            });
+
+            // 点击模态框外部关闭
+            window.addEventListener('click', function (event) {
+                const modal = document.getElementById('studentIdModal');
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+            // 编辑资料功能
+            document.getElementById('editProfileBtn').addEventListener('click', function () {
+                // 切换到个人资料标签
+                navItems.forEach(nav => nav.classList.remove('active'));
+                document.querySelector('.nav-item[data-tab="profile"]').classList.add('active');
+
+                contentSections.forEach(section => section.style.display = 'none');
+                document.getElementById('profile-section').style.display = 'block';
+            });
+
+            // 保存个人资料
+            document.getElementById('saveProfileBtn').addEventListener('click', function () {
+                // 获取表单数据
+                const newName = document.getElementById('profileName').value;
+                const newMajor = document.getElementById('profileMajor').value;
+                const newYear = document.getElementById('profileYear').value;
+                const newPhone = document.getElementById('profilePhone').value;
+                const newEmail = document.getElementById('profileEmail').value;
+
+                // 更新用户信息
+                userInfo.name = newName;
+                userInfo.major = newMajor;
+                userInfo.year = newYear;
+                userInfo.phone = newPhone;
+                userInfo.email = newEmail;
+
+                // 更新页面显示
+                updateUserInfo();
+
+                // 显示成功消息
+                alert('个人信息已更新成功！');
+
+                // 切换回概览页面
+                navItems.forEach(nav => nav.classList.remove('active'));
+                document.querySelector('.nav-item[data-tab="overview"]').classList.add('active');
+
+                contentSections.forEach(section => section.style.display = 'none');
+                document.getElementById('overview-section').style.display = 'block';
+            });
+
+            // 取消编辑
+            document.getElementById('cancelProfileBtn').addEventListener('click', function () {
+                // 重置表单数据
+                document.getElementById('profileName').value = userInfo.name;
+                document.getElementById('profileMajor').value = userInfo.major;
+                document.getElementById('profileYear').value = userInfo.year;
+                document.getElementById('profilePhone').value = userInfo.phone;
+                document.getElementById('profileEmail').value = userInfo.email;
+
+                // 切换回概览页面
+                navItems.forEach(nav => nav.classList.remove('active'));
+                document.querySelector('.nav-item[data-tab="overview"]').classList.add('active');
+
+                contentSections.forEach(section => section.style.display = 'none');
+                document.getElementById('overview-section').style.display = 'block';
+            });
+
+            // 保存设置
+            document.getElementById('saveSettingsBtn').addEventListener('click', function () {
+                alert('系统设置已保存！');
+            });
+
+            // 筛选功能
+            function setupFilterTabs(containerClass, itemClass) {
+                const filterTabs = document.querySelectorAll(`${containerClass} .filter-tab`);
+                const items = document.querySelectorAll(itemClass);
+
+                filterTabs.forEach(tab => {
+                    tab.addEventListener('click', function () {
+                        // 移除所有active类
+                        filterTabs.forEach(t => t.classList.remove('active'));
+                        // 添加active类到当前项
+                        this.classList.add('active');
+
+                        const filter = this.getAttribute('data-filter');
+
+                        items.forEach(item => {
+                            if (filter === 'all' || item.getAttribute('data-type') === filter) {
+                                item.style.display = 'flex';
+                            } else {
+                                item.style.display = 'none';
+                            }
+                        });
+                    });
+                });
+            }
+
+            // 搜索功能
+            function setupSearch(inputId, itemsSelector) {
+                const searchInput = document.getElementById(inputId);
+                if (searchInput) {
+                    searchInput.addEventListener('input', function () {
+                        const searchTerm = this.value.toLowerCase();
+                        const items = document.querySelectorAll(itemsSelector);
+
+                        items.forEach(item => {
+                            const text = item.textContent.toLowerCase();
+                            if (text.includes(searchTerm)) {
+                                item.style.display = 'flex';
+                            } else {
+                                item.style.display = 'none';
+                            }
+                        });
+                    });
+                }
+            }
+
+            // 悬浮球功能
+            const floatBall = document.getElementById('floatBall');
+            const ballMain = document.getElementById('ballMain');
+            const ballMenu = document.getElementById('ballMenu');
+            let isDragging = false;
+            let dragOffsetX = 0;
+            let dragOffsetY = 0;
+
+            // 悬浮球点击事件
+            ballMain.addEventListener('click', function (e) {
+                e.stopPropagation();
+                ballMenu.classList.toggle('active');
+            });
+
+            // 悬浮球拖拽功能
+            ballMain.addEventListener('mousedown', startDrag);
+            ballMain.addEventListener('touchstart', startDrag);
+
+            function startDrag(e) {
+                e.preventDefault();
+                isDragging = true;
+
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+
+                const rect = floatBall.getBoundingClientRect();
+                dragOffsetX = clientX - rect.left;
+                dragOffsetY = clientY - rect.top;
+
+                document.addEventListener('mousemove', onDrag);
+                document.addEventListener('touchmove', onDrag);
+                document.addEventListener('mouseup', stopDrag);
+                document.addEventListener('touchend', stopDrag);
+
+                // 隐藏菜单
+                ballMenu.classList.remove('active');
+            }
+
+            function onDrag(e) {
+                if (!isDragging) return;
+
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+
+                let newX = clientX - dragOffsetX;
+                let newY = clientY - dragOffsetY;
+
+                // 限制在可视区域内
+                const maxX = window.innerWidth - floatBall.offsetWidth;
+                const maxY = window.innerHeight - floatBall.offsetHeight;
+
+                newX = Math.max(0, Math.min(newX, maxX));
+                newY = Math.max(0, Math.min(newY, maxY));
+
+                floatBall.style.left = newX + 'px';
+                floatBall.style.top = newY + 'px';
+                floatBall.style.right = 'auto';
+                floatBall.style.bottom = 'auto';
+            }
+
+            function stopDrag() {
+                isDragging = false;
+                document.removeEventListener('mousemove', onDrag);
+                document.removeEventListener('touchmove', onDrag);
+                document.removeEventListener('mouseup', stopDrag);
+                document.removeEventListener('touchend', stopDrag);
+            }
+
+            // 点击页面其他地方关闭悬浮菜单
+            document.addEventListener('click', function (e) {
+                if (!floatBall.contains(e.target)) {
+                    ballMenu.classList.remove('active');
+                }
+            });
+
+            // 悬浮球菜单项点击事件
+            document.getElementById('ballHome').addEventListener('click', function (e) {
+                e.preventDefault();
+                window.location.href = 'index.html';
+            });
+
+            document.getElementById('ballProfile').addEventListener('click', function (e) {
+                e.preventDefault();
+                // 切换到个人中心
+                navItems.forEach(nav => nav.classList.remove('active'));
+                document.querySelector('.nav-item[data-tab="overview"]').classList.add('active');
+                contentSections.forEach(section => section.style.display = 'none');
+                document.getElementById('overview-section').style.display = 'block';
+                ballMenu.classList.remove('active');
+            });
+
+            document.getElementById('ballMessage').addEventListener('click', function (e) {
+                e.preventDefault();
+                // 切换到消息中心
+                navItems.forEach(nav => nav.classList.remove('active'));
+                document.querySelector('.nav-item[data-tab="messages"]').classList.add('active');
+                contentSections.forEach(section => section.style.display = 'none');
+                document.getElementById('messages-section').style.display = 'block';
+                ballMenu.classList.remove('active');
+            });
+
+            document.getElementById('ballCart').addEventListener('click', function (e) {
+                e.preventDefault();
+                alert('购物车功能开发中...');
+                ballMenu.classList.remove('active');
+            });
+
+            document.getElementById('ballScan').addEventListener('click', function (e) {
+                e.preventDefault();
+                alert('扫码功能开发中...');
+                ballMenu.classList.remove('active');
+            });
+
+            document.getElementById('ballHelp').addEventListener('click', function (e) {
+                e.preventDefault();
+                alert('帮助中心功能开发中...');
+                ballMenu.classList.remove('active');
+            });
+
+            // 初始化筛选功能
+            setupFilterTabs('#orders-section .filter-tabs', '.order-item');
+            setupFilterTabs('#messages-section .filter-tabs', '.message-item');
+            setupFilterTabs('#applications-section .filter-tabs', '.application-item');
+
+            // 初始化搜索功能
+            setupSearch('orderSearch', '.order-item');
+            setupSearch('favoriteSearch', '.browse-item');
+            setupSearch('browseSearch', '.browse-item');
+            setupSearch('messageSearch', '.message-item');
+            setupSearch('applicationSearch', '.application-item');
+
+            // 初始化页面
+            updateUserInfo();
+        });
+    </script>
+</body>
+
+</html>
