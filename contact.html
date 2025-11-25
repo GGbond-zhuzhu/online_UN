@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>联系我们 - 上大学Online校园综合服务平台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+        }
+
+        /* 统一粉色色调变量 */
+        :root {
+            --primary-pink: #e91e63;
+            --secondary-pink: #ec407a;
+            --light-pink: #f8bbd9;
+            --light-pink-2: #fce4ec;
+            --pink-gradient: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
+        }
+
+        body {
+            background: var(--pink-gradient);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* 顶部导航栏 - 已移除"联系我们"链接 */
+        .header {
+            background: white;
+            padding: 15px 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-pink);
+            text-decoration: none;
+        }
+
+        .header-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .header-links a {
+            text-decoration: none;
+            color: #666;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .header-links a:hover {
+            color: var(--primary-pink);
+        }
+
+        .header-links a.active {
+            color: var(--primary-pink);
+            font-weight: bold;
+        }
+
+        /* 登录状态样式 */
+        .login-status {
+            margin-left: 20px;
+            padding-left: 20px;
+            border-left: 1px solid #eee;
+        }
+
+        .not-logged-in {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .login-link {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .login-link:hover {
+            color: var(--primary-pink);
+        }
+
+        /* 登录后用户菜单 */
+        .logged-in {
+            position: relative;
+            display: none;
+        }
+
+        .user-menu {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .user-name {
+            color: #666;
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .user-name:hover {
+            background-color: var(--light-pink-2);
+            color: var(--primary-pink);
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            min-width: 120px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .user-dropdown a {
+            display: block;
+            padding: 10px 15px;
+            color: #666;
+            text-decoration: none;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s;
+        }
+
+        .user-dropdown a:hover {
+            background-color: var(--light-pink-2);
+            color: var(--primary-pink);
+        }
+
+        .user-dropdown a:last-child {
+            border-bottom: none;
+        }
+
+        .user-menu:hover .user-dropdown {
+            display: block;
+        }
+
+        /* 主要内容区域 */
+        .main-content {
+            flex: 1;
+            padding: 40px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* 联系我们标题区域 - 已移除白色背景 */
+        .contact-hero {
+            /* background: white; 已移除 */
+            /* border-radius: 20px; 已移除 */
+            /* box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); 已移除 */
+            padding: 40px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .contact-title {
+            font-size: 32px;
+            color: var(--primary-pink);
+            margin-bottom: 20px;
+        }
+
+        .contact-subtitle {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        /* 联系我们内容区域 - 左右布局 */
+        .contact-container {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        /* 左侧联系信息 */
+        .contact-info {
+            flex: 0 0 350px;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+            position: sticky;
+            top: 30px;
+        }
+
+        .info-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: var(--primary-pink);
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--light-pink-2);
+        }
+
+        .contact-methods {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .contact-method {
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            transition: all 0.3s;
+            border: 1px solid #f0f0f0;
+        }
+
+        .contact-method:hover {
+            border-color: var(--light-pink);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.1);
+        }
+
+        .method-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-pink) 0%, var(--secondary-pink) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+        }
+
+        .method-content {
+            flex: 1;
+        }
+
+        .method-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .method-detail {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .method-time {
+            font-size: 12px;
+            color: #999;
+            margin-top: 3px;
+        }
+
+        /* 右侧联系表单 */
+        .contact-form {
+            flex: 1;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-title {
+            font-size: 24px;
+            color: var(--primary-pink);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-pink);
+            box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
+            outline: none;
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary-pink) 0%, var(--secondary-pink) 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(233, 30, 99, 0.3);
+        }
+
+        .submit-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* 成功消息 */
+        .success-message {
+            display: none;
+            text-align: center;
+            padding: 30px;
+            background: var(--light-pink-2);
+            border-radius: 12px;
+            margin-top: 20px;
+        }
+
+        .success-message h3 {
+            color: #4caf50;
+            margin-bottom: 15px;
+        }
+
+        .success-message p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        /* 常见问题区域 */
+        .faq-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+        }
+
+        .faq-title {
+            font-size: 24px;
+            color: var(--primary-pink);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .faq-list {
+            display: grid;
+            gap: 15px;
+        }
+
+        .faq-item {
+            border: 1px solid #f0f0f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 15px 20px;
+            background: #f9f9f9;
+            cursor: pointer;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .faq-question:hover {
+            background: var(--light-pink-2);
+        }
+
+        .faq-question h4 {
+            margin: 0;
+            font-size: 16px;
+            color: #333;
+            flex: 1;
+        }
+
+        .faq-icon {
+            color: var(--primary-pink);
+            transition: transform 0.3s;
+        }
+
+        .faq-answer {
+            padding: 0 20px;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .faq-answer p {
+            margin: 0;
+            padding: 15px 0;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .faq-item.active .faq-question {
+            background: var(--light-pink-2);
+        }
+
+        .faq-item.active .faq-icon {
+            transform: rotate(180deg);
+        }
+
+        .faq-item.active .faq-answer {
+            max-height: 200px;
+        }
+
+        /* 新增：社交媒体链接区域 [1](@ref) */
+        .social-section {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .social-title {
+            font-size: 20px;
+            color: var(--primary-pink);
+            margin-bottom: 20px;
+        }
+
+        .social-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .social-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #666;
+            transition: all 0.3s;
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 80px;
+        }
+
+        .social-link:hover {
+            background: var(--light-pink-2);
+            color: var(--primary-pink);
+            transform: translateY(-5px);
+        }
+
+        .social-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary-pink) 0%, var(--secondary-pink) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .social-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* 多功能悬浮球 */
+        .floating-ball {
+            position: fixed;
+            right: 30px;
+            bottom: 30px;
+            z-index: 1000;
+        }
+
+        .ball-main {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-pink) 0%, var(--secondary-pink) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(233, 30, 99, 0.3);
+            transition: all 0.3s ease;
+            font-size: 20px;
+        }
+
+        .ball-main:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(233, 30, 99, 0.4);
+        }
+
+        .ball-menu {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .menu-item {
+            width: 45px;
+            height: 45px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-pink);
+            text-decoration: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            transform: scale(0);
+            opacity: 0;
+        }
+
+        .menu-item:hover {
+            transform: scale(1.1);
+            background: var(--light-pink-2);
+        }
+
+        .floating-ball.active .ball-main {
+            transform: rotate(45deg);
+        }
+
+        .floating-ball.active .ball-menu {
+            display: flex;
+        }
+
+        .floating-ball.active .menu-item {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        /* 菜单项动画延迟 */
+        .floating-ball.active .menu-item:nth-child(1) {
+            transition-delay: 0.1s;
+        }
+
+        .floating-ball.active .menu-item:nth-child(2) {
+            transition-delay: 0.2s;
+        }
+
+        .floating-ball.active .menu-item:nth-child(3) {
+            transition-delay: 0.3s;
+        }
+
+        .floating-ball.active .menu-item:nth-child(4) {
+            transition-delay: 0.4s;
+        }
+
+        .floating-ball.active .menu-item:nth-child(5) {
+            transition-delay: 0.5s;
+        }
+
+        /* 底部 */
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px 0;
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 15px 0;
+        }
+
+        .footer-links a {
+            color: #666;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: #ec407a;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 968px) {
+            .contact-container {
+                flex-direction: column;
+            }
+
+            .contact-info {
+                flex: none;
+                position: static;
+                margin-bottom: 30px;
+            }
+
+            .header {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .header-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .floating-ball {
+                right: 20px;
+                bottom: 20px;
+            }
+
+            .ball-main {
+                width: 50px;
+                height: 50px;
+                font-size: 18px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .contact-title {
+                font-size: 28px;
+            }
+
+            .contact-hero,
+            .contact-info,
+            .contact-form,
+            .faq-section,
+            .social-section {
+                padding: 30px 20px;
+            }
+
+            .social-links {
+                gap: 10px;
+            }
+
+            .social-link {
+                min-width: 70px;
+                padding: 10px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- 顶部导航栏 - 已移除"联系我们"链接 -->
+    <div class="header">
+        <a href="index.html" class="header-logo">上大学Online</a>
+        <div class="header-links">
+            <a href="index.html">首页</a>
+            <a href="app-download.html">手机App下载</a>
+            <a href="client-download.html">电脑客户端</a>
+            <a href="security.html">安全保障</a>
+            <a href="help_center.html">使用帮助</a>
+            <a href="feedback.html">问题反馈</a>
+            <a href="about.html">关于我们</a>
+            <!-- 已移除"联系我们"链接 -->
+
+            <!-- 登录状态区域 -->
+            <div class="login-status" id="loginStatus">
+                <!-- 未登录时显示 -->
+                <div class="not-logged-in">
+                    <a href="login.html" class="login-link">登录</a>
+                </div>
+                <!-- 登录后显示 -->
+                <div class="logged-in">
+                    <div class="user-menu">
+                        <span class="user-name" id="userName">用户</span>
+                        <div class="user-dropdown">
+                            <a href="profile.html">个人中心</a>
+                            <a href="profile.html">账户设置</a>
+                            <a href="login.html" id="logoutBtn">退出登录</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要内容区域 -->
+    <div class="main-content">
+        <!-- 联系我们标题区域 - 已移除白色背景 -->
+        <div class="contact-hero">
+            <h1 class="contact-title">联系我们</h1>
+            <p class="contact-subtitle">有任何问题或建议？我们很乐意为您提供帮助</p>
+        </div>
+
+        <!-- 联系我们内容区域 - 左右布局 -->
+        <div class="contact-container">
+            <!-- 左侧联系信息 -->
+            <div class="contact-info">
+                <h2 class="info-title">联系信息</h2>
+                <div class="contact-methods">
+                    <div class="contact-method">
+                        <div class="method-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                        <div class="method-content">
+                            <div class="method-title">客服热线</div>
+                            <div class="method-detail">400-123-4567</div>
+                            <div class="method-time">工作日 9:00-18:00</div>
+                        </div>
+                    </div>
+
+                    <div class="contact-method">
+                        <div class="method-icon">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="method-content">
+                            <div class="method-title">电子邮件</div>
+                            <div class="method-detail">contact@shangdaxue.com</div>
+                            <div class="method-time">24小时内回复</div>
+                        </div>
+                    </div>
+
+                    <div class="contact-method">
+                        <div class="method-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="method-content">
+                            <div class="method-title">公司地址</div>
+                            <div class="method-detail">北京市海淀区中关村大街科技园区A座1001室</div>
+                            <div class="method-time">邮编：100000</div>
+                        </div>
+                    </div>
+
+                    <div class="contact-method">
+                        <div class="method-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="method-content">
+                            <div class="method-title">工作时间</div>
+                            <div class="method-detail">周一至周五 9:00-18:00</div>
+                            <div class="method-time">周末技术支持</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧联系表单 -->
+            <div class="contact-form">
+                <h2 class="form-title">发送消息</h2>
+                <form id="contactForm">
+                    <div class="form-group">
+                        <label for="name">您的姓名 *</label>
+                        <input type="text" id="name" class="form-control" placeholder="请输入您的姓名" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">电子邮箱 *</label>
+                        <input type="email" id="email" class="form-control" placeholder="请输入您的电子邮箱" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phone">联系电话</label>
+                        <input type="tel" id="phone" class="form-control" placeholder="请输入您的联系电话（选填）">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="subject">主题 *</label>
+                        <select id="subject" class="form-control" required>
+                            <option value="">请选择问题类型</option>
+                            <option value="technical">技术问题</option>
+                            <option value="account">账号问题</option>
+                            <option value="payment">支付问题</option>
+                            <option value="suggestion">功能建议</option>
+                            <option value="complaint">投诉反馈</option>
+                            <option value="other">其他</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">详细描述 *</label>
+                        <textarea id="message" class="form-control" placeholder="请详细描述您的问题或建议..." required></textarea>
+                    </div>
+
+                    <button type="submit" class="submit-btn">发送消息</button>
+                </form>
+
+                <!-- 成功消息 -->
+                <div class="success-message" id="successMessage">
+                    <h3>消息发送成功！</h3>
+                    <p>感谢您的反馈，我们将在24小时内回复您。</p>
+                    <p>客服人员会通过您提供的联系方式与您联系。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 新增：社交媒体链接区域 [1](@ref) -->
+        <div class="social-section">
+            <h2 class="social-title">关注我们的社交媒体</h2>
+            <div class="social-links">
+                <a href="#" class="social-link" aria-label="微信公众号">
+                    <div class="social-icon">
+                        <i class="fab fa-weixin"></i>
+                    </div>
+                    <span class="social-name">微信</span>
+                </a>
+                <a href="#" class="social-link" aria-label="微博">
+                    <div class="social-icon">
+                        <i class="fab fa-weibo"></i>
+                    </div>
+                    <span class="social-name">微博</span>
+                </a>
+                <a href="#" class="social-link" aria-label="QQ">
+                    <div class="social-icon">
+                        <i class="fab fa-qq"></i>
+                    </div>
+                    <span class="social-name">QQ</span>
+                </a>
+                <a href="#" class="social-link" aria-label="知乎">
+                    <div class="social-icon">
+                        <i class="fab fa-zhihu"></i>
+                    </div>
+                    <span class="social-name">知乎</span>
+                </a>
+                <a href="#" class="social-link" aria-label="Bilibili">
+                    <div class="social-icon">
+                        <i class="fab fa-bilibili"></i>
+                    </div>
+                    <span class="social-name">B站</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- 常见问题区域 -->
+        <div class="faq-section">
+            <h2 class="faq-title">常见问题</h2>
+            <div class="faq-list">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h4>如何注册上大学Online账号？</h4>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>您可以通过手机号快速注册，注册完成后需要进行手机验证。注册时请确保使用真实有效的手机号码，以便接收验证码和重要通知。</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h4>忘记密码怎么办？</h4>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>在登录页面点击"忘记密码"，通过注册手机号接收验证码即可重置密码。如手机号已停用，请联系客服人工处理。</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h4>如何申请校园E卡通？</h4>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>完成实名认证后，在"我的"页面选择"校园E卡通"功能，按照提示上传学生证照片即可申请。审核通过后即可使用。</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h4>交易遇到问题如何处理？</h4>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>如遇交易纠纷，请及时联系客服并提供相关截图证据。我们将在1-3个工作日内处理完毕，保障您的权益。</p>
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <h4>如何注销账号？</h4>
+                        <i class="fas fa-chevron-down faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        <p>在"账户设置"中选择"账号注销"，按照提示操作即可。注销前请确保无未完成的交易和未结清的款项。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 多功能悬浮球 -->
+    <div class="floating-ball" id="floatingBall">
+        <div class="ball-main">
+            <i class="fas fa-plus"></i>
+        </div>
+        <div class="ball-menu">
+            <a href="index.html" class="menu-item" title="首页">
+                <i class="fas fa-home"></i>
+            </a>
+            <a href="profile.html" class="menu-item" title="个人中心">
+                <i class="fas fa-user"></i>
+            </a>
+            <a href="help.html" class="menu-item" title="使用帮助">
+                <i class="fas fa-question"></i>
+            </a>
+            <a href="#" class="menu-item" id="backToTop" title="返回顶部">
+                <i class="fas fa-arrow-up"></i>
+            </a>
+            <a href="privacy.html" class="menu-item" title="隐私协议">
+                <i class="fas fa-user-shield"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <div class="footer">
+        <div>北京软工杨啵啵有限公司 版权所有 京ICP备12046592号 经营许可证：京B2-20170388</div>
+        <div class="footer-links">
+            <a href="privacy.html">隐私协议</a>
+            <a href="terms.html">服务条款</a>
+            <a href="about.html">关于我们</a>
+            <a href="contact.html">联系我们</a>
+            <a href="help_center.html">帮助中心</a>
+            <a href="feedback.html">问题反馈</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 登录状态管理
+            function checkLoginStatus() {
+                const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+                const userName = localStorage.getItem('userName') || '用户';
+
+                const notLoggedIn = document.querySelector('.not-logged-in');
+                const loggedIn = document.querySelector('.logged-in');
+                const userNameElement = document.getElementById('userName');
+
+                if (isLoggedIn) {
+                    notLoggedIn.style.display = 'none';
+                    loggedIn.style.display = 'block';
+                    userNameElement.textContent = userName;
+                } else {
+                    notLoggedIn.style.display = 'flex';
+                    loggedIn.style.display = 'none';
+                }
+            }
+
+            // 登出功能
+            function handleLogout() {
+                localStorage.setItem('isLoggedIn', 'false');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userEmail');
+                checkLoginStatus();
+            }
+
+            // 初始化登录状态
+            checkLoginStatus();
+
+            // 登出按钮事件
+            document.getElementById('logoutBtn')?.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (confirm('确定要退出登录吗？')) {
+                    handleLogout();
+                }
+            });
+
+            // 联系表单提交
+            document.getElementById('contactForm').addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                // 获取表单数据
+                const name = document.getElementById('name').value;
+                const email = document.getElementById('email').value;
+                const phone = document.getElementById('phone').value;
+                const subject = document.getElementById('subject').value;
+                const message = document.getElementById('message').value;
+
+                // 简单验证
+                if (!name || !email || !subject || !message) {
+                    alert('请填写所有必填字段');
+                    return;
+                }
+
+                if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
+                    alert('请输入正确的邮箱地址');
+                    return;
+                }
+
+                // 模拟发送消息
+                console.log('联系消息:', { name, email, phone, subject, message });
+
+                // 显示成功消息
+                document.getElementById('contactForm').style.display = 'none';
+                document.getElementById('successMessage').style.display = 'block';
+
+                // 3秒后重置表单
+                setTimeout(() => {
+                    document.getElementById('contactForm').reset();
+                    document.getElementById('contactForm').style.display = 'block';
+                    document.getElementById('successMessage').style.display = 'none';
+                }, 3000);
+            });
+
+            // 常见问题切换
+            const faqItems = document.querySelectorAll('.faq-item');
+            faqItems.forEach(item => {
+                const question = item.querySelector('.faq-question');
+                question.addEventListener('click', () => {
+                    // 关闭其他打开的FAQ
+                    faqItems.forEach(otherItem => {
+                        if (otherItem !== item) {
+                            otherItem.classList.remove('active');
+                        }
+                    });
+                    // 切换当前FAQ
+                    item.classList.toggle('active');
+                });
+            });
+
+            // 悬浮球功能
+            const floatingBall = document.getElementById('floatingBall');
+            const ballMain = floatingBall.querySelector('.ball-main');
+            const backToTopBtn = document.getElementById('backToTop');
+
+            // 切换悬浮球菜单
+            ballMain.addEventListener('click', function (e) {
+                e.stopPropagation();
+                floatingBall.classList.toggle('active');
+            });
+
+            // 返回顶部功能
+            backToTopBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+                floatingBall.classList.remove('active');
+            });
+
+            // 点击页面其他区域关闭菜单
+            document.addEventListener('click', function () {
+                floatingBall.classList.remove('active');
+            });
+
+            // 阻止菜单内部的点击事件冒泡
+            floatingBall.querySelector('.ball-menu').addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+        });
+    </script>
+</body>
+
+</html>

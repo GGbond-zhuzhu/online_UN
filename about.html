@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>上大学Online - 关于我们</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+        }
+
+        /* 统一粉色色调变量 */
+        :root {
+            --primary-pink: #e91e63;
+            --secondary-pink: #ec407a;
+            --light-pink: #f8bbd9;
+            --light-pink-2: #fce4ec;
+            --pink-gradient: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
+        }
+
+        body {
+            background: var(--pink-gradient);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        /* 顶部导航栏 - 与问题反馈页面保持一致 */
+        .header {
+            background: white;
+            padding: 15px 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--primary-pink);
+            text-decoration: none;
+        }
+
+        .header-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .header-links a {
+            text-decoration: none;
+            color: #666;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .header-links a:hover {
+            color: var(--primary-pink);
+        }
+
+        .header-links a.active {
+            color: var(--primary-pink);
+            font-weight: bold;
+        }
+
+        /* 登录状态样式 */
+        .login-status {
+            margin-left: 20px;
+            padding-left: 20px;
+            border-left: 1px solid #eee;
+        }
+
+        .not-logged-in {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .login-link {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s;
+        }
+
+        .login-link:hover {
+            color: var(--primary-pink);
+        }
+
+        /* 登录后用户菜单 */
+        .logged-in {
+            position: relative;
+            display: none;
+        }
+
+        .user-menu {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .user-name {
+            color: #666;
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .user-name:hover {
+            background-color: var(--light-pink-2);
+            color: var(--primary-pink);
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            min-width: 120px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .user-dropdown a {
+            display: block;
+            padding: 10px 15px;
+            color: #666;
+            text-decoration: none;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: all 0.3s;
+        }
+
+        .user-dropdown a:hover {
+            background-color: var(--light-pink-2);
+            color: var(--primary-pink);
+        }
+
+        .user-dropdown a:last-child {
+            border-bottom: none;
+        }
+
+        .user-menu:hover .user-dropdown {
+            display: block;
+        }
+
+        /* 主要内容区域 */
+        .main-content {
+            flex: 1;
+            padding: 0;
+            max-width: 100%;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        /* 轮播图区域 - 替换原英雄区域 */
+        .carousel-section {
+            position: relative;
+            height: 500px;
+            overflow: hidden;
+            margin-bottom: 40px;
+        }
+
+        .carousel-slides {
+            display: flex;
+            width: 300%;
+            height: 100%;
+            transition: transform 0.8s ease-in-out;
+        }
+
+        .carousel-slide {
+            width: 33.333%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 0 20px;
+        }
+
+        /* 第一张幻灯片 - 基于原图设计 */
+        .slide-1 {
+            background: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
+            color: #333;
+        }
+
+        .slide-2 {
+            background: linear-gradient(135deg, #e6f7ff 0%, #f9f0ff 100%);
+            color: #333;
+        }
+
+        .slide-3 {
+            background: linear-gradient(135deg, #fce4ec 0%, #e6f7ff 100%);
+            color: #333;
+        }
+
+        .slide-content {
+            max-width: 800px;
+            padding: 40px;
+        }
+
+        .slide-title {
+            font-size: 42px;
+            color: var(--primary-pink);
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .slide-subtitle {
+            font-size: 20px;
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .slide-badge {
+            display: inline-block;
+            background: var(--primary-pink);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .slide-badge:hover {
+            background: #d81b60;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(233, 30, 99, 0.3);
+        }
+
+        .slide-badge i {
+            margin-right: 8px;
+        }
+
+        /* 轮播图导航 */
+        .carousel-nav {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .carousel-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .carousel-dot.active {
+            background: var(--primary-pink);
+            transform: scale(1.2);
+        }
+
+        .carousel-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.7);
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 20px;
+            color: var(--primary-pink);
+            transition: all 0.3s;
+            z-index: 10;
+        }
+
+        .carousel-arrow:hover {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .carousel-arrow.prev {
+            left: 30px;
+        }
+
+        .carousel-arrow.next {
+            right: 30px;
+        }
+
+        /* 公司介绍区域 */
+        .company-intro {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .section-title {
+            font-size: 32px;
+            color: var(--primary-pink);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .intro-content {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .intro-text {
+            flex: 1;
+        }
+
+        .intro-text p {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 20px;
+        }
+
+        .intro-image {
+            flex: 0 0 400px;
+            text-align: center;
+        }
+
+        .intro-img {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            border-radius: 15px;
+        }
+
+        /* 核心价值区域 */
+        .values-section {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .values-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .value-card {
+            background: #f9f9f9;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .value-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .value-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--light-pink-2);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+            color: var(--primary-pink);
+        }
+
+        .value-card h3 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .value-card p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* 发展历程区域 */
+        .timeline-section {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .timeline {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--light-pink-2);
+            transform: translateX(-50%);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 40px;
+            width: 50%;
+            padding: 0 40px;
+        }
+
+        .timeline-item:nth-child(odd) {
+            left: 0;
+            text-align: right;
+        }
+
+        .timeline-item:nth-child(even) {
+            left: 50%;
+            text-align: left;
+        }
+
+        .timeline-content {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .timeline-item:nth-child(odd) .timeline-content::after {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: 20px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 10px 0 10px 10px;
+            border-color: transparent transparent transparent #f9f9f9;
+        }
+
+        .timeline-item:nth-child(even) .timeline-content::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 20px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 10px 10px 10px 0;
+            border-color: transparent #f9f9f9 transparent transparent;
+        }
+
+        .timeline-year {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-pink);
+            margin-bottom: 10px;
+        }
+
+        .timeline-content h4 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .timeline-content p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        /* 团队介绍区域 */
+        .team-section {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+
+        .team-member {
+            text-align: center;
+        }
+
+        .member-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--light-pink-2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 40px;
+            color: var(--primary-pink);
+        }
+
+        .team-member h3 {
+            font-size: 18px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .team-member .position {
+            font-size: 14px;
+            color: var(--primary-pink);
+            margin-bottom: 10px;
+        }
+
+        .team-member p {
+            font-size: 13px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        /* 联系方式区域 */
+        .contact-section {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+            text-align: center;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .contact-item {
+            padding: 30px 20px;
+        }
+
+        .contact-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--light-pink-2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 32px;
+            color: var(--primary-pink);
+        }
+
+        .contact-item h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .contact-item p {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        /* 多功能悬浮球 - 与问题反馈页面保持一致 */
+        .floating-ball {
+            position: fixed;
+            right: 30px;
+            bottom: 30px;
+            z-index: 1000;
+        }
+
+        .ball-main {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-pink) 0%, var(--secondary-pink) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(233, 30, 99, 0.3);
+            transition: all 0.3s ease;
+            font-size: 20px;
+        }
+
+        .ball-main:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(233, 30, 99, 0.4);
+        }
+
+        .ball-menu {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            display: none;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .menu-item {
+            width: 45px;
+            height: 45px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-pink);
+            text-decoration: none;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            transform: scale(0);
+            opacity: 0;
+        }
+
+        .menu-item:hover {
+            transform: scale(1.1);
+            background: var(--light-pink-2);
+        }
+
+        .floating-ball.active .ball-main {
+            transform: rotate(45deg);
+        }
+
+        .floating-ball.active .ball-menu {
+            display: flex;
+        }
+
+        .floating-ball.active .menu-item {
+            transform: scale(1);
+            opacity: 1;
+        }
+
+        /* 菜单项动画延迟 */
+        .floating-ball.active .menu-item:nth-child(1) {
+            transition-delay: 0.1s;
+        }
+
+        .floating-ball.active .menu-item:nth-child(2) {
+            transition-delay: 0.2s;
+        }
+
+        .floating-ball.active .menu-item:nth-child(3) {
+            transition-delay: 0.3s;
+        }
+
+        .floating-ball.active .menu-item:nth-child(4) {
+            transition-delay: 0.4s;
+        }
+
+        .floating-ball.active .menu-item:nth-child(5) {
+            transition-delay: 0.5s;
+        }
+
+        /* 底部 */
+        .footer {
+            background-color: #f8f9fa;
+            padding: 30px 0;
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 15px 0;
+        }
+
+        .footer-links a {
+            color: #666;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: #ec407a;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 968px) {
+            .intro-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .intro-image {
+                flex: 0 0 auto;
+            }
+
+            .values-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .team-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .contact-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .timeline::before {
+                left: 30px;
+            }
+
+            .timeline-item {
+                width: 100%;
+                left: 0 !important;
+                text-align: left !important;
+                padding-left: 70px;
+                padding-right: 20px;
+            }
+
+            .timeline-item:nth-child(odd) .timeline-content::after {
+                right: auto;
+                left: -10px;
+                border-width: 10px 10px 10px 0;
+                border-color: transparent #f9f9f9 transparent transparent;
+            }
+
+            .header {
+                padding: 15px 20px;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .header-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .floating-ball {
+                right: 20px;
+                bottom: 20px;
+            }
+
+            .ball-main {
+                width: 50px;
+                height: 50px;
+                font-size: 18px;
+            }
+
+            .carousel-section {
+                height: 400px;
+            }
+
+            .slide-title {
+                font-size: 32px;
+            }
+
+            .slide-subtitle {
+                font-size: 18px;
+            }
+
+            .carousel-arrow {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            .carousel-arrow.prev {
+                left: 15px;
+            }
+
+            .carousel-arrow.next {
+                right: 15px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .values-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .team-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .company-intro,
+            .values-section,
+            .timeline-section,
+            .team-section,
+            .contact-section {
+                padding: 40px 20px;
+            }
+
+            .carousel-section {
+                height: 350px;
+            }
+
+            .slide-title {
+                font-size: 28px;
+            }
+
+            .slide-subtitle {
+                font-size: 16px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- 顶部导航栏 - 与问题反馈页面保持一致 -->
+    <div class="header">
+        <a href="index.html" class="header-logo">上大学Online</a>
+        <div class="header-links">
+            <a href="index.html">首页</a>
+            <a href="app-download.html">手机App下载</a>
+            <a href="client-download.html">电脑客户端</a>
+            <a href="security.html">安全保障</a>
+            <a href="help_center.html">使用帮助</a>
+            <a href="feedback.html">问题反馈</a>
+            <a href="about.html" class="active">关于我们</a>
+
+            <!-- 登录状态区域 -->
+            <div class="login-status" id="loginStatus">
+                <!-- 未登录时显示 -->
+                <div class="not-logged-in">
+                    <a href="login.html" class="login-link">登录</a>
+                </div>
+                <!-- 登录后显示 -->
+                <div class="logged-in">
+                    <div class="user-menu">
+                        <span class="user-name" id="userName">用户</span>
+                        <div class="user-dropdown">
+                            <a href="profile.html">个人中心</a>
+                            <a href="profile.html">账户设置</a>
+                            <a href="login.html" id="logoutBtn">退出登录</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主要内容区域 -->
+    <div class="main-content">
+        <!-- 轮播图区域 - 替换原英雄区域 -->
+        <div class="carousel-section">
+            <div class="carousel-slides" id="carouselSlides">
+                <!-- 第一张幻灯片 - 基于原图设计 -->
+                <div class="carousel-slide slide-1">
+                    <div class="slide-content">
+                        <h1 class="slide-title">关于上大学Online</h1>
+                        <p class="slide-subtitle">致力于为大学生提供全方位的校园服务平台<br>让校园生活更便捷、更智能、更精彩</p>
+                        <div class="slide-badge">
+                            <i class="fas fa-heart"></i> 让校园生活更美好
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第二张幻灯片 -->
+                <div class="carousel-slide slide-2">
+                    <div class="slide-content">
+                        <h1 class="slide-title">我们的使命</h1>
+                        <p class="slide-subtitle">通过技术创新，为大学生提供全方位的校园生活解决方案<br>让校园生活更简单、更智能</p>
+                        <div class="slide-badge">
+                            <i class="fas fa-rocket"></i> 探索更多
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 第三张幻灯片 -->
+                <div class="carousel-slide slide-3">
+                    <div class="slide-content">
+                        <h1 class="slide-title">服务覆盖</h1>
+                        <p class="slide-subtitle">已服务全国500+高校的百万名大学生<br>持续优化产品，服务更多大学生</p>
+                        <div class="slide-badge">
+                            <i class="fas fa-graduation-cap"></i> 加入我们
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 轮播图导航箭头 -->
+            <button class="carousel-arrow prev" id="carouselPrev">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="carousel-arrow next" id="carouselNext">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+
+            <!-- 轮播图指示点 -->
+            <div class="carousel-nav">
+                <div class="carousel-dot active" data-slide="0"></div>
+                <div class="carousel-dot" data-slide="1"></div>
+                <div class="carousel-dot" data-slide="2"></div>
+            </div>
+        </div>
+
+        <!-- 公司介绍区域 -->
+        <div class="company-intro">
+            <h2 class="section-title">公司介绍</h2>
+            <div class="intro-content">
+                <div class="intro-text">
+                    <p>上大学Online成立于2020年，是一家专注于大学生校园服务的科技公司。我们致力于通过技术创新，为大学生提供全方位的校园生活解决方案。</p>
+                    <p>我们的使命是"让校园生活更简单、更智能"，通过整合校园内的各类资源和服务，打造一个集学习、生活、社交于一体的综合性平台。</p>
+                    <p>目前，我们已经服务了全国超过500所高校的百万名大学生，获得了用户和投资机构的高度认可。未来，我们将继续深耕校园服务领域，为大学生的成长和发展提供更多价值。</p>
+                </div>
+                <div class="intro-image">
+                    <div class="intro-img-placeholder">
+                        <i class="fas fa-university" style="font-size: 200px; color: var(--light-pink-2);"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 核心价值区域 -->
+        <div class="values-section">
+            <h2 class="section-title">我们的价值观</h2>
+            <div class="values-grid">
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>用户至上</h3>
+                    <p>始终以用户需求为导向，持续优化产品体验，为用户创造真实价值。</p>
+                </div>
+
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="fas fa-lightbulb"></i>
+                    </div>
+                    <h3>创新驱动</h3>
+                    <p>勇于探索新技术、新模式，用创新解决校园生活中的痛点问题。</p>
+                </div>
+
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>安全可靠</h3>
+                    <p>将用户安全和数据隐私放在首位，建立完善的安全保障体系。</p>
+                </div>
+
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="fas fa-hand-holding-heart"></i>
+                    </div>
+                    <h3>责任担当</h3>
+                    <p>积极履行社会责任，为大学生成长和校园文化建设贡献力量。</p>
+                </div>
+
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <h3>追求卓越</h3>
+                    <p>不断挑战自我，追求更高的产品标准和服务质量。</p>
+                </div>
+
+                <div class="value-card">
+                    <div class="value-icon">
+                        <i class="fas fa-handshake"></i>
+                    </div>
+                    <h3>合作共赢</h3>
+                    <p>与高校、企业建立深度合作，共同推动校园服务生态建设。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 发展历程区域 -->
+        <div class="timeline-section">
+            <h2 class="section-title">发展历程</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-year">2020.03</div>
+                        <h4>公司成立</h4>
+                        <p>上大学Online正式成立，专注于校园服务领域</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-year">2020.09</div>
+                        <h4>首版上线</h4>
+                        <p>第一版上大学Online App正式上线，获得首批用户</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-year">2021.06</div>
+                        <h4>A轮融资</h4>
+                        <p>完成数千万元A轮融资，加速产品研发和市场拓展</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-year">2022.03</div>
+                        <h4>用户突破</h4>
+                        <p>注册用户突破100万，覆盖全国300+高校</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-year">2023.01</div>
+                        <h4>全面升级</h4>
+                        <p>产品全面升级，推出电脑客户端和更多校园服务功能</p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <div class="timeline-year">至今</div>
+                        <h4>持续发展</h4>
+                        <p>服务500+高校，持续优化产品，服务更多大学生</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 团队介绍区域 -->
+        <div class="team-section">
+            <h2 class="section-title">核心团队</h2>
+            <div class="team-grid">
+                <div class="team-member">
+                    <div class="member-avatar">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <h3>张三</h3>
+                    <div class="position">创始人 & CEO</div>
+                    <p>前bat产品总监，10年互联网产品经验，专注于用户体验和产品创新。</p>
+                </div>
+
+                <div class="team-member">
+                    <div class="member-avatar">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h3>李四</h3>
+                    <div class="position">CTO</div>
+                    <p>资深全栈工程师，擅长系统架构设计和技术团队管理。</p>
+                </div>
+
+                <div class="team-member">
+                    <div class="member-avatar">
+                        <i class="fas fa-paint-brush"></i>
+                    </div>
+                    <h3>王五</h3>
+                    <div class="position">设计总监</div>
+                    <p>注重用户体验设计，曾主导多个知名产品的视觉设计工作。</p>
+                </div>
+
+                <div class="team-member">
+                    <div class="member-avatar">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>赵六</h3>
+                    <div class="position">运营总监</div>
+                    <p>丰富的校园市场运营经验，深度理解大学生需求。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 联系方式区域 -->
+        <div class="contact-section">
+            <h2 class="section-title">联系我们</h2>
+            <p>欢迎与我们交流合作，共同推动校园服务发展</p>
+
+            <div class="contact-grid">
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <h3>公司地址</h3>
+                    <p>北京市海淀区中关村大街<br>科技园区A座1001室</p>
+                </div>
+
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-phone"></i>
+                    </div>
+                    <h3>联系电话</h3>
+                    <p>400-123-4567<br>工作日 9:00-18:00</p>
+                </div>
+
+                <div class="contact-item">
+                    <div class="contact-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <h3>邮箱地址</h3>
+                    <p>contact@shangdaxue.com<br>合作: partner@shangdaxue.com</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 多功能悬浮球 - 与问题反馈页面保持一致 -->
+    <div class="floating-ball" id="floatingBall">
+        <div class="ball-main">
+            <i class="fas fa-plus"></i>
+        </div>
+        <div class="ball-menu">
+            <a href="index.html" class="menu-item" title="首页">
+                <i class="fas fa-home"></i>
+            </a>
+            <a href="profile.html" class="menu-item" title="个人中心">
+                <i class="fas fa-user"></i>
+            </a>
+            <a href="help.html" class="menu-item" title="使用帮助">
+                <i class="fas fa-question"></i>
+            </a>
+            <a href="#" class="menu-item" id="backToTop" title="返回顶部">
+                <i class="fas fa-arrow-up"></i>
+            </a>
+            <a href="about.html" class="menu-item" title="关于我们">
+                <i class="fas fa-info-circle"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <div class="footer">
+        <div>北京软工杨啵啵有限公司 版权所有 京ICP备12046592号 经营许可证：京B2-20170388</div>
+        <div class="footer-links">
+            <a href="privacy.html">隐私协议</a>
+            <a href="terms.html">服务条款</a>
+            <a href="about.html">关于我们</a>
+            <a href="contact.html">联系我们</a>
+            <a href="help_center.html">帮助中心</a>
+            <a href="feedback.html">问题反馈</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 登录状态管理
+            function checkLoginStatus() {
+                const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+                const userName = localStorage.getItem('userName') || '用户';
+
+                const notLoggedIn = document.querySelector('.not-logged-in');
+                const loggedIn = document.querySelector('.logged-in');
+                const userNameElement = document.getElementById('userName');
+
+                if (isLoggedIn) {
+                    notLoggedIn.style.display = 'none';
+                    loggedIn.style.display = 'block';
+                    userNameElement.textContent = userName;
+                } else {
+                    notLoggedIn.style.display = 'flex';
+                    loggedIn.style.display = 'none';
+                }
+            }
+
+            // 登出功能
+            function handleLogout() {
+                localStorage.setItem('isLoggedIn', 'false');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userEmail');
+                checkLoginStatus();
+            }
+
+            // 初始化登录状态
+            checkLoginStatus();
+
+            // 登出按钮事件
+            document.getElementById('logoutBtn')?.addEventListener('click', function (e) {
+                e.preventDefault();
+                if (confirm('确定要退出登录吗？')) {
+                    handleLogout();
+                }
+            });
+
+            // 轮播图功能
+            let currentSlide = 0;
+            const totalSlides = 3;
+            const carouselSlides = document.getElementById('carouselSlides');
+            const dots = document.querySelectorAll('.carousel-dot');
+            let slideInterval;
+
+            // 更新轮播图位置
+            function updateCarousel() {
+                carouselSlides.style.transform = `translateX(-${currentSlide * 33.333}%)`;
+
+                // 更新指示点状态
+                dots.forEach((dot, index) => {
+                    dot.classList.toggle('active', index === currentSlide);
+                });
+            }
+
+            // 下一张幻灯片
+            function nextSlide() {
+                currentSlide = (currentSlide + 1) % totalSlides;
+                updateCarousel();
+            }
+
+            // 上一张幻灯片
+            function prevSlide() {
+                currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+                updateCarousel();
+            }
+
+            // 自动轮播
+            function startAutoSlide() {
+                slideInterval = setInterval(nextSlide, 5000);
+            }
+
+            // 停止自动轮播
+            function stopAutoSlide() {
+                clearInterval(slideInterval);
+            }
+
+            // 初始化轮播图
+            updateCarousel();
+            startAutoSlide();
+
+            // 箭头按钮事件
+            document.getElementById('carouselNext').addEventListener('click', function () {
+                stopAutoSlide();
+                nextSlide();
+                startAutoSlide();
+            });
+
+            document.getElementById('carouselPrev').addEventListener('click', function () {
+                stopAutoSlide();
+                prevSlide();
+                startAutoSlide();
+            });
+
+            // 指示点点击事件
+            dots.forEach((dot, index) => {
+                dot.addEventListener('click', function () {
+                    stopAutoSlide();
+                    currentSlide = index;
+                    updateCarousel();
+                    startAutoSlide();
+                });
+            });
+
+            // 鼠标悬停时暂停自动轮播
+            const carouselSection = document.querySelector('.carousel-section');
+            carouselSection.addEventListener('mouseenter', stopAutoSlide);
+            carouselSection.addEventListener('mouseleave', startAutoSlide);
+
+            // 时间轴动画
+            const timelineItems = document.querySelectorAll('.timeline-item');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = 1;
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            timelineItems.forEach(item => {
+                item.style.opacity = 0;
+                item.style.transform = 'translateY(20px)';
+                item.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                observer.observe(item);
+            });
+
+            // 团队卡片动画
+            const teamMembers = document.querySelectorAll('.team-member');
+            teamMembers.forEach(member => {
+                member.style.opacity = 0;
+                member.style.transform = 'translateY(20px)';
+                member.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+
+                const memberObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.style.opacity = 1;
+                            entry.target.style.transform = 'translateY(0)';
+                        }
+                    });
+                }, { threshold: 0.1 });
+
+                memberObserver.observe(member);
+            });
+
+            // 悬浮球功能
+            const floatingBall = document.getElementById('floatingBall');
+            const ballMain = floatingBall.querySelector('.ball-main');
+            const backToTopBtn = document.getElementById('backToTop');
+
+            // 切换悬浮球菜单
+            ballMain.addEventListener('click', function (e) {
+                e.stopPropagation();
+                floatingBall.classList.toggle('active');
+            });
+
+            // 返回顶部功能
+            backToTopBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+                floatingBall.classList.remove('active');
+            });
+
+            // 点击页面其他区域关闭菜单
+            document.addEventListener('click', function () {
+                floatingBall.classList.remove('active');
+            });
+
+            // 阻止菜单内部的点击事件冒泡
+            floatingBall.querySelector('.ball-menu').addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+        });
+    </script>
+</body>
+
+</html>
