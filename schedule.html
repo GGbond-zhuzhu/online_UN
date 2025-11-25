@@ -5,7 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>行程管理 - 上大学Online</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* 这里放置完整的CSS代码 */
         * {
             margin: 0;
             padding: 0;
@@ -849,6 +851,297 @@
             font-size: 14px;
         }
 
+        /* 时间选择器样式 */
+        .date-picker-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .date-display {
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 20px;
+            background: var(--primary-light);
+            color: var(--primary-color);
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .date-display:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .date-picker-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-hover);
+            padding: 20px;
+            margin-top: 10px;
+            min-width: 300px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .date-picker-dropdown.active {
+            display: block;
+        }
+
+        .date-picker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .month-nav {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: var(--primary-color);
+            padding: 5px 10px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .month-nav:hover {
+            background: var(--primary-light);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+
+        .calendar-day {
+            text-align: center;
+            font-weight: bold;
+            color: var(--text-light);
+            font-size: 12px;
+            padding: 5px 0;
+        }
+
+        .calendar-date {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            margin: 2px auto;
+        }
+
+        .calendar-date:hover {
+            background: var(--primary-light);
+        }
+
+        .calendar-date.selected {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .calendar-date.today {
+            border: 2px solid var(--primary-color);
+        }
+
+        .calendar-date.other-month {
+            color: #ccc;
+        }
+
+        /* 导入功能样式 */
+        .import-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .import-option {
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+            padding: 15px;
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .import-option:hover {
+            border-color: var(--primary-color);
+            background: var(--primary-light);
+        }
+
+        .import-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+
+        .import-text {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* 团队管理侧边栏 */
+        .team-sidebar {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 380px;
+            height: 100vh;
+            background: white;
+            box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s ease;
+            z-index: 2000;
+            overflow-y: auto;
+        }
+
+        .team-sidebar.active {
+            right: 0;
+        }
+
+        .team-sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .team-sidebar-content {
+            padding: 20px;
+        }
+
+        .team-list {
+            margin: 20px 0;
+        }
+
+        .team-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .team-item:hover {
+            border-color: var(--primary-color);
+            background: var(--primary-light);
+        }
+
+        .team-item.active {
+            border-color: var(--primary-color);
+            background: var(--primary-light);
+        }
+
+        .team-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+        }
+
+        .team-info {
+            flex: 1;
+        }
+
+        .team-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .team-members {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        /* 独立提醒样式 */
+        .standalone-reminders {
+            margin-top: 20px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+
+        .reminder-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            background: var(--bg-light);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .reminder-content {
+            flex: 1;
+        }
+
+        .reminder-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .reminder-time {
+            font-size: 12px;
+            color: var(--text-light);
+        }
+
+        .reminder-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .reminder-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .reminder-complete {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .reminder-snooze {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .reminder-delete {
+            background: #f44336;
+            color: white;
+        }
+
         /* 响应式设计 */
         @media (max-width: 768px) {
             .header-top {
@@ -913,6 +1206,20 @@
                 bottom: 20px;
                 right: 20px;
             }
+
+            .team-sidebar {
+                width: 100%;
+                right: -100%;
+            }
+
+            .import-options {
+                flex-direction: column;
+            }
+
+            .date-picker-dropdown {
+                left: 50%;
+                transform: translateX(-50%);
+            }
         }
 
         @media (max-width: 480px) {
@@ -947,7 +1254,6 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
 <body>
@@ -1015,7 +1321,27 @@
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">今日行程概览</h2>
-                    <div>2024年1月16日 星期二</div>
+                    <div class="date-picker-container">
+                        <div class="date-display" id="dateDisplay">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span id="currentDate">2024年1月16日 星期二</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="date-picker-dropdown" id="datePicker">
+                            <div class="date-picker-header">
+                                <button class="month-nav" id="prevMonth"><i class="fas fa-chevron-left"></i></button>
+                                <h4 id="currentMonthYear">2024年1月</h4>
+                                <button class="month-nav" id="nextMonth"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                            <div class="calendar-grid" id="calendarDays">
+                                <!-- 日历将通过JavaScript动态生成 -->
+                            </div>
+                            <div class="form-actions">
+                                <button class="btn btn-outline" id="cancelDate">取消</button>
+                                <button class="btn btn-primary" id="confirmDate">确认</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="today-overview">
                     <div class="overview-card">
@@ -1061,8 +1387,48 @@
                         <button class="filter-btn" data-category="personal">个人事务</button>
                     </div>
                     <div class="search-controls">
+                        <button class="btn btn-outline" id="importScheduleBtn">
+                            <i class="fas fa-file-import"></i> 导入行程
+                        </button>
+                        <button class="btn btn-outline" id="teamManageBtn">
+                            <i class="fas fa-users"></i> 团队管理
+                        </button>
                         <input type="text" class="search-input" placeholder="搜索行程关键词..." id="searchInput">
                         <button class="btn btn-primary" id="searchBtn"><i class="fas fa-search"></i> 搜索</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 导入功能模态框 -->
+            <div class="modal" id="importModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3 class="modal-title">导入行程</h3>
+                        <button class="close-modal" id="closeImportModal">&times;</button>
+                    </div>
+                    <div class="import-options">
+                        <div class="import-option" id="importFile">
+                            <div class="import-icon">
+                                <i class="fas fa-file-excel"></i>
+                            </div>
+                            <div class="import-text">从文件导入</div>
+                            <input type="file" id="fileInput" class="file-input" accept=".xlsx,.xls,.csv">
+                        </div>
+                        <div class="import-option" id="importCalendar">
+                            <div class="import-icon">
+                                <i class="fas fa-calendar"></i>
+                            </div>
+                            <div class="import-text">从日历导入</div>
+                        </div>
+                        <div class="import-option" id="importTemplate">
+                            <div class="import-icon">
+                                <i class="fas fa-download"></i>
+                            </div>
+                            <div class="import-text">下载模板</div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-outline" id="cancelImport">取消</button>
                     </div>
                 </div>
             </div>
@@ -1162,6 +1528,17 @@
                 </form>
             </div>
 
+            <!-- 独立提醒管理 -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">独立提醒</h2>
+                    <button class="btn btn-primary" id="addReminderBtn"><i class="fas fa-plus"></i> 添加提醒</button>
+                </div>
+                <div class="standalone-reminders" id="reminderList">
+                    <!-- 独立提醒将通过JavaScript动态生成 -->
+                </div>
+            </div>
+
             <!-- 今日行程列表 -->
             <div class="card">
                 <div class="card-header">
@@ -1195,6 +1572,29 @@
             <div class="form-actions">
                 <button class="btn btn-outline" id="cancelShare">取消</button>
                 <button class="btn btn-primary" id="confirmShare">确认共享</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 团队管理侧边栏 -->
+    <div class="team-sidebar" id="teamSidebar">
+        <div class="team-sidebar-header">
+            <h3>团队管理</h3>
+            <button class="close-modal" id="closeTeamSidebar">&times;</button>
+        </div>
+        <div class="team-sidebar-content">
+            <button class="btn btn-primary" id="createTeamBtn" style="width: 100%; margin-bottom: 20px;">
+                <i class="fas fa-plus"></i> 创建新团队
+            </button>
+
+            <h4>我的团队</h4>
+            <div class="team-list" id="teamList">
+                <!-- 团队列表将通过JavaScript动态生成 -->
+            </div>
+
+            <h4>团队邀请</h4>
+            <div class="team-invites" id="teamInvites">
+                <!-- 团队邀请将通过JavaScript动态生成 -->
             </div>
         </div>
     </div>
@@ -1278,6 +1678,365 @@
             dropdownMenu.addEventListener('click', function (e) {
                 e.stopPropagation();
             });
+        }
+
+        // 时间选择器功能
+        function initDatePicker() {
+            const dateDisplay = document.getElementById('dateDisplay');
+            const datePicker = document.getElementById('datePicker');
+            const currentDateElement = document.getElementById('currentDate');
+            const currentMonthYear = document.getElementById('currentMonthYear');
+            const calendarDays = document.getElementById('calendarDays');
+            const prevMonthBtn = document.getElementById('prevMonth');
+            const nextMonthBtn = document.getElementById('nextMonth');
+            const cancelDateBtn = document.getElementById('cancelDate');
+            const confirmDateBtn = document.getElementById('confirmDate');
+
+            let currentDate = new Date();
+            let selectedDate = new Date();
+
+            // 更新日期显示
+            function updateDateDisplay() {
+                const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+                currentDateElement.textContent = selectedDate.toLocaleDateString('zh-CN', options);
+            }
+
+            // 生成日历
+            function generateCalendar(date) {
+                const year = date.getFullYear();
+                const month = date.getMonth();
+
+                currentMonthYear.textContent = `${year}年${month + 1}月`;
+
+                const firstDay = new Date(year, month, 1);
+                const lastDay = new Date(year, month + 1, 0);
+                const firstDayIndex = firstDay.getDay();
+                const lastDayIndex = lastDay.getDay();
+                const lastDate = lastDay.getDate();
+                const prevLastDate = new Date(year, month, 0).getDate();
+
+                let days = '';
+
+                // 星期标题
+                const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+                weekDays.forEach(day => {
+                    days += `<div class="calendar-day">${day}</div>`;
+                });
+
+                // 上个月日期
+                for (let i = firstDayIndex; i > 0; i--) {
+                    const dateNum = prevLastDate - i + 1;
+                    const isToday = false;
+                    const isSelected = false;
+                    const isOtherMonth = true;
+                    days += `<div class="calendar-date other-month" data-date="${dateNum}" data-month="${month - 1}" data-year="${year}">${dateNum}</div>`;
+                }
+
+                // 当月日期
+                for (let i = 1; i <= lastDate; i++) {
+                    const isToday = i === new Date().getDate() && month === new Date().getMonth() && year === new Date().getFullYear();
+                    const isSelected = i === selectedDate.getDate() && month === selectedDate.getMonth() && year === selectedDate.getFullYear();
+                    const dateClass = `calendar-date ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}`;
+                    days += `<div class="${dateClass}" data-date="${i}" data-month="${month}" data-year="${year}">${i}</div>`;
+                }
+
+                // 下个月日期
+                for (let i = 1; i <= (42 - firstDayIndex - lastDate); i++) {
+                    days += `<div class="calendar-date other-month" data-date="${i}" data-month="${month + 1}" data-year="${year}">${i}</div>`;
+                }
+
+                calendarDays.innerHTML = days;
+
+                // 添加日期点击事件
+                document.querySelectorAll('.calendar-date:not(.other-month)').forEach(dateElement => {
+                    dateElement.addEventListener('click', function () {
+                        const date = parseInt(this.getAttribute('data-date'));
+                        const month = parseInt(this.getAttribute('data-month'));
+                        const year = parseInt(this.getAttribute('data-year'));
+
+                        selectedDate = new Date(year, month, date);
+
+                        // 更新选中状态
+                        document.querySelectorAll('.calendar-date').forEach(el => {
+                            el.classList.remove('selected');
+                        });
+                        this.classList.add('selected');
+                    });
+                });
+            }
+
+            // 事件监听
+            dateDisplay.addEventListener('click', function (e) {
+                e.stopPropagation();
+                datePicker.classList.toggle('active');
+            });
+
+            prevMonthBtn.addEventListener('click', function () {
+                currentDate.setMonth(currentDate.getMonth() - 1);
+                generateCalendar(currentDate);
+            });
+
+            nextMonthBtn.addEventListener('click', function () {
+                currentDate.setMonth(currentDate.getMonth() + 1);
+                generateCalendar(currentDate);
+            });
+
+            cancelDateBtn.addEventListener('click', function () {
+                datePicker.classList.remove('active');
+            });
+
+            confirmDateBtn.addEventListener('click', function () {
+                updateDateDisplay();
+                datePicker.classList.remove('active');
+                // 这里可以添加根据选择日期更新行程列表的逻辑
+                alert(`已切换到日期: ${selectedDate.toLocaleDateString('zh-CN')}`);
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!dateDisplay.contains(e.target) && !datePicker.contains(e.target)) {
+                    datePicker.classList.remove('active');
+                }
+            });
+
+            // 初始化
+            updateDateDisplay();
+            generateCalendar(currentDate);
+        }
+
+        // 导入功能
+        function initImportFunction() {
+            const importModal = document.getElementById('importModal');
+            const importScheduleBtn = document.getElementById('importScheduleBtn');
+            const closeImportModal = document.getElementById('closeImportModal');
+            const cancelImport = document.getElementById('cancelImport');
+            const importFile = document.getElementById('importFile');
+            const importCalendar = document.getElementById('importCalendar');
+            const importTemplate = document.getElementById('importTemplate');
+            const fileInput = document.getElementById('fileInput');
+
+            importScheduleBtn.addEventListener('click', function () {
+                importModal.classList.add('active');
+            });
+
+            closeImportModal.addEventListener('click', closeImportModalFunc);
+            cancelImport.addEventListener('click', closeImportModalFunc);
+
+            importFile.addEventListener('click', function () {
+                fileInput.click();
+            });
+
+            fileInput.addEventListener('change', function (e) {
+                if (e.target.files.length > 0) {
+                    const fileName = e.target.files[0].name;
+                    alert(`准备导入文件: ${fileName}\n导入功能开发中...`);
+                    // 这里可以添加实际的文件处理逻辑
+                    closeImportModalFunc();
+                }
+            });
+
+            importCalendar.addEventListener('click', function () {
+                alert('从日历导入功能开发中...');
+                // 这里可以添加从日历导入的逻辑
+            });
+
+            importTemplate.addEventListener('click', function () {
+                alert('开始下载导入模板...');
+                // 这里可以添加模板下载逻辑
+            });
+
+            function closeImportModalFunc() {
+                importModal.classList.remove('active');
+            }
+        }
+
+        // 团队管理功能
+        function initTeamManagement() {
+            const teamSidebar = document.getElementById('teamSidebar');
+            const teamManageBtn = document.getElementById('teamManageBtn');
+            const closeTeamSidebar = document.getElementById('closeTeamSidebar');
+            const createTeamBtn = document.getElementById('createTeamBtn');
+            const teamList = document.getElementById('teamList');
+            const teamInvites = document.getElementById('teamInvites');
+
+            // 示例团队数据
+            const sampleTeams = [
+                { id: 1, name: '项目开发组', members: 5, color: '#d81b60' },
+                { id: 2, name: '学习小组', members: 3, color: '#4a90e2' },
+                { id: 3, name: '社团活动', members: 8, color: '#4caf50' }
+            ];
+
+            const sampleInvites = [
+                { id: 1, name: '竞赛团队', inviter: '李四' },
+                { id: 2, name: '研究小组', inviter: '王五' }
+            ];
+
+            teamManageBtn.addEventListener('click', function () {
+                teamSidebar.classList.add('active');
+            });
+
+            closeTeamSidebar.addEventListener('click', function () {
+                teamSidebar.classList.remove('active');
+            });
+
+            createTeamBtn.addEventListener('click', function () {
+                const teamName = prompt('请输入团队名称:');
+                if (teamName) {
+                    alert(`团队 "${teamName}" 创建成功！`);
+                    // 这里可以添加实际创建团队的逻辑
+                }
+            });
+
+            // 渲染团队列表
+            function renderTeamList() {
+                teamList.innerHTML = '';
+                sampleTeams.forEach(team => {
+                    const teamElement = document.createElement('div');
+                    teamElement.className = 'team-item';
+                    teamElement.innerHTML = `
+                        <div class="team-avatar" style="background: ${team.color}">
+                            ${team.name.charAt(0)}
+                        </div>
+                        <div class="team-info">
+                            <div class="team-name">${team.name}</div>
+                            <div class="team-members">${team.members} 名成员</div>
+                        </div>
+                        <i class="fas fa-chevron-right"></i>
+                    `;
+                    teamList.appendChild(teamElement);
+                });
+            }
+
+            // 渲染团队邀请
+            function renderTeamInvites() {
+                teamInvites.innerHTML = '';
+                sampleInvites.forEach(invite => {
+                    const inviteElement = document.createElement('div');
+                    inviteElement.className = 'team-item';
+                    inviteElement.innerHTML = `
+                        <div class="team-avatar" style="background: var(--warning-color)">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <div class="team-info">
+                            <div class="team-name">${invite.name}</div>
+                            <div class="team-members">${invite.inviter} 邀请您加入</div>
+                        </div>
+                        <div class="team-actions">
+                            <button class="btn btn-success" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;">接受</button>
+                            <button class="btn btn-outline" style="padding: 5px 10px; font-size: 12px;">拒绝</button>
+                        </div>
+                    `;
+                    teamInvites.appendChild(inviteElement);
+                });
+            }
+
+            // 初始化团队管理
+            renderTeamList();
+            renderTeamInvites();
+        }
+
+        // 独立提醒功能
+        function initStandaloneReminders() {
+            const reminderList = document.getElementById('reminderList');
+            const addReminderBtn = document.getElementById('addReminderBtn');
+
+            // 示例提醒数据
+            let reminders = [
+                { id: 1, title: '提交课程作业', time: '今天 18:00', completed: false },
+                { id: 2, title: '准备小组讨论', time: '明天 14:00', completed: false },
+                { id: 3, title: '还图书馆书籍', time: '1月18日 16:00', completed: true }
+            ];
+
+            addReminderBtn.addEventListener('click', function () {
+                const reminderTitle = prompt('请输入提醒内容:');
+                if (reminderTitle) {
+                    const newReminder = {
+                        id: Date.now(),
+                        title: reminderTitle,
+                        time: '今天 23:59',
+                        completed: false
+                    };
+                    reminders.push(newReminder);
+                    renderReminderList();
+                    alert('独立提醒添加成功！');
+                }
+            });
+
+            // 渲染提醒列表
+            function renderReminderList() {
+                reminderList.innerHTML = '';
+
+                reminders.forEach(reminder => {
+                    const reminderElement = document.createElement('div');
+                    reminderElement.className = 'reminder-item';
+                    if (reminder.completed) {
+                        reminderElement.style.opacity = '0.6';
+                    }
+
+                    reminderElement.innerHTML = `
+                        <div class="reminder-content">
+                            <div class="reminder-title">${reminder.title}</div>
+                            <div class="reminder-time">${reminder.time}</div>
+                        </div>
+                        <div class="reminder-actions">
+                            <button class="reminder-btn reminder-complete" data-id="${reminder.id}">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button class="reminder-btn reminder-snooze" data-id="${reminder.id}">
+                                <i class="fas fa-clock"></i>
+                            </button>
+                            <button class="reminder-btn reminder-delete" data-id="${reminder.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    `;
+
+                    reminderList.appendChild(reminderElement);
+                });
+
+                // 添加事件监听
+                document.querySelectorAll('.reminder-complete').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const id = parseInt(this.getAttribute('data-id'));
+                        completeReminder(id);
+                    });
+                });
+
+                document.querySelectorAll('.reminder-snooze').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const id = parseInt(this.getAttribute('data-id'));
+                        snoozeReminder(id);
+                    });
+                });
+
+                document.querySelectorAll('.reminder-delete').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const id = parseInt(this.getAttribute('data-id'));
+                        deleteReminder(id);
+                    });
+                });
+            }
+
+            function completeReminder(id) {
+                reminders = reminders.map(reminder =>
+                    reminder.id === id ? { ...reminder, completed: !reminder.completed } : reminder
+                );
+                renderReminderList();
+            }
+
+            function snoozeReminder(id) {
+                alert('提醒已延后1小时');
+                // 这里可以添加实际的延后逻辑
+            }
+
+            function deleteReminder(id) {
+                if (confirm('确定要删除这个提醒吗？')) {
+                    reminders = reminders.filter(reminder => reminder.id !== id);
+                    renderReminderList();
+                }
+            }
+
+            // 初始化提醒列表
+            renderReminderList();
         }
 
         // 生成周视图
@@ -1602,18 +2361,23 @@
             const cancelShare = document.getElementById('cancelShare');
             const addShareUser = document.getElementById('addShareUser');
             const confirmShare = document.getElementById('confirmShare');
+            const shareUserInput = document.getElementById('shareUserInput');
 
             closeShareModal.addEventListener('click', closeModal);
             cancelShare.addEventListener('click', closeModal);
 
             addShareUser.addEventListener('click', function () {
-                const userInput = document.getElementById('shareUserInput');
-                const user = userInput.value.trim();
-
+                const user = shareUserInput.value.trim();
                 if (user) {
                     sharedUsers.add(user);
                     updateSharedUsersList();
-                    userInput.value = '';
+                    shareUserInput.value = '';
+                }
+            });
+
+            shareUserInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    addShareUser.click();
                 }
             });
 
@@ -1637,12 +2401,12 @@
             const exportWordBtn = document.getElementById('exportWordBtn');
 
             exportPdfBtn.addEventListener('click', function () {
-                alert('PDF导出功能即将实现');
+                alert('PDF导出功能开发中...');
                 // 实际实现可以使用jsPDF等库
             });
 
             exportWordBtn.addEventListener('click', function () {
-                alert('Word导出功能即将实现');
+                alert('Word导出功能开发中...');
                 // 实际实现可以使用docx.js等库
             });
         }
@@ -1683,7 +2447,7 @@
                 alert(`行程添加成功！
 标题: ${title}
 分类: ${getCategoryText(category)}
-时间: ${time}
+时间: ${new Date(time).toLocaleString('zh-CN')}
 地点: ${location}
 描述: ${description}
 提醒: ${reminderCount} ${reminderUnit}前，通过${reminderMethods.join(', ')}提醒`);
@@ -1691,6 +2455,9 @@
                 addScheduleForm.classList.remove('active');
                 addScheduleBtn.style.display = 'inline-flex';
                 scheduleForm.reset();
+
+                // 重新渲染行程列表以显示新添加的行程
+                renderScheduleList();
             });
         }
 
@@ -1721,6 +2488,10 @@
 
                     if (action === '添加行程') {
                         document.getElementById('addScheduleBtn').click();
+                    } else if (action === '返回首页') {
+                        window.location.href = 'index.html';
+                    } else if (action === '校园E卡通') {
+                        window.location.href = 'e-card.html';
                     } else {
                         alert(`执行操作: ${action}`);
                     }
@@ -1730,9 +2501,14 @@
             });
         }
 
-        // 页面加载完成后初始化
+        // 页面加载完成后初始化所有功能
         document.addEventListener('DOMContentLoaded', function () {
+            // 初始化所有功能
             initDropdownMenu();
+            initDatePicker();
+            initImportFunction();
+            initTeamManagement();
+            initStandaloneReminders();
             generateWeekView();
             renderScheduleList();
             initCategoryFilter();
@@ -1752,6 +2528,11 @@
                     }, 150);
                 });
             });
+
+            // 初始化今日日期显示
+            const today = new Date();
+            const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+            document.getElementById('currentDate').textContent = today.toLocaleDateString('zh-CN', options);
         });
     </script>
 </body>

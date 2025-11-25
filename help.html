@@ -149,11 +149,64 @@
             border-radius: 20px;
             transition: all 0.3s;
             cursor: pointer;
+            position: relative;
         }
 
         .icon-btn:hover {
             background: var(--primary-light);
             color: var(--primary-color);
+        }
+
+        /* 下拉菜单 */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            min-width: 180px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s;
+            z-index: 1001;
+        }
+
+        .dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-menu a {
+            display: block;
+            padding: 12px 20px;
+            color: var(--text-dark);
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.3s;
+        }
+
+        .dropdown-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-menu a:hover {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .dropdown-arrow {
+            margin-left: 5px;
+            transition: transform 0.3s;
+        }
+
+        .dropdown:hover .dropdown-arrow {
+            transform: rotate(180deg);
         }
 
         /* 主导航 */
@@ -699,6 +752,74 @@
             background: rgba(233, 30, 99, 0.1);
         }
 
+        /* 悬浮球 */
+        .floating-ball {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.4);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+
+        .floating-ball:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(233, 30, 99, 0.6);
+        }
+
+        .floating-menu {
+            position: absolute;
+            bottom: 70px;
+            right: 0;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+            min-width: 150px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.3s;
+        }
+
+        .floating-ball:hover .floating-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .floating-menu a {
+            display: block;
+            padding: 12px 20px;
+            color: var(--text-dark);
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.3s;
+        }
+
+        .floating-menu a:last-child {
+            border-bottom: none;
+        }
+
+        .floating-menu a:hover {
+            background: var(--primary-light);
+            color: var(--primary-color);
+        }
+
+        .floating-menu a i {
+            margin-right: 8px;
+            width: 20px;
+            text-align: center;
+        }
+
         /* 清除浮动 */
         .clearfix::after {
             content: "";
@@ -844,6 +965,14 @@
                 width: 100%;
                 float: none;
             }
+
+            .floating-ball {
+                bottom: 20px;
+                right: 20px;
+                width: 50px;
+                height: 50px;
+                font-size: 18px;
+            }
         }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -868,10 +997,20 @@
                         <i class="fas fa-bell"></i>
                         <span>消息</span>
                     </a>
-                    <a href="#" class="icon-btn">
-                        <i class="fas fa-user"></i>
-                        <span>个人中心</span>
-                    </a>
+                    <div class="dropdown">
+                        <a href="#" class="icon-btn">
+                            <i class="fas fa-user"></i>
+                            <span>个人中心</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <a href="#"><i class="fas fa-user-circle"></i> 个人资料</a>
+                            <a href="#"><i class="fas fa-cog"></i> 账户设置</a>
+                            <a href="#"><i class="fas fa-history"></i> 使用记录</a>
+                            <a href="#"><i class="fas fa-question-circle"></i> 帮助中心</a>
+                            <a href="#"><i class="fas fa-sign-out-alt"></i> 退出登录</a>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="main-nav">
@@ -1234,6 +1373,17 @@
         </div>
     </div>
 
+    <!-- 悬浮球 -->
+    <div class="floating-ball">
+        <i class="fas fa-question"></i>
+        <div class="floating-menu">
+            <a href="#"><i class="fas fa-home"></i> 首页</a>
+            <a href="#"><i class="fas fa-search"></i> 搜索</a>
+            <a href="#"><i class="fas fa-headset"></i> 客服</a>
+            <a href="#"><i class="fas fa-arrow-up"></i> 回到顶部</a>
+        </div>
+    </div>
+
     <!-- 页脚 -->
     <footer class="footer">
         <div class="container">
@@ -1330,6 +1480,35 @@
                 option.addEventListener('click', function () {
                     const title = this.querySelector('.option-title').textContent;
                     alert(`即将跳转到${title}详细教程页面`);
+                });
+            });
+
+            // 悬浮球点击事件
+            const floatingBall = document.querySelector('.floating-ball');
+            floatingBall.addEventListener('click', function (e) {
+                if (e.target === this || e.target.closest('.fa-question')) {
+                    // 回到顶部功能
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+
+            // 悬浮球菜单项点击事件
+            const floatingMenuItems = document.querySelectorAll('.floating-menu a');
+            floatingMenuItems.forEach(item => {
+                item.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const text = this.textContent.trim();
+                    alert(`点击了: ${text}`);
+
+                    if (text === '回到顶部') {
+                        window.scrollTo({
+                            top: 0,
+                            behavior: 'smooth'
+                        });
+                    }
                 });
             });
         });
