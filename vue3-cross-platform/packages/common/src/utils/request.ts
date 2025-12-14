@@ -1,0 +1,167 @@
+/**
+ * Axios请求封装
+ * 统一处理请求拦截、响应拦截、错误处理等
+ */
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios'
+import { getToken, removeToken } from './auth'
+
+// 定义统一响应格式
+export interface ApiResponse<T = any> {
+  code: number
+  msg: string
+  data: T
+}
+
+// 创建axios实例
+const createAxiosInstance = (): AxiosInstance => {
+  // 获取API基础地址（从环境变量或默认值）
+  const baseURL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+  
+  const instance = axios.create({
+    baseURL: baseURL,
+    timeout: 30000, // 30秒超时
+    headers: {
+      'Content-Type': 'application/json;charset=UTF-8'
+    }
+  })
+
+  // 请求拦截器
+  instance.interceptors.request.use(
+    (config) => {
+      // 从本地存储获取token
+      const token = getToken()
+      if (token && config.headers) {
+        // 添加JWT token到请求头
+        config.headers['Authorization'] = `Bearer ${token}`
+      }
+      
+      // 打印请求信息（开发环境）
+      if (import.meta.env.DEV) {
+        console.log('📤 请求发送:', {
+          url: config.url,
+          method: config.method,
+          params: config.params,
+          data: config.data
+        })
+      }
+      
+      return config
+    },
+    (error: AxiosError) => {
+      console.error('❌ 请求拦截器错误:', error)
+      return Promise.reject(error)
+    }
+  )
+
+  // 响应拦截器
+  instance.interceptors.response.use(
+    (response: AxiosResponse<ApiResponse>) => {
+      const res = response.data
+      
+      // 打印响应信息（开发环境）
+      if (import.meta.env.DEV) {
+        console.log('📥 响应接收:', {
+          url: response.config.url,
+          code: res.code,
+          msg: res.msg,
+          data: res.data
+        })
+      }
+      
+      // 根据业务状态码处理
+      if (res.code === 200) {
+        // 成功响应，直接返回data
+        return res.data
+      } else if (res.code === 401) {
+        // token过期或未授权，清除token并跳转登录
+        removeToken()
+        // 可以在这里添加路由跳转到登录页
+        window.location.href = '/login'
+        return Promise.reject(new Error(res.msg || '未授权，请重新登录'))
+      } else {
+        // 其他业务错误
+        console.error('❌ 业务错误:', res.msg)
+        return Promise.reject(new Error(res.msg || '请求失败'))
+      }
+    },
+    (error: AxiosError) => {
+      // HTTP错误处理
+      let message = '请求失败'
+      
+      if (error.response) {
+        // 服务器返回了错误状态码
+        const status = error.response.status
+        switch (status) {
+          case 400:
+            message = '请求参数错误'
+            break
+          case 401:
+            message = '未授权，请重新登录'
+            removeToken()
+            window.location.href = '/login'
+            break
+          case 403:
+            message = '没有权限访问'
+            break
+          case 404:
+            message = '请求的资源不存在'
+            break
+          case 500:
+            message = '服务器内部错误'
+            break
+          case 502:
+            message = '网关错误'
+            break
+          case 503:
+            message = '服务不可用'
+            break
+          default:
+            message = `请求失败 (${status})`
+        }
+      } else if (error.request) {
+        // 请求已发出但没有收到响应
+        message = '网络连接失败，请检查网络'
+      } else {
+        // 其他错误
+        message = error.message || '请求失败'
+      }
+      
+      console.error('❌ 请求错误:', {
+        url: error.config?.url,
+        message: message,
+        error: error
+      })
+      
+      return Promise.reject(new Error(message))
+    }
+  )
+
+  return instance
+}
+
+// 导出axios实例
+export const request = createAxiosInstance()
+
+  // 导出常用的请求方法
+export default {
+  get<T = any>(url: string, config?: any): Promise<T> {
+    return request.get<ApiResponse<T>>(url, config).then(res => res as unknown as T)
+  },
+  
+  post<T = any>(url: string, data?: any, config?: any): Promise<T> {
+    return request.post<ApiResponse<T>>(url, data, config).then(res => res as unknown as T)
+  },
+  
+  put<T = any>(url: string, data?: any, config?: any): Promise<T> {
+    return request.put<ApiResponse<T>>(url, data, config).then(res => res as unknown as T)
+  },
+  
+  delete<T = any>(url: string, config?: any): Promise<T> {
+    return request.delete<ApiResponse<T>>(url, config).then(res => res as unknown as T)
+  },
+  
+  patch<T = any>(url: string, data?: any, config?: any): Promise<T> {
+    return request.patch<ApiResponse<T>>(url, data, config).then(res => res as unknown as T)
+  }
+}
+
