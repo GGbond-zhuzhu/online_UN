@@ -1,2 +1,9 @@
-package com.yourschool.campussystem.mapper;public class SecondhandGoodsMapper {
+package com.yourschool.campussystem.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.yourschool.campussystem.entity.SecondhandGoods;
+import org.apache.ibatis.annotations.Mapper;
+
+@Mapper
+public interface SecondhandGoodsMapper extends BaseMapper<SecondhandGoods> {
 }

@@ -1,0 +1,82 @@
+package com.yourschool.campussystem.controller;
+
+import com.yourschool.campussystem.common.ApiResponse;
+import com.yourschool.campussystem.service.ChatService;
+import com.yourschool.campussystem.util.UserContextUtils;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 聊天功能Controller
+ * 处理用户之间的聊天会话和消息
+ */
+@RestController
+@RequestMapping("/api/chat")
+@Tag(name = "聊天功能", description = "用户聊天：会话列表、消息列表、发送消息等")
+@RequiredArgsConstructor
+public class ChatController {
+
+    private final ChatService chatService;
+
+    @Operation(summary = "获取聊天会话列表", description = "获取当前用户的聊天会话列表")
+    @GetMapping("/conversations")
+    public ApiResponse<List<Map<String, Object>>> getConversations(HttpServletRequest request) {
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        List<Map<String, Object>> conversations = chatService.getConversations(userId);
+        return ApiResponse.success("查询成功", conversations);
+    }
+
+    @Operation(summary = "获取聊天消息列表", description = "获取指定会话的聊天消息列表")
+    @GetMapping("/messages")
+    public ApiResponse<Map<String, Object>> getMessages(
+            HttpServletRequest request,
+            @Parameter(description = "会话ID", example = "1")
+            @RequestParam(required = false) Long conversationId,
+            @Parameter(description = "目标用户ID（如果没有会话ID）", example = "123")
+            @RequestParam(required = false) Long targetUserId,
+            @Parameter(description = "页码", example = "1")
+            @RequestParam(defaultValue = "1") Integer page,
+            @Parameter(description = "每页大小", example = "20")
+            @RequestParam(defaultValue = "20") Integer size) {
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        Map<String, Object> response = chatService.getMessages(userId, conversationId, targetUserId, page, size);
+        return ApiResponse.success("查询成功", response);
+    }
+
+    @Operation(summary = "发送消息", description = "发送聊天消息")
+    @PostMapping("/send")
+    public ApiResponse<Map<String, Object>> sendMessage(
+            HttpServletRequest request,
+            @Parameter(description = "目标用户ID", required = true)
+            @RequestParam Long targetUserId,
+            @Parameter(description = "消息内容", required = true)
+            @RequestParam String content,
+            @Parameter(description = "消息类型（TEXT/IMAGE/FILE）", example = "TEXT")
+            @RequestParam(defaultValue = "TEXT") String type,
+            @Parameter(description = "图片URL（如果是图片消息）")
+            @RequestParam(required = false) String imageUrl,
+            @Parameter(description = "文件URL（如果是文件消息）")
+            @RequestParam(required = false) String fileUrl) {
+        Long senderId = UserContextUtils.getUserIdRequired(request);
+        Map<String, Object> response = chatService.sendMessage(senderId, targetUserId, content, type, imageUrl, fileUrl);
+        return ApiResponse.success("发送成功", response);
+    }
+
+    @Operation(summary = "标记会话消息为已读", description = "将指定会话的所有消息标记为已读")
+    @PutMapping("/conversations/{conversationId}/read")
+    public ApiResponse<String> markConversationAsRead(
+            HttpServletRequest request,
+            @Parameter(description = "会话ID", example = "1", required = true)
+            @PathVariable Long conversationId) {
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        chatService.markConversationAsRead(userId, conversationId);
+        return ApiResponse.success("标记成功");
+    }
+}

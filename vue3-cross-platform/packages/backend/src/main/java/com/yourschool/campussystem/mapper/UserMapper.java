@@ -1,2 +1,9 @@
-package com.yourschool.campussystem.mapper;public class UserMapper {
+package com.yourschool.campussystem.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.yourschool.campussystem.entity.User;
+import org.apache.ibatis.annotations.Mapper;
+
+@Mapper
+public interface UserMapper extends BaseMapper<User> {
 }

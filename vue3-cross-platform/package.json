@@ -1,0 +1,15 @@
+{
+  "name": "vue3-cross-platform",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "workspaces": ["packages/web", "packages/common"],
+  "scripts": {
+    "dev:app": "cd packages/app && npm run dev",
+    "dev:web": "cd packages/web && npm run dev",
+    "install:all": "npm install --legacy-peer-deps && cd packages/web && npm install --legacy-peer-deps && cd ../common && npm install --legacy-peer-deps"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4"
+  }
+}

@@ -2,24 +2,26 @@
 
 ## 📋 接口总览
 
-根据参考网页设计和业务需求，系统共包含 **9个Controller**，**80+个API接口**。
+根据参考网页设计和业务需求，系统共包含 **11个Controller**，**136个API接口**。
 
 ### 接口统计
 
 | Controller | 接口数量 | 说明 |
 |-----------|---------|------|
 | UserController | 6个 | 用户注册、登录、信息管理 |
-| AuthController | 7个 | 身份认证（学生/教师/游客/高校） |
+| AuthController | 9个 | 身份认证（学生/教师/游客/高校/邮箱登录） |
 | EcardController | 12个 | 校园卡管理、消费、人脸支付 |
-| SecondhandController | 12个 | 二手交易平台 |
-| ParttimeController | 12个 | 兼职管理 |
-| ScheduleController | 18个 | 行程管理、团队协作、课程表导入 |
+| SecondhandController | 16个 | 二手交易平台（含浏览记录） |
+| ParttimeController | 20个 | 兼职管理（含收藏和浏览记录） |
+| ScheduleController | 23个 | 行程管理、团队协作、课程表导入、提醒管理 |
 | CommonController | 15个 | 通用功能（帮助、公告、反馈等） |
 | AdminController | 11个 | 管理员功能 |
 | MerchantController | 8个 | 商户管理 |
 | UniversityController | 10个 | 高校管理（高校角色专用） |
+| MessageController | 3个 | 消息中心管理 |
+| ChatController | 3个 | 聊天功能 |
 
-**总计：111个API接口**
+**总计：136个API接口**
 
 ---
 
@@ -53,6 +55,8 @@
 | GET | `/apply/status` | 查询认证申请状态 |
 | POST | `/university/apply` | 高校官方接入申请 |
 | GET | `/apply/records` | 获取认证申请记录 |
+| POST | `/email/send-code` | 发送邮箱验证码（用于邮箱登录） |
+| POST | `/email/login` | 邮箱登录（使用邮箱和验证码） |
 
 ---
 
@@ -96,6 +100,10 @@
 | DELETE | `/favorite/{id}` | 取消收藏 |
 | GET | `/favorites` | 获取收藏列表 |
 | GET | `/categories` | 获取商品分类 |
+| POST | `/browse/{id}` | 记录商品浏览行为 |
+| GET | `/browse-history` | 获取浏览记录列表（分页） |
+| DELETE | `/browse-history/{id}` | 删除单条浏览记录 |
+| DELETE | `/browse-history/clear` | 清空所有浏览记录 |
 
 ---
 
@@ -117,6 +125,14 @@
 | PUT | `/update/{id}` | 修改兼职信息 |
 | PUT | `/update-status/{id}` | 更新兼职状态 |
 | DELETE | `/delete/{id}` | 删除兼职 |
+| POST | `/favorite/{id}` | 收藏兼职岗位 |
+| DELETE | `/favorite/{id}` | 取消收藏兼职岗位 |
+| GET | `/favorites` | 获取收藏列表（分页） |
+| DELETE | `/favorites/clear` | 清空所有收藏 |
+| POST | `/browse/{id}` | 记录岗位浏览行为 |
+| GET | `/browse-history` | 获取浏览记录列表（分页） |
+| DELETE | `/browse-history/{id}` | 删除单条浏览记录 |
+| DELETE | `/browse-history/clear` | 清空所有浏览记录 |
 
 ---
 
@@ -143,6 +159,9 @@
 | POST | `/team/{teamId}/invite` | 邀请成员加入团队 |
 | POST | `/team/invite/{inviteId}/process` | 处理团队邀请 |
 | DELETE | `/team/{teamId}/member/{userId}` | 移除团队成员 |
+| POST | `/team/join-by-code` | 通过邀请码加入团队 |
+| GET | `/team/invitations` | 获取团队邀请列表 |
+| POST | `/team/invitation/{id}/process` | 处理团队邀请（接受/拒绝） |
 
 #### 团队行程
 | 方法 | 路径 | 说明 |
@@ -162,6 +181,8 @@
 | POST | `/import/schedule-excel` | 导入课程表（Excel） |
 | GET | `/export/schedule-excel` | 导出课程表（Excel） |
 | GET | `/import/template` | 获取课程表模板 |
+| POST | `/import/manual` | 手动录入导入课程表 |
+| POST | `/import/from-link` | 通过教务系统链接导入课程表 |
 
 #### 提醒与日历
 | 方法 | 路径 | 说明 |
@@ -169,6 +190,8 @@
 | GET | `/reminders/today` | 获取今日提醒 |
 | PUT | `/reminders/mark-reminded/{id}` | 标记为已提醒 |
 | GET | `/calendar/{year}/{month}` | 获取日历视图数据 |
+| PUT | `/reminder/{id}/status` | 更新提醒启用/禁用状态 |
+| DELETE | `/reminder/{id}` | 删除行程提醒 |
 
 ---
 
@@ -330,19 +353,78 @@
 
 ---
 
+### 11. 消息和聊天模块 (MessageController & ChatController) - 新增
+
+**基础路径**: `/api/messages` 和 `/api/chat`
+
+#### 消息中心
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/messages/list` | 获取消息列表（支持分类筛选） |
+| PUT | `/api/messages/{id}/read` | 标记单条消息为已读 |
+| PUT | `/api/messages/batch-read` | 批量标记消息为已读 |
+
+#### 聊天功能
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/chat/conversations` | 获取聊天会话列表 |
+| GET | `/api/chat/messages` | 获取指定会话的聊天消息列表（分页） |
+| POST | `/api/chat/send` | 发送聊天消息 |
+
+---
+
 ## 🆕 本次新增接口
 
 ### 1. 课程表导入功能（ScheduleController）
 - ✅ `POST /api/schedule/import/schedule-excel` - Excel导入课程表
 - ✅ `GET /api/schedule/export/schedule-excel` - 导出课程表
 - ✅ `GET /api/schedule/import/template` - 获取导入模板
+- ✅ `POST /api/schedule/import/manual` - 手动录入导入课程表
+- ✅ `POST /api/schedule/import/from-link` - 通过教务系统链接导入课程表
 
 ### 2. 用户管理增强（UserController）
 - ✅ `PUT /api/user/info` - 更新用户信息
 - ✅ `POST /api/user/change-password` - 修改密码
 - ✅ `POST /api/user/logout` - 退出登录
 
-### 3. 通用功能扩展（CommonController）
+### 3. 认证模块增强（AuthController）
+- ✅ `POST /api/auth/email/send-code` - 发送邮箱验证码（用于邮箱登录）
+- ✅ `POST /api/auth/email/login` - 邮箱登录（使用邮箱和验证码）
+
+### 4. 浏览记录管理（SecondhandController & ParttimeController）
+- ✅ `POST /api/secondhand/browse/{id}` - 记录二手商品浏览行为
+- ✅ `GET /api/secondhand/browse-history` - 获取二手商品浏览记录列表
+- ✅ `DELETE /api/secondhand/browse-history/{id}` - 删除单条浏览记录
+- ✅ `DELETE /api/secondhand/browse-history/clear` - 清空所有浏览记录
+- ✅ `POST /api/parttime/browse/{id}` - 记录兼职岗位浏览行为
+- ✅ `GET /api/parttime/browse-history` - 获取兼职岗位浏览记录列表
+- ✅ `DELETE /api/parttime/browse-history/{id}` - 删除单条浏览记录
+- ✅ `DELETE /api/parttime/browse-history/clear` - 清空所有浏览记录
+
+### 5. 兼职收藏管理（ParttimeController）
+- ✅ `POST /api/parttime/favorite/{id}` - 收藏兼职岗位
+- ✅ `DELETE /api/parttime/favorite/{id}` - 取消收藏兼职岗位
+- ✅ `GET /api/parttime/favorites` - 获取收藏列表
+- ✅ `DELETE /api/parttime/favorites/clear` - 清空所有收藏
+
+### 6. 消息和聊天模块（MessageController & ChatController）- 全新模块
+- ✅ `GET /api/messages/list` - 获取消息列表（支持分类筛选）
+- ✅ `PUT /api/messages/{id}/read` - 标记单条消息为已读
+- ✅ `PUT /api/messages/batch-read` - 批量标记消息为已读
+- ✅ `GET /api/chat/conversations` - 获取聊天会话列表
+- ✅ `GET /api/chat/messages` - 获取指定会话的聊天消息列表
+- ✅ `POST /api/chat/send` - 发送聊天消息
+
+### 7. 团队管理增强（ScheduleController）
+- ✅ `POST /api/schedule/team/join-by-code` - 通过邀请码加入团队
+- ✅ `GET /api/schedule/team/invitations` - 获取团队邀请列表
+- ✅ `POST /api/schedule/team/invitation/{id}/process` - 处理团队邀请（接受/拒绝）
+
+### 8. 行程提醒管理（ScheduleController）
+- ✅ `PUT /api/schedule/reminder/{id}/status` - 更新提醒启用/禁用状态
+- ✅ `DELETE /api/schedule/reminder/{id}` - 删除行程提醒
+
+### 9. 通用功能扩展（CommonController）
 - ✅ `GET /api/common/security/info` - 安全保障说明
 - ✅ `GET /api/common/privacy-policy` - 隐私政策
 - ✅ `GET /api/common/service-agreement` - 服务协议
@@ -355,7 +437,7 @@
 - ✅ `POST /api/common/surveys/{surveyId}/submit` - 提交问卷
 - ✅ `GET /api/common/about` - 平台介绍
 
-### 4. 高校管理功能（UniversityController）- 全新Controller
+### 10. 高校管理功能（UniversityController）- 全新Controller
 - ✅ `GET /api/university/info` - 获取高校信息
 - ✅ `PUT /api/university/info` - 更新高校信息
 - ✅ `GET /api/university/users` - 获取本校用户列表
@@ -370,6 +452,388 @@
 - ✅ `PUT /api/university/content/{contentId}/review` - 审核内容
 - ✅ `POST /api/university/notifications/send` - 发送通知
 - ✅ `GET /api/university/notifications/history` - 通知历史
+
+---
+
+## 📖 新增接口详细说明
+
+### 1. 认证模块 - 邮箱登录
+
+#### 1.1 发送邮箱验证码
+**接口**: `POST /api/auth/email/send-code`
+
+**描述**: 发送邮箱验证码用于邮箱登录
+
+**请求参数**:
+```json
+{
+  "email": "string" // 邮箱地址，必填
+}
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "验证码已发送",
+  "data": {
+    "codeId": "string", // 验证码ID，用于后续验证
+    "expireTime": 60 // 过期时间（秒）
+  }
+}
+```
+
+#### 1.2 邮箱登录
+**接口**: `POST /api/auth/email/login`
+
+**描述**: 使用邮箱和验证码登录
+
+**请求参数**:
+```json
+{
+  "email": "string", // 邮箱地址，必填
+  "code": "string"   // 验证码，必填
+}
+```
+
+**响应**: 同普通登录接口，返回JWT token和用户信息
+
+---
+
+### 2. 浏览记录管理
+
+#### 2.1 二手商品浏览记录
+
+**记录浏览行为**: `POST /api/secondhand/browse/{id}`
+- **路径参数**: `id` (Long) - 商品ID
+- **描述**: 记录用户浏览商品的行为
+
+**获取浏览记录列表**: `GET /api/secondhand/browse-history`
+- **查询参数**: 
+  - `page` (Integer, 默认1) - 页码
+  - `size` (Integer, 默认10) - 每页大小
+- **响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "查询成功",
+  "data": {
+    "records": [
+      {
+        "id": 1,
+        "goodsId": 1001,
+        "goodsTitle": "二手笔记本电脑",
+        "goodsImage": "string",
+        "price": 2000.00,
+        "viewTime": "2024-01-15 10:30:00"
+      }
+    ],
+    "total": 50,
+    "page": 1,
+    "size": 10
+  }
+}
+```
+
+**删除单条浏览记录**: `DELETE /api/secondhand/browse-history/{id}`
+- **路径参数**: `id` (Long) - 浏览记录ID
+
+**清空浏览记录**: `DELETE /api/secondhand/browse-history/clear`
+
+#### 2.2 兼职岗位浏览记录
+
+**记录浏览行为**: `POST /api/parttime/browse/{id}`
+- **路径参数**: `id` (Long) - 岗位ID
+- **描述**: 记录用户浏览兼职岗位的行为
+
+**获取浏览记录列表**: `GET /api/parttime/browse-history`
+- **查询参数**: 
+  - `page` (Integer, 默认1) - 页码
+  - `size` (Integer, 默认10) - 每页大小
+- **响应格式**: 类似二手商品浏览记录
+
+**删除单条浏览记录**: `DELETE /api/parttime/browse-history/{id}`
+
+**清空浏览记录**: `DELETE /api/parttime/browse-history/clear`
+
+---
+
+### 3. 兼职收藏管理
+
+**收藏兼职岗位**: `POST /api/parttime/favorite/{id}`
+- **路径参数**: `id` (Long) - 兼职岗位ID
+
+**取消收藏**: `DELETE /api/parttime/favorite/{id}`
+- **路径参数**: `id` (Long) - 兼职岗位ID
+
+**获取收藏列表**: `GET /api/parttime/favorites`
+- **查询参数**: 
+  - `page` (Integer, 默认1) - 页码
+  - `size` (Integer, 默认10) - 每页大小
+- **响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "查询成功",
+  "data": {
+    "records": [
+      {
+        "id": 1,
+        "parttimeId": 1001,
+        "title": "校园推广专员",
+        "companyName": "某教育公司",
+        "salary": "150-200元/天",
+        "location": "校内",
+        "favoriteTime": "2024-01-15 10:30:00"
+      }
+    ],
+    "total": 20,
+    "page": 1,
+    "size": 10
+  }
+}
+```
+
+**清空收藏**: `DELETE /api/parttime/favorites/clear`
+
+---
+
+### 4. 消息和聊天模块
+
+#### 4.1 消息中心
+
+**获取消息列表**: `GET /api/messages/list`
+- **查询参数**: 
+  - `type` (String, 可选) - 消息类型（ALL/SYSTEM/PARTTIME/SECONDHAND）
+  - `page` (Integer, 默认1) - 页码
+  - `size` (Integer, 默认10) - 每页大小
+- **响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "查询成功",
+  "data": {
+    "records": [
+      {
+        "id": 1,
+        "type": "SYSTEM",
+        "title": "系统通知",
+        "content": "您的身份认证已通过审核",
+        "read": false,
+        "createTime": "2024-01-15 10:30:00"
+      }
+    ],
+    "total": 50,
+    "page": 1,
+    "size": 10
+  }
+}
+```
+
+**标记消息为已读**: `PUT /api/messages/{id}/read`
+- **路径参数**: `id` (Long) - 消息ID
+
+**批量标记已读**: `PUT /api/messages/batch-read`
+- **请求参数**:
+```json
+{
+  "messageIds": [1, 2, 3] // 消息ID数组
+}
+```
+
+#### 4.2 聊天功能
+
+**获取聊天会话列表**: `GET /api/chat/conversations`
+- **响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "查询成功",
+  "data": [
+    {
+      "conversationId": "string",
+      "targetUserId": 123,
+      "targetUserName": "张同学",
+      "targetUserAvatar": "string",
+      "lastMessage": "你好，请问这个商品还在吗？",
+      "lastMessageTime": "2024-01-15 10:30:00",
+      "unreadCount": 2
+    }
+  ]
+}
+```
+
+**获取聊天消息列表**: `GET /api/chat/messages`
+- **查询参数**: 
+  - `conversationId` (String) - 会话ID
+  - `targetUserId` (Long, 可选) - 目标用户ID（如果没有会话ID）
+  - `page` (Integer, 默认1) - 页码
+  - `size` (Integer, 默认20) - 每页大小
+- **响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "查询成功",
+  "data": {
+    "records": [
+      {
+        "id": 1,
+        "senderId": 123,
+        "senderName": "张同学",
+        "content": "你好，请问这个商品还在吗？",
+        "type": "TEXT", // TEXT/IMAGE/FILE
+        "createTime": "2024-01-15 10:30:00"
+      }
+    ],
+    "total": 50,
+    "page": 1,
+    "size": 20
+  }
+}
+```
+
+**发送消息**: `POST /api/chat/send`
+- **请求参数**:
+```json
+{
+  "targetUserId": 123, // 目标用户ID，必填
+  "content": "string",  // 消息内容，必填
+  "type": "TEXT",       // 消息类型（TEXT/IMAGE/FILE），必填
+  "imageUrl": "string"  // 如果是图片消息，图片URL
+}
+```
+- **响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "发送成功",
+  "data": {
+    "messageId": 1,
+    "createTime": "2024-01-15 10:30:00"
+  }
+}
+```
+
+---
+
+### 5. 行程管理 - 团队相关
+
+**通过邀请码加入团队**: `POST /api/schedule/team/join-by-code`
+- **请求参数**:
+```json
+{
+  "inviteCode": "string" // 团队邀请码，必填
+}
+```
+- **响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "加入团队成功",
+  "data": {
+    "teamId": 1,
+    "teamName": "项目组A"
+  }
+}
+```
+
+**获取团队邀请列表**: `GET /api/schedule/team/invitations`
+- **响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "查询成功",
+  "data": [
+    {
+      "id": 1,
+      "teamId": 1,
+      "teamName": "项目组A",
+      "inviterId": 123,
+      "inviterName": "李同学",
+      "inviteTime": "2024-01-15 10:30:00",
+      "status": "PENDING" // PENDING/ACCEPTED/REJECTED
+    }
+  ]
+}
+```
+
+**处理团队邀请**: `POST /api/schedule/team/invitation/{id}/process`
+- **路径参数**: `id` (Long) - 邀请ID
+- **请求参数**:
+```json
+{
+  "action": "accept" // accept/reject，必填
+}
+```
+
+---
+
+### 6. 行程管理 - 提醒管理
+
+**更新提醒状态**: `PUT /api/schedule/reminder/{id}/status`
+- **路径参数**: `id` (Long) - 行程ID
+- **请求参数**:
+```json
+{
+  "enabled": true // 是否启用提醒，必填
+}
+```
+
+**删除提醒**: `DELETE /api/schedule/reminder/{id}`
+- **路径参数**: `id` (Long) - 提醒ID
+
+---
+
+### 7. 行程管理 - 课程表导入
+
+**手动录入导入课程表**: `POST /api/schedule/import/manual`
+- **请求参数**:
+```json
+{
+  "semester": "2024-2025-1", // 学期，必填
+  "courses": [
+    {
+      "courseName": "高等数学", // 课程名称，必填
+      "dayOfWeek": 1, // 1-7，周一到周日，必填
+      "timeSlot": "1-2节", // 时间段，必填
+      "location": "教学楼A101", // 上课地点
+      "teacher": "张老师" // 授课教师
+    }
+  ]
+}
+```
+- **响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "导入成功",
+  "data": {
+    "importedCount": 5,
+    "scheduleIds": [1, 2, 3, 4, 5]
+  }
+}
+```
+
+**链接导入课程表**: `POST /api/schedule/import/from-link`
+- **请求参数**:
+```json
+{
+  "url": "string",      // 课程表链接，必填
+  "username": "string", // 账号（如果需要登录）
+  "password": "string"  // 密码（如果需要登录）
+}
+```
+- **响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "导入成功",
+  "data": {
+    "importedCount": 10,
+    "scheduleIds": [1, 2, 3, ...]
+  }
+}
+```
 
 ---
 
@@ -451,4 +915,14 @@
 - ✅ 新增用户反馈、联系我们、用户调研功能
 - ✅ 新增高校管理Controller（UniversityController）
 - ✅ 完善ConsumeRecordVO，添加payMethod字段
+
+**2024-01-15**
+- ✅ 新增邮箱登录功能（发送验证码、邮箱登录）
+- ✅ 新增浏览记录管理功能（二手商品、兼职岗位）
+- ✅ 新增兼职收藏管理功能（收藏、取消收藏、收藏列表、清空收藏）
+- ✅ 新增消息和聊天模块（消息中心、聊天会话、消息发送）
+- ✅ 新增团队管理增强功能（邀请码加入、邀请列表、处理邀请）
+- ✅ 新增行程提醒管理功能（更新提醒状态、删除提醒）
+- ✅ 新增课程表导入增强功能（手动录入、链接导入）
+- ✅ 更新API文档，补全所有缺失接口说明
 
