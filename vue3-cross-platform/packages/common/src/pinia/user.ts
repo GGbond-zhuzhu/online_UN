@@ -27,13 +27,13 @@ import {
 // 引入认证工具方法，用于在本地存储 token 和用户信息
 import {
   getToken, // getToken：从本地存储中读取 token 字符串
-  setToken, // setToken：将新的 token 保存到本地（支持“记住我”）
+  setToken, // setToken：将新的 token 保存到本地（支持"记住我"）
   removeToken, // removeToken：从本地删除 token（当前未直接使用，保留备用）
   getUserInfo as getStoredUserInfo, // getStoredUserInfo：从本地存储中读取用户信息对象
   setUserInfo as setStoredUserInfo, // setStoredUserInfo：将用户信息写入本地存储
   removeUserInfo, // removeUserInfo：从本地删除用户信息（当前未直接使用，保留备用）
   clearAuth // clearAuth：同时清除 token 和用户信息
-} from '@/utils/auth' // 从 utils/auth 中导入跨端认证工具
+} from '../utils/auth' // 从 utils/auth 中导入跨端认证工具（使用相对路径，避免别名解析问题）
 
 // ==================== 类型定义 ====================
 

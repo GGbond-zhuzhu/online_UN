@@ -114,8 +114,60 @@
               required
             />
             <p class="form-hint">
-              若学校暂未开通验证码服务，可以先填写“暂未获取”，后续由辅导员或教务老师线下协助核验。
+              若学校暂未开通验证码服务，可以先填写"暂未获取"，后续由辅导员或教务老师线下协助核验。
             </p>
+          </div>
+
+          <!-- 动态人脸身份认证（必填） -->
+          <div class="form-group">
+            <label class="form-label">
+              <i class="fas fa-user-check"></i>
+              动态人脸身份认证
+              <span class="required">*</span>
+            </label>
+            <p class="form-hint">请进行人脸识别和活体检测，确保身份真实性</p>
+            
+            <!-- 人脸识别状态显示 -->
+            <div v-if="faceDetectStatus === 'success'" class="face-status success">
+              <i class="fas fa-check-circle"></i>
+              <span class="status-text">人脸识别通过</span>
+              <span class="status-detail">活体检测分数: {{ faceDetectResult?.livenessScore?.toFixed(2) || '0.00' }}</span>
+            </div>
+            <div v-else-if="faceDetectStatus === 'failed'" class="face-status failed">
+              <i class="fas fa-times-circle"></i>
+              <span class="status-text">人脸识别失败</span>
+              <span class="status-detail">{{ faceDetectError || '请重新进行人脸识别' }}</span>
+            </div>
+            
+            <!-- 人脸照片预览 -->
+            <div v-if="form.faceImage" class="face-preview">
+              <img :src="form.faceImage" alt="人脸照片预览" />
+              <button type="button" class="btn-remove-face" @click="removeFaceImage">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            
+            <!-- 拍照/选择照片按钮 -->
+            <div v-if="!form.faceImage" class="face-upload-area">
+              <button type="button" class="btn-face-capture" @click="handleFaceCapture" :disabled="faceDetecting">
+                <i class="fas fa-camera"></i>
+                <span v-if="!faceDetecting">拍照进行人脸识别</span>
+                <span v-else>识别中...</span>
+              </button>
+              <button type="button" class="btn-face-choose" @click="handleChooseFaceImage" :disabled="faceDetecting">
+                <i class="fas fa-image"></i>
+                <span>从相册选择</span>
+              </button>
+            </div>
+            
+            <!-- 进行人脸识别按钮（已选择照片但未识别时显示） -->
+            <div v-if="form.faceImage && faceDetectStatus !== 'success'" class="face-detect-actions">
+              <button type="button" class="btn-face-detect" @click="performFaceDetect" :disabled="faceDetecting">
+                <i class="fas fa-search"></i>
+                <span v-if="!faceDetecting">开始人脸识别和活体检测</span>
+                <span v-else>识别中，请稍候...</span>
+              </button>
+            </div>
           </div>
 
           <!-- 证明材料上传（可选）：学生证 / 学信网截图等，只在前端预览，方便人工核对 -->
@@ -221,8 +273,10 @@ import AppFooter from '@/components/common/AppFooter.vue' // AppFooter：统一�
 // 引入公共 SDK 中封装好的学生认证接口与校园配置
 import {
   applyStudentAuth, // applyStudentAuth：调用后端 /api/auth/student/apply 完成学生身份认证申请
+  studentFaceDetect, // studentFaceDetect：调用后端学生身份认证人脸识别接口
   DEFAULT_CAMPUS_LIST, // DEFAULT_CAMPUS_LIST：前端兜底的校园列表配置
-  type AuthStudentAuthApplyParams // AuthStudentAuthApplyParams：学生认证申请参数类型（从 common/types 导出）
+  type AuthStudentAuthApplyParams, // AuthStudentAuthApplyParams：学生认证申请参数类型（从 common/types 导出）
+  type StudentFaceDetectResponse // StudentFaceDetectResponse：学生身份认证人脸识别响应类型
 } from '@campus/common'
 
 // 可选学校列表（当前版本从前端配置中读取，后续可改为后端动态接口）
@@ -236,6 +290,7 @@ const form = ref<
   AuthStudentAuthApplyParams & {
     proofText: string // proofText：用户填写的文字说明，仅前端使用
     proofImageUrl: string // proofImageUrl：本地预览用的图片地址（不直接上传到学生认证接口）
+    faceImage: string // faceImage：人脸照片Base64字符串，用于动态人脸身份认证
   }
 >({
   studentId: '', // studentId：学号
@@ -244,7 +299,8 @@ const form = ref<
   idCard: '', // idCard：身份证号
   schoolId: selectedCampusId.value, // schoolId：学校 ID，与当前选择保持一致
   proofText: '', // proofText：证明说明
-  proofImageUrl: '' // proofImageUrl：证明材料本地预览地址
+  proofImageUrl: '', // proofImageUrl：证明材料本地预览地址
+  faceImage: '' // faceImage：人脸照片Base64字符串
 })
 
 // 提交加载状态与错误提示
@@ -253,6 +309,12 @@ const errorMessage = ref('') // errorMessage：提交过程中的错误提示文
 
 // 文件选择 input 的引用，用于在自定义按钮中手动触发点击
 const fileInputRef = ref<HTMLInputElement | null>(null) // fileInputRef：隐藏文件输入控件的引用
+
+// 人脸识别相关状态
+const faceDetecting = ref(false) // faceDetecting：是否正在进行人脸识别
+const faceDetectStatus = ref<'idle' | 'success' | 'failed'>('idle') // faceDetectStatus：人脸识别状态
+const faceDetectResult = ref<StudentFaceDetectResponse | null>(null) // faceDetectResult：人脸识别结果
+const faceDetectError = ref('') // faceDetectError：人脸识别错误信息
 
 // 触发文件选择：点击自定义上传区域时调用
 const triggerFileSelect = () => {
@@ -281,7 +343,119 @@ const handleFileChange = (event: Event) => {
   reader.readAsDataURL(file) // 以 dataURL 方式读取文件内容
 }
 
-// 简单的前端表单校验：保证必填项不为空、身份证格式基本正确
+// 处理人脸拍照：使用浏览器相机API
+const handleFaceCapture = () => {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/*'
+  input.capture = 'user' // 使用前置摄像头
+  input.onchange = (e: Event) => {
+    const target = e.target as HTMLInputElement
+    const file = target.files?.[0]
+    if (file) {
+      convertImageToBase64(file)
+    }
+  }
+  input.click()
+}
+
+// 处理从相册选择人脸照片
+const handleChooseFaceImage = () => {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/*'
+  input.onchange = (e: Event) => {
+    const target = e.target as HTMLInputElement
+    const file = target.files?.[0]
+    if (file) {
+      convertImageToBase64(file)
+    }
+  }
+  input.click()
+}
+
+// 将图片文件转换为Base64格式
+const convertImageToBase64 = (file: File) => {
+  const reader = new FileReader()
+  reader.onload = e => {
+    const result = e.target?.result as string
+    form.value.faceImage = result // 保存Base64字符串
+    // 重置识别状态
+    faceDetectStatus.value = 'idle'
+    faceDetectResult.value = null
+    faceDetectError.value = ''
+  }
+  reader.readAsDataURL(file)
+}
+
+// 移除人脸照片
+const removeFaceImage = () => {
+  form.value.faceImage = ''
+  faceDetectStatus.value = 'idle'
+  faceDetectResult.value = null
+  faceDetectError.value = ''
+}
+
+// 执行人脸识别和活体检测
+const performFaceDetect = async () => {
+  if (!form.value.faceImage) {
+    alert('请先拍照或选择照片')
+    return
+  }
+
+  // 基础信息校验
+  if (!form.value.studentId.trim() || !form.value.name.trim() || !form.value.idCard.trim()) {
+    alert('请先填写学号、姓名和身份证号')
+    return
+  }
+
+  faceDetecting.value = true // 设置识别中状态
+  faceDetectStatus.value = 'idle' // 重置状态
+  faceDetectError.value = '' // 清空错误信息
+
+  try {
+    // 调用人脸识别API
+    const result = await studentFaceDetect({
+      faceImage: form.value.faceImage, // 人脸照片Base64
+      studentId: form.value.studentId.trim(), // 学号
+      name: form.value.name.trim(), // 姓名
+      idCard: form.value.idCard.trim(), // 身份证号
+      schoolId: form.value.schoolId // 学校ID
+    })
+
+    // 保存识别结果
+    faceDetectResult.value = result
+
+    // 判断是否通过识别
+    if (result.isAlive && result.faceNum === 1) {
+      // 活体检测通过且只有一张人脸
+      faceDetectStatus.value = 'success'
+      alert('人脸识别通过')
+    } else {
+      // 识别失败
+      faceDetectStatus.value = 'failed'
+      if (result.faceNum === 0) {
+        faceDetectError.value = '未检测到人脸，请确保照片清晰且人脸完整'
+      } else if (result.faceNum > 1) {
+        faceDetectError.value = '检测到多张人脸，请确保照片中只有您本人'
+      } else if (!result.isAlive) {
+        faceDetectError.value = '活体检测未通过，请使用真人照片'
+      } else {
+        faceDetectError.value = result.message || '人脸识别失败，请重试'
+      }
+      alert('人脸识别失败')
+    }
+  } catch (error: any) {
+    console.error('人脸识别失败:', error)
+    faceDetectStatus.value = 'failed'
+    faceDetectError.value = error?.message || '人脸识别服务异常，请稍后重试'
+    alert('识别失败，请重试')
+  } finally {
+    faceDetecting.value = false // 恢复按钮状态
+  }
+}
+
+// 简单的前端表单校验：保证必填项不为空、身份证格式基本正确、人脸识别已通过
 const validateForm = (): boolean => {
   if (!form.value.studentId.trim()) {
     alert('请输入学号')
@@ -300,7 +474,16 @@ const validateForm = (): boolean => {
     return false
   }
   if (!form.value.verificationCode.trim()) {
-    alert('请输入教务系统 / 学信网验证码，没有可以先填写“暂未获取”')
+    alert('请输入教务系统 / 学信网验证码，没有可以先填写"暂未获取"')
+    return false
+  }
+  // 校验人脸识别是否通过
+  if (!form.value.faceImage) {
+    alert('请进行人脸识别认证')
+    return false
+  }
+  if (faceDetectStatus.value !== 'success') {
+    alert('请先完成人脸识别和活体检测')
     return false
   }
   return true // 所有必填项校验通过
@@ -322,13 +505,14 @@ const handleSubmit = async () => {
   errorMessage.value = '' // 清空历史错误信息
 
   try {
-    // 组装仅后端需要的参数对象（不包含前端专用字段）
+    // 组装仅后端需要的参数对象（包含人脸照片）
     const params: AuthStudentAuthApplyParams = {
       studentId: form.value.studentId.trim(), // 学号去除首尾空格
       verificationCode: form.value.verificationCode.trim(), // 验证码去除首尾空格
       name: form.value.name.trim(), // 姓名去除首尾空格
       idCard: form.value.idCard.trim(), // 身份证号去除首尾空格
-      schoolId: form.value.schoolId // 学校 ID
+      schoolId: form.value.schoolId, // 学校 ID
+      faceImage: form.value.faceImage // 人脸照片Base64字符串（用于动态人脸身份认证）
     }
 
     // 调用公共 SDK 中的学生身份认证申请接口，实际会请求后端 /api/auth/student/apply
@@ -658,6 +842,159 @@ const handleSubmit = async () => {
   .form-card {
     padding: 18px 16px 22px;
   }
+
+  .face-upload-area {
+    flex-direction: column;
+  }
+}
+
+/* 人脸识别状态显示区域 */
+.face-status {
+  margin-top: 12px;
+  padding: 16px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.face-status.success {
+  background-color: #f6ffed;
+  border: 1px solid #b7eb8f;
+}
+
+.face-status.failed {
+  background-color: #fff1f0;
+  border: 1px solid #ffccc7;
+}
+
+.face-status i {
+  font-size: 32px;
+}
+
+.face-status.success i {
+  color: #52c41a;
+}
+
+.face-status.failed i {
+  color: #ff4d4f;
+}
+
+.status-text {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.status-detail {
+  font-size: 13px;
+  color: #666;
+}
+
+/* 人脸照片预览区域 */
+.face-preview {
+  margin-top: 12px;
+  width: 100%;
+  max-height: 300px;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  border: 2px solid #d9d9d9;
+}
+
+.face-preview img {
+  width: 100%;
+  display: block;
+}
+
+.btn-remove-face {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-remove-face:hover {
+  background: #ff4d4f;
+}
+
+/* 人脸上传区域 */
+.face-upload-area {
+  margin-top: 12px;
+  display: flex;
+  gap: 12px;
+}
+
+.btn-face-capture,
+.btn-face-choose {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #d81b60;
+  background-color: #fff;
+  color: #d81b60;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-face-capture:hover,
+.btn-face-choose:hover {
+  background-color: #fff5f9;
+}
+
+.btn-face-capture:disabled,
+.btn-face-choose:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 人脸识别操作按钮区域 */
+.face-detect-actions {
+  margin-top: 12px;
+}
+
+.btn-face-detect {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: none;
+  background-color: #d81b60;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-face-detect:hover:not(:disabled) {
+  background-color: #c2185b;
+  transform: translateY(-1px);
+}
+
+.btn-face-detect:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background-color: #ccc;
 }
 </style>
 

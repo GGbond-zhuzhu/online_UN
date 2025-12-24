@@ -37,6 +37,29 @@
               @keyup.enter="handleSearch"
             />
           </div>
+          <!-- 加号按钮：类似微信设计，点击显示功能菜单 -->
+          <div class="add-button" @mouseenter="showAddMenu = true" @mouseleave="showAddMenu = false">
+            <i class="fas fa-plus"></i>
+            <!-- 加号下拉菜单 -->
+            <div class="add-menu" v-show="showAddMenu">
+              <div class="add-menu-item" @click="goToEcard">
+                <i class="fas fa-id-card-alt"></i>
+                <span>E卡通</span>
+              </div>
+              <div class="add-menu-item" @click="goToAddFriend">
+                <i class="fas fa-user-plus"></i>
+                <span>添加朋友</span>
+              </div>
+              <div class="add-menu-item" @click="goToScan">
+                <i class="fas fa-qrcode"></i>
+                <span>扫一扫</span>
+              </div>
+              <div class="add-menu-item" @click="goToGroupChat">
+                <i class="fas fa-users"></i>
+                <span>发起群聊</span>
+              </div>
+            </div>
+          </div>
           <!-- 消息中心图标：点击跳转到消息列表，存在未读时显示右上角小红点 -->
           <div class="message-bell" @click="goToMessages">
             <i class="fas fa-bell"></i>
@@ -152,6 +175,8 @@ const userStore = useUserStore() // 获取用户状态管理实例，用于读�
 const searchKeyword = ref('') // 绑定顶部搜索输入框中的内容
 // 下拉菜单显示状态
 const showDropdown = ref(false) // 控制用户头像右侧下拉菜单的展开与收起
+// 加号菜单显示状态
+const showAddMenu = ref(false) // 控制加号按钮下拉菜单的展开与收起
 // 当前时间
 const currentTime = ref('--:--:--') // 显示在导航栏中的当前时间文本
 // 定位状态
@@ -274,6 +299,32 @@ const handleMessageWsEvent = async (payload: any) => {
 // 跳转到消息中心页面
 const goToMessages = () => {
   router.push('/messages') // 使用路由跳转到消息中心列表页面
+}
+
+// 跳转到E卡通页面
+const goToEcard = () => {
+  router.push('/ecard') // 跳转到校园E卡通页面
+  showAddMenu.value = false // 关闭菜单
+}
+
+// 跳转到添加朋友页面
+const goToAddFriend = () => {
+  router.push('/add-friend') // 跳转到添加朋友页面
+  showAddMenu.value = false // 关闭菜单
+}
+
+// 跳转到扫一扫页面
+const goToScan = () => {
+  // 如果还没有扫一扫页面，可以跳转到E卡通的扫码功能
+  router.push('/ecard?action=scan') // 跳转到E卡通页面并传递扫码参数
+  showAddMenu.value = false // 关闭菜单
+}
+
+// 跳转到发起群聊页面
+const goToGroupChat = () => {
+  // 如果还没有群聊页面，可以跳转到消息中心或创建群聊
+  router.push('/chat?action=create-group') // 跳转到聊天页面并传递创建群聊参数
+  showAddMenu.value = false // 关闭菜单
 }
 
 // 退出登录
@@ -424,6 +475,93 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 15px;
+}
+
+/* 加号按钮：类似微信设计 */
+.add-button {
+  position: relative; /* 为下拉菜单绝对定位提供参照 */
+  width: 36px; /* 设定一个合适的宽度，稍微大一点更易点击 */
+  height: 36px; /* 设定一个合适的高度 */
+  border-radius: 50%; /* 圆形背景 */
+  background: #f0f0f0; /* 使用浅灰背景，类似微信的加号按钮 */
+  display: flex; /* 使用flex让图标居中 */
+  align-items: center; /* 垂直居中图标 */
+  justify-content: center; /* 水平居中图标 */
+  cursor: pointer; /* 鼠标悬停时显示为可点击 */
+  transition: background 0.2s ease; /* 平滑过渡动画 */
+}
+
+.add-button i {
+  color: #666; /* 加号图标使用中性灰色 */
+  font-size: 20px; /* 图标大小适中 */
+  font-weight: 300; /* 使用较细的字体，类似微信的加号 */
+  line-height: 1; /* 确保图标垂直居中 */
+}
+
+.add-button:hover {
+  background: #e0e0e0; /* 悬停时背景稍微深一点，类似微信的交互效果 */
+}
+
+/* 加号下拉菜单 */
+.add-menu {
+  position: absolute; /* 绝对定位在加号按钮下方 */
+  top: 100%; /* 紧贴按钮底部 */
+  right: 0; /* 右对齐 */
+  margin-top: 10px; /* 与按钮保持一定间距 */
+  background: white; /* 白色背景 */
+  border-radius: 8px; /* 圆角 */
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15); /* 阴影效果，类似微信 */
+  padding: 6px 0; /* 内边距，稍微紧凑一点 */
+  min-width: 180px; /* 最小宽度，稍微宽一点 */
+  z-index: 1001; /* 确保在其他元素之上 */
+  /* 添加弹出动画 */
+  animation: slideDown 0.2s ease-out;
+  border: 1px solid #e5e5e5; /* 添加边框，更精致 */
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 菜单项样式 */
+.add-menu-item {
+  display: flex; /* 使用flex布局 */
+  align-items: center; /* 垂直居中 */
+  padding: 10px 20px; /* 内边距，类似微信的菜单项 */
+  color: #333; /* 文字颜色 */
+  cursor: pointer; /* 鼠标指针 */
+  transition: background 0.2s ease; /* 过渡动画 */
+  font-size: 14px; /* 字体大小 */
+  position: relative; /* 为分隔线定位 */
+}
+
+.add-menu-item:not(:last-child)::after {
+  content: ''; /* 添加分隔线 */
+  position: absolute;
+  bottom: 0;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: #f0f0f0; /* 分隔线颜色 */
+}
+
+.add-menu-item:hover {
+  background: #f5f5f5; /* 悬停背景色，类似微信的灰色 */
+}
+
+.add-menu-item i {
+  margin-right: 12px; /* 图标右边距 */
+  width: 18px; /* 图标宽度 */
+  text-align: center; /* 图标居中 */
+  font-size: 16px; /* 图标大小 */
+  color: #666; /* 图标颜色 */
 }
 
 /* 消息中心小铃铛图标外层容器 */
@@ -627,17 +765,34 @@ onUnmounted(() => {
 }
 
   .user-actions {
-    flex-direction: column;
+    flex-direction: row;
+    flex-wrap: wrap;
     width: 100%;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .add-button,
+  .message-bell {
+    width: 36px;
+    height: 36px;
+  }
+
+  .add-menu {
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 10px;
   }
 
   .search-bar {
     width: 100%;
-}
+    order: 3;
+  }
 
   .search-bar input {
     width: 100%;
-}
+  }
 
   .header-bottom {
     padding: 12px 20px;

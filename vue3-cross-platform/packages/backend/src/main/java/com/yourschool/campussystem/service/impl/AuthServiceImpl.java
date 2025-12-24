@@ -61,9 +61,56 @@ public class AuthServiceImpl implements AuthService {
     private final BCryptPasswordEncoder passwordEncoder;
 
     @Override
+    public Map<String, Object> studentFaceDetect(String faceImage, String studentId, String name,
+                                                  String idCard, Long schoolId) {
+        // 处理前端可能传入的 data:image/jpeg;base64, 前缀，只保留纯Base64数据
+        String pureBase64 = faceImage; // 默认使用原始字符串
+        if (pureBase64 != null && pureBase64.contains(",")) { // 如果包含逗号，说明可能带有前缀
+            pureBase64 = pureBase64.substring(pureBase64.indexOf(",") + 1); // 截取逗号之后的部分作为纯Base64
+        }
+
+        // 步骤1：调用百度AI云人脸检测接口，确认图片中是否存在人脸
+        Map<String, Object> detectResult = baiduFaceService.detectFace(pureBase64); // 调用人脸检测服务
+        log.info("学生身份认证-百度AI云人脸检测结果: studentId={}, detectResult={}", studentId, detectResult); // 打印检测结果日志
+
+        // 步骤2：调用百度AI云在线活体检测接口，确保为真实活体而非照片/视频
+        Map<String, Object> livenessResult = baiduFaceService.faceLiveness(pureBase64); // 调用活体检测服务
+        log.info("学生身份认证-百度AI云活体检测结果: studentId={}, livenessResult={}", studentId, livenessResult); // 打印活体检测结果日志
+
+        // 从检测结果中提取人脸数量和活体分数等关键信息
+        int faceNum = 0; // 默认人脸数量为0
+        Object faceNumObj = detectResult.get("faceNum"); // 从返回Map中读取faceNum字段
+        if (faceNumObj instanceof Number) { // 如果该字段为数字类型
+            faceNum = ((Number) faceNumObj).intValue(); // 转换为int类型
+        }
+
+        double livenessScore = 0.0; // 默认活体分数为0
+        Object scoreObj = livenessResult.get("livenessScore"); // 从返回Map中读取livenessScore字段
+        if (scoreObj instanceof Number) { // 如果为数字类型
+            livenessScore = ((Number) scoreObj).doubleValue(); // 转换为double类型
+        }
+
+        boolean isAlive = Boolean.TRUE.equals(livenessResult.get("isAlive")); // 根据返回的isAlive字段判断是否为活体
+
+        // 构建统一的响应结果，返回给前端页面
+        Map<String, Object> response = new HashMap<>(); // 创建返回结果Map
+        response.put("detectResult", "SUCCESS"); // 标记检测流程执行成功
+        response.put("livenessScore", livenessScore); // 返回活体检测分数
+        response.put("isAlive", isAlive); // 返回是否为真实活体
+        response.put("faceNum", faceNum); // 返回检测到的人脸数量
+        response.put("message", isAlive && faceNum == 1 ? "人脸识别和活体检测通过" : 
+                faceNum == 0 ? "未检测到人脸，请确保照片清晰且人脸完整" :
+                faceNum > 1 ? "检测到多张人脸，请确保照片中只有您本人" :
+                "活体检测未通过，请使用真人照片"); // 根据结果给出提示文案
+        response.put("timestamp", LocalDateTime.now()); // 返回当前时间戳，便于前端展示
+
+        return response; // 将检测结果返回给调用方（Controller）
+    }
+
+    @Override
     @Transactional
     public Map<String, Object> applyStudentAuth(Long userId, String studentId, String verificationCode,
-                                                String name, String idCard, Long schoolId) {
+                                                String name, String idCard, Long schoolId, String faceImage) {
         // 验证用户是否存在
         User user = userMapper.selectById(userId);
         if (user == null) {

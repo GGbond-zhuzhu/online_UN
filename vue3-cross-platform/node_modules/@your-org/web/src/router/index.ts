@@ -246,6 +246,13 @@ const router = createRouter({
       component: () => import('../pages/chat/index.vue'),
       meta: { title: '聊天', requiresAuth: false }
     },
+    // 添加朋友
+    {
+      path: '/add-friend',
+      name: 'add-friend',
+      component: () => import('../pages/add-friend/index.vue'),
+      meta: { title: '添加朋友', requiresAuth: false }
+    },
     // 管理员功能
     {
       path: '/admin',

@@ -14,7 +14,7 @@ public interface AuthService {
      * 学生身份认证申请
      */
     Map<String, Object> applyStudentAuth(Long userId, String studentId, String verificationCode,
-                                         String name, String idCard, Long schoolId);
+                                         String name, String idCard, Long schoolId, String faceImage);
 
     /**
      * 教师身份认证申请
@@ -27,6 +27,12 @@ public interface AuthService {
      */
     Map<String, Object> visitorFaceDetect(String faceImage, String name, String phone,
                                           String idCard, String reason);
+
+    /**
+     * 学生身份认证动态人脸识别
+     */
+    Map<String, Object> studentFaceDetect(String faceImage, String studentId, String name,
+                                          String idCard, Long schoolId);
 
     /**
      * 游客进校登记

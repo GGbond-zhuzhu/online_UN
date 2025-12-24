@@ -25,7 +25,29 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @Operation(summary = "学生身份认证申请", description = "学生使用学号+教务系统验证码进行双因素认证申请")
+    @Operation(summary = "学生身份认证动态人脸识别", description = "学生身份认证时进行人脸识别和活体检测，确保身份真实性")
+    @PostMapping("/student/face-detect")
+    public ApiResponse<Map<String, Object>> studentFaceDetect(
+            @Parameter(description = "人脸照片（Base64）", required = true)
+            @RequestParam String faceImage,
+            
+            @Parameter(description = "学号", required = true)
+            @RequestParam String studentId,
+            
+            @Parameter(description = "学生姓名", required = true)
+            @RequestParam String name,
+            
+            @Parameter(description = "身份证号", required = true)
+            @RequestParam String idCard,
+            
+            @Parameter(description = "学校ID", required = true)
+            @RequestParam Long schoolId) {
+        
+        Map<String, Object> response = authService.studentFaceDetect(faceImage, studentId, name, idCard, schoolId);
+        return ApiResponse.success("人脸识别完成", response);
+    }
+
+    @Operation(summary = "学生身份认证申请", description = "学生使用学号+教务系统验证码进行双因素认证申请，支持人脸照片（可选）")
     @PostMapping("/student/apply")
     public ApiResponse<Map<String, Object>> applyStudentAuth(
             HttpServletRequest request,
@@ -42,10 +64,13 @@ public class AuthController {
             @RequestParam String idCard,
             
             @Parameter(description = "学校ID", required = true)
-            @RequestParam Long schoolId) {
+            @RequestParam Long schoolId,
+            
+            @Parameter(description = "人脸照片（Base64，可选）")
+            @RequestParam(required = false) String faceImage) {
         
         Long userId = UserContextUtils.getUserIdRequired(request);
-        Map<String, Object> response = authService.applyStudentAuth(userId, studentId, verificationCode, name, idCard, schoolId);
+        Map<String, Object> response = authService.applyStudentAuth(userId, studentId, verificationCode, name, idCard, schoolId, faceImage);
         return ApiResponse.success("认证申请已提交", response);
     }
 

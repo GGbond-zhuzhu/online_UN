@@ -151,6 +151,27 @@ export interface StudentAuthApplyParams {                  // 定义学生身份
   name: string                                             // name：学生姓名
   idCard: string                                           // idCard：身份证号
   schoolId: number                                         // schoolId：学校ID（由前端从下拉列表或用户信息中选择）
+  faceImage?: string                                       // faceImage：人脸照片Base64字符串（可选，用于动态人脸身份认证）
+}
+
+// 学生身份认证人脸识别请求参数                              // StudentFaceDetectParams：学生身份认证人脸识别接口的入参类型
+export interface StudentFaceDetectParams {                 // 定义学生身份认证人脸识别请求参数类型
+  faceImage: string                                       // faceImage：人脸照片的Base64字符串（可带data:image前缀）
+  studentId: string                                       // studentId：学号
+  name: string                                            // name：学生姓名
+  idCard: string                                          // idCard：身份证号
+  schoolId: number                                        // schoolId：学校ID
+}
+
+// 学生身份认证人脸识别响应数据                              // StudentFaceDetectResponse：学生身份认证人脸识别接口返回的数据结构
+export interface StudentFaceDetectResponse {               // 定义学生身份认证人脸识别响应数据类型
+  detectResult: string                                    // detectResult：检测流程结果标记（例如SUCCESS）
+  livenessScore: number                                   // livenessScore：活体检测分数（0~1）
+  isAlive: boolean                                        // isAlive：是否通过活体检测
+  faceNum: number                                         // faceNum：检测到的人脸数量
+  similarityScore?: number                                 // similarityScore：与身份证照片相似度分数（0~1，可选）
+  message: string                                         // message：后端返回的友好提示文案
+  timestamp: string                                       // timestamp：检测完成的时间戳字符串
 }
 
 // 单条认证申请记录                                          // AuthApplyRecordItem：用于“我的申请列表”中的单条记录
@@ -210,13 +231,24 @@ export function getAuthApplyStatus(applyId: number): Promise<AuthApplyStatus> { 
 }
 
 /**
- * 获取当前用户的认证申请记录列表                           // getAuthApplyRecords：分页获取“我的认证申请”列表
+ * 获取当前用户的认证申请记录列表                           // getAuthApplyRecords：分页获取"我的认证申请"列表
  * @param page 页码                                        // page：当前页码，默认 1
  * @param size 每页数量                                    // size：每页加载的记录条数，默认 10
  */
 export function getAuthApplyRecords(page = 1, size = 10): Promise<AuthApplyRecordList> { // 定义 getAuthApplyRecords 函数
   return request.get<AuthApplyRecordList>('/api/auth/apply/records', {                  // 调用 /api/auth/apply/records 接口
     params: { page, size }                                                              // 使用 params 方式传递分页参数
+  })
+}
+
+/**
+ * 学生身份认证动态人脸识别                                   // studentFaceDetect：调用后端学生身份认证人脸识别接口
+ * @param params 检测参数（包含人脸照片和学籍信息）         // params：包含人脸Base64、学号、姓名、身份证号和学校ID
+ */
+export function studentFaceDetect(params: StudentFaceDetectParams): Promise<StudentFaceDetectResponse> { // 定义 studentFaceDetect 函数
+  // 这里使用POST + queryString的方式调用后端接口，对应后端的@RequestParam入参            // 说明：使用POST请求并通过params选项拼接查询参数
+  return request.post<StudentFaceDetectResponse>('/api/auth/student/face-detect', null, { // 调用 /api/auth/student/face-detect 接口
+    params                                                                               // params：通过axios的params选项拼接到URL查询参数中
   })
 }
 
