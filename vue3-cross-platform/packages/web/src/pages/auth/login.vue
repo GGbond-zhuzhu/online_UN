@@ -252,6 +252,7 @@
 </template>
 
 <script setup lang="ts">
+// 引入 Vue 的基础组合式 API，用于管理响应式数据和生命周期
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import QRCode from 'qrcode'
@@ -260,9 +261,8 @@ import QRCode from 'qrcode'
 import LoginNavBar from '@/components/common/LoginNavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 
-// 引入API和工具函数
-import { login } from '@campus/common'
-import { setToken, setUserInfo } from '@campus/common'
+// 引入公共认证钩子：统一处理登录、发送验证码以及用户信息存储
+import { useAuth } from '@campus/common'
 
 // 路由实例
 const router = useRouter()
@@ -270,22 +270,34 @@ const router = useRouter()
 // 登录方式切换
 const loginType = ref<'account' | 'phone' | 'qr'>('account')
 
-// 表单数据
+// 表单数据：账号密码登录使用的表单
 const accountForm = ref({
-  username: '',
-  password: ''
+  username: '', // 用户输入的用户名（可以是账号/手机号/邮箱）
+  password: '' // 用户输入的密码
 })
 
+// 表单数据：手机号登录使用的表单（目前仍为模拟登录）
 const phoneForm = ref({
-  phone: '',
-  verifyCode: ''
+  phone: '', // 用户输入的手机号码
+  verifyCode: '' // 用户输入的手机验证码
 })
 
-// 状态管理
-const loading = ref(false)
-const errorMessage = ref('')
-const rememberMe = ref(false)
-const countdown = ref(0)
+// 使用公共认证钩子，获取统一的认证相关状态和方法
+const {
+  loading, // 认证操作的加载状态（登录 / 发送邮箱验证码等时会自动切换）
+  errorMessage, // 最近一次认证操作的错误提示信息
+  login: authLogin, // 账号密码登录方法（内部会自动保存 token 和用户信息）
+  sendLoginEmailCode, // 发送登录邮箱验证码的方法（当前页面暂未使用，预留扩展）
+  loginByEmailCode, // 使用邮箱验证码登录的方法（当前页面暂未使用，预留扩展）
+  emailSending, // 是否正在发送邮箱验证码（当前页面暂未使用）
+  emailCountdown // 邮箱验证码倒计时秒数（当前页面暂未使用）
+} = useAuth() // 调用 useAuth，得到一组可直接使用的响应式工具
+
+// “30 天内免登录”的勾选状态（会透传给 authLogin 用于控制 token 记忆时长）
+const rememberMe = ref(false) // true 表示记住登录，false 表示仅本次会话有效
+
+// 手机验证码倒计时（仅用于手机号登录的本地模拟，不影响邮箱验证码的计时）
+const countdown = ref(0) // >0 时表示正在倒计时，发送验证码按钮会被禁用
 const showSuccess = ref(false)
 const successCountdown = ref(5)
 
@@ -293,9 +305,9 @@ const successCountdown = ref(5)
 const qrCodeCanvas = ref<HTMLCanvasElement | null>(null)
 const qrCodeData = ref<string>('')
 
-// 定时器管理
-let successTimer: number | null = null
-let codeTimer: number | null = null
+// 定时器管理：用于处理二维码刷新和手机号验证码的本地倒计时
+let successTimer: number | null = null // 控制登录成功后自动跳转的计时器
+let codeTimer: number | null = null // 控制手机验证码按钮的倒计时计时器
 
 // 生成二维码
 const generateQRCode = async () => {
@@ -344,65 +356,52 @@ const refreshQRCode = async () => {
 // 发送验证码
 const sendVerifyCode = () => {
   if (!phoneForm.value.phone) {
-    errorMessage.value = '请输入手机号'
-    return
+    errorMessage.value = '请输入手机号' // 未输入手机号时提示用户
+    return // 终止发送流程
   }
 
   // 清空之前的错误提示
-  errorMessage.value = ''
+  errorMessage.value = '' // 清空错误信息，准备重新发送验证码
   
-  // 启动倒计时
-  countdown.value = 60
+  // 启动本地倒计时（这里是模拟逻辑，真实项目应调用后端短信接口）
+  countdown.value = 60 // 设置倒计时为 60 秒
   codeTimer = window.setInterval(() => {
-    countdown.value--
+    countdown.value-- // 每秒递减
     if (countdown.value <= 0) {
-      clearInterval(codeTimer!)
+      clearInterval(codeTimer!) // 倒计时结束后清理定时器
     }
-  }, 1000)
+  }, 1000) // 每隔 1 秒执行一次
 
-  // 模拟发送验证码请求（实际项目替换为真实接口）
-  console.log('发送验证码到:', phoneForm.value.phone)
+  // 当前示例仅在控制台输出提示，实际项目中应在此调用发送短信验证码接口
+  console.log('模拟发送手机验证码到:', phoneForm.value.phone) // 控制台输出模拟信息
 }
 
 // 账号登录处理
 const handleAccountLogin = async () => {
   // 表单验证
   if (!accountForm.value.username || !accountForm.value.password) {
-    errorMessage.value = '请输入用户名和密码'
+    errorMessage.value = '请输入用户名和密码' // 若未输入完整的账号信息则给出提示
     return
   }
 
-  errorMessage.value = ''
-  loading.value = true
+  errorMessage.value = '' // 清空历史错误消息
 
   try {
-    // 调用真实登录API
-    const result = await login({
-      username: accountForm.value.username,
-      password: accountForm.value.password
-    })
-    
-    // 保存token和用户信息（适配后端返回格式）
-    setToken(result.token)
-    // 适配后端LoginVO格式：userId, username, role, token, expiresIn
-    // 如果result有userInfo字段，使用它；否则从result中提取
-    const userInfo = result.userInfo || {
-      id: result.userId || (result as any).id,
-      username: result.username,
-      role: typeof result.role === 'string' ? result.role : (result.role as any)?.name || 'TOURIST'
-    }
-    setUserInfo(userInfo)
-    
-    // 显示成功弹窗
-    showSuccess.value = true
-    startSuccessCountdown()
+    // 调用公共认证钩子中的登录方法，自动完成 token 保存与用户信息初始化
+    await authLogin(
+      {
+        username: accountForm.value.username, // 账号（可以是用户名/手机号/邮箱）
+        password: accountForm.value.password // 密码
+      },
+      rememberMe.value // 是否记住登录（会影响 token 的持久化策略）
+    )
+
+    // 登录成功后，展示统一的成功弹窗，并启动自动跳转倒计时
+    showSuccess.value = true // 显示“登录成功”弹窗
+    startSuccessCountdown() // 开始 5 秒的自动跳转倒计时
   } catch (error: any) {
-    // 处理错误信息
-    const errorMsg = error?.message || '登录失败，请检查账号密码'
-    errorMessage.value = errorMsg
-    console.error('登录失败:', error)
-  } finally {
-    loading.value = false
+    // 认证钩子内部已经为我们设置了 errorMessage，这里仅在控制台输出详细错误信息
+    console.error('登录失败:', error) // 打印错误日志，便于开发调试
   }
 }
 
@@ -410,29 +409,29 @@ const handleAccountLogin = async () => {
 const handlePhoneLogin = async () => {
   // 表单验证
   if (!phoneForm.value.phone || !phoneForm.value.verifyCode) {
-    errorMessage.value = '请输入手机号和验证码'
+    errorMessage.value = '请输入手机号和验证码' // 未输入手机号或验证码时提示用户
     return
   }
 
-  errorMessage.value = ''
-  loading.value = true
+  errorMessage.value = '' // 清空之前的错误提示
+  loading.value = true // 标记当前处于登录处理中
 
   try {
-    // 模拟登录请求（实际项目替换为真实接口）
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 目前手机号登录为模拟逻辑：仅等待一段时间，未真正调用后端
+    await new Promise(resolve => setTimeout(resolve, 1000)) // 模拟网络请求耗时
     
-    // 登录成功处理
-    localStorage.setItem('isLoggedIn', 'true')
-    localStorage.setItem('userName', phoneForm.value.phone)
+    // 模拟登录成功：在本地存储中记录简单的登录状态（后续可替换为真实短信登录）
+    localStorage.setItem('isLoggedIn', 'true') // 记录已登录标记
+    localStorage.setItem('userName', phoneForm.value.phone) // 将手机号作为当前用户名
     
-    // 显示成功弹窗
-    showSuccess.value = true
-    startSuccessCountdown()
+    // 显示登录成功弹窗并启动跳转倒计时
+    showSuccess.value = true // 打开成功提示弹窗
+    startSuccessCountdown() // 开始自动跳转
   } catch (error) {
-    errorMessage.value = '登录失败，请检查手机号和验证码'
-    console.error('登录失败:', error)
+    errorMessage.value = '登录失败，请检查手机号和验证码' // 提示用户登录失败
+    console.error('登录失败:', error) // 控制台输出错误原因
   } finally {
-    loading.value = false
+    loading.value = false // 无论成功失败，都恢复为非加载状态
   }
 }
 

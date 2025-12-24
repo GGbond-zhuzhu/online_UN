@@ -88,68 +88,63 @@
 </template>
 
 <script setup lang="ts">
+// 引入 Vue 的组合式 API，用于管理响应式数据和生命周期
 import { ref, reactive, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import LoginNavBar from '@/components/common/LoginNavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 
-// 引入API和工具函数
-import { sendEmailCode, emailLogin } from '@campus/common'
-import { setToken, setUserInfo } from '@campus/common'
+// 引入公共认证钩子，统一处理邮箱验证码发送和登录逻辑
+import { useAuth } from '@campus/common'
 
-const router = useRouter()
+const router = useRouter() // 获取路由实例，用于登录成功后的页面跳转
 
-const loading = ref(false)
-const countdown = ref(0)
-let codeTimer: number | null = null
+// 使用公共认证钩子，获取统一的邮箱验证码登录能力和状态
+const {
+  loading, // 当前是否有认证相关操作在进行（发送验证码 / 登录）
+  errorMessage, // 最近一次认证操作的错误信息（可选，用于展示）
+  sendLoginEmailCode, // 发送登录邮箱验证码的方法（内部会自动处理倒计时和错误）
+  loginByEmailCode, // 使用邮箱验证码登录的方法（内部会自动保存 token 和用户信息）
+  emailCountdown // 邮箱验证码倒计时秒数（>0 时应禁用发送按钮）
+} = useAuth() // 调用认证钩子，复用公共逻辑
 
+const countdown = emailCountdown // 将钩子中的倒计时引用给本地变量，方便模板直接使用
+
+// 表单数据：记录用户输入的邮箱地址和验证码
 const emailForm = reactive({
-  email: '',
-  code: '',
-  codeId: '' // 保存验证码ID
+  email: '', // 用户输入的邮箱地址
+  code: '' // 用户输入的验证码
 })
 
+// 发送邮箱验证码
 const sendCode = async () => {
+  // 基本校验：必须先输入邮箱
   if (!emailForm.email) {
-    alert('请先输入邮箱地址')
-    return
+    alert('请先输入邮箱地址') // 提示用户先填写邮箱
+    return // 终止发送流程
   }
 
-  // 验证邮箱格式
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  // 校验邮箱格式是否正确
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/ // 邮箱格式验证的正则表达式
   if (!emailRegex.test(emailForm.email)) {
-    alert('请输入正确的邮箱地址')
-    return
+    alert('请输入正确的邮箱地址') // 格式不正确时给出提示
+    return // 终止发送流程
   }
 
   try {
-    // 调用发送验证码API
-    const result = await sendEmailCode(emailForm.email)
-    
-    // 保存验证码ID用于后续登录
-    emailForm.codeId = result.codeId
-    
-    // 如果返回了验证码（模拟模式），显示给用户
-    if (result.code) {
-      alert(`验证码：${result.code}（模拟模式，请直接使用）`)
+    // 调用公共认证钩子中的发送验证码方法（内部会自动记录 codeId 和开启倒计时）
+    const result = await sendLoginEmailCode(emailForm.email, 60) // 设置倒计时 60 秒
+
+    // 如果在开发/测试环境下后端返回了验证码内容，可以直接提示出来，方便调试
+    if (result && result.code) {
+      alert(`验证码：${result.code}（测试环境专用，请勿泄露）`) // 测试环境便捷提示
     } else {
-      alert('验证码已发送到您的邮箱，请查收')
+      alert('验证码已发送到您的邮箱，请注意查收') // 正常环境提示用户查收邮件
     }
-    
-    // 开始倒计时（使用返回的过期时间或默认60秒）
-    countdown.value = Math.floor(result.expireTime / 60) || 60
-    if (codeTimer) clearInterval(codeTimer)
-    codeTimer = window.setInterval(() => {
-      countdown.value--
-      if (countdown.value <= 0) {
-        if (codeTimer) clearInterval(codeTimer)
-        codeTimer = null
-      }
-    }, 1000)
   } catch (error: any) {
-    console.error('发送验证码失败:', error)
-    const errorMsg = error?.message || '发送验证码失败，请稍后重试'
-    alert(errorMsg)
+    console.error('发送验证码失败:', error) // 控制台输出错误信息
+    const msg = error?.message || '发送验证码失败，请稍后重试' // 生成友好的错误提示
+    alert(msg) // 使用弹窗提示用户
   }
 }
 
@@ -165,40 +160,19 @@ const handleEmailLogin = async () => {
     return
   }
   
-  if (!emailForm.codeId) {
-    alert('请先获取验证码')
-    return
-  }
-
   try {
-    loading.value = true
-    
-    // 调用邮箱登录API
-    const result = await emailLogin(
-      emailForm.email,
-      emailForm.code,
-      emailForm.codeId
+    // 使用公共认证钩子提供的邮箱验证码登录方法（内部会保存 token 和用户信息）
+    await loginByEmailCode(
+      emailForm.email, // 用户输入的邮箱地址
+      emailForm.code // 用户输入的验证码（codeId 由钩子内部管理）
     )
-    
-    // 保存token和用户信息（适配后端返回格式）
-    setToken(result.token)
-    // 适配后端LoginVO格式：userId, username, role, token, expiresIn
-    // 如果result有userInfo字段，使用它；否则从result中提取
-    const userInfo = result.userInfo || {
-      id: result.userId || (result as any).id,
-      username: result.username,
-      role: typeof result.role === 'string' ? result.role : (result.role as any)?.name || 'TOURIST'
-    }
-    setUserInfo(userInfo)
-    
-    alert('登录成功')
-    router.push('/')
+
+    alert('登录成功') // 登录成功后给出提示
+    router.push('/') // 跳转到首页
   } catch (error: any) {
-    console.error('登录失败:', error)
-    const errorMsg = error?.message || '登录失败，请检查验证码是否正确'
-    alert(errorMsg)
-  } finally {
-    loading.value = false
+    console.error('登录失败:', error) // 控制台输出错误信息
+    const msg = error?.message || '登录失败，请检查验证码是否正确' // 生成友好的错误提示
+    alert(msg) // 弹窗提示用户
   }
 }
 
@@ -220,10 +194,7 @@ const goToQQLogin = () => {
 
 // 清理定时器
 onUnmounted(() => {
-  if (codeTimer) {
-    clearInterval(codeTimer)
-    codeTimer = null
-  }
+  // 目前验证码倒计时由认证钩子内部管理，这里无需手动清理定时器，保留函数以便后续扩展
 })
 </script>
 

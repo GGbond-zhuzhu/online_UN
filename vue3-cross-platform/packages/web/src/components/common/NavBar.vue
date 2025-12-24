@@ -37,6 +37,11 @@
               @keyup.enter="handleSearch"
             />
           </div>
+          <!-- 消息中心图标：点击跳转到消息列表，存在未读时显示右上角小红点 -->
+          <div class="message-bell" @click="goToMessages">
+            <i class="fas fa-bell"></i>
+            <span v-if="hasUnreadMessages" class="message-badge"></span>
+          </div>
           <div class="user-login" @mouseenter="showDropdown = true" @mouseleave="showDropdown = false">
             <div class="user-icon">
               <i class="fas fa-user"></i>
@@ -135,25 +140,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '@campus/common'
+import { ref, computed, onMounted, onUnmounted } from 'vue' // 引入 Vue 的响应式工具和生命周期函数
+import { useRouter } from 'vue-router' // 引入路由工具，用于在导航栏中进行页面跳转
+import { useUserStore, request } from '@campus/common' // 引入用户状态 Store 和统一封装的请求工具
+import { connectMessageWebSocket, disconnectMessageWebSocket } from '@/utils/messageWebSocket' // 引入消息中心 WebSocket 工具，用于实时更新未读消息小红点
 
-const router = useRouter()
-const userStore = useUserStore()
+const router = useRouter() // 创建路由实例，后续用于执行跳转操作
+const userStore = useUserStore() // 获取用户状态管理实例，用于读取登录信息和用户角色
 
 // 搜索关键词
-const searchKeyword = ref('')
+const searchKeyword = ref('') // 绑定顶部搜索输入框中的内容
 // 下拉菜单显示状态
-const showDropdown = ref(false)
+const showDropdown = ref(false) // 控制用户头像右侧下拉菜单的展开与收起
 // 当前时间
-const currentTime = ref('--:--:--')
+const currentTime = ref('--:--:--') // 显示在导航栏中的当前时间文本
 // 定位状态
-const locationStatus = ref<'loading' | 'success' | 'error'>('loading')
+const locationStatus = ref<'loading' | 'success' | 'error'>('loading') // 表示定位的加载状态（加载中/成功/失败）
 // 定位文本
-const locationText = ref('定位中...')
+const locationText = ref('定位中...') // 展示给用户看的当前位置描述
 // 时间更新定时器
-let timeInterval: number | null = null
+let timeInterval: number | null = null // 保存 setInterval 的ID，组件卸载时需要清除
+
+// 消息中心未读消息数量（用于控制右上角的小红点显示）
+const unreadCount = ref(0) // 存储当前用户在消息中心的未读消息总数
+
+// 是否有未读消息的计算属性（大于0即认为存在未读消息）
+const hasUnreadMessages = computed(() => unreadCount.value > 0) // 当未读数量大于0时返回true，用于控制小红点显示
 
 // 显示名称
 const displayName = computed(() => {
@@ -178,18 +190,18 @@ const showSchool = computed(() => {
   return userStore.isStudent || userStore.isTeacher || userStore.isUniversity
 })
 
-// 检查是否可以访问某个功能
-const canAccess = (feature: string): boolean => {
-  const role = userStore.currentRole
-  const featureRoles: Record<string, string[]> = {
-    ecard: ['student', 'teacher', 'university', 'visitor'],
-    secondhand: ['student', 'teacher', 'merchant', 'visitor'],
-    parttime: ['student', 'merchant', 'admin', 'visitor'],
-    schedule: ['student', 'teacher', 'visitor'],
-    admin: ['admin', 'university']
+// 检查是否可以访问某个功能（与首页保持同一套角色控制表）
+const canAccess = (feature: string): boolean => { // canAccess：根据当前角色判断某个功能是否可访问
+  const role = userStore.currentRole // 读取当前用户角色编码（student / teacher / visitor 等）
+  const featureRoles: Record<string, string[]> = { // 为不同功能配置允许访问的角色列表
+    ecard: ['student', 'teacher', 'university', 'visitor', 'tourist'], // 校园卡：学生 / 教师 / 高校管理员 / 游客
+    secondhand: ['student', 'teacher', 'merchant', 'visitor', 'tourist'], // 二手交易：学生 / 教师 / 商家 / 游客
+    parttime: ['student', 'merchant', 'admin', 'visitor', 'tourist'], // 兼职服务：学生 / 商家 / 管理员 / 游客
+    schedule: ['student', 'teacher', 'visitor', 'tourist'], // 行程管理：学生 / 教师 / 游客
+    admin: ['admin', 'university'] // 管理中心：仅管理员与高校管理员可见
   }
-  const allowedRoles = featureRoles[feature] || []
-  return allowedRoles.includes(role) || allowedRoles.includes('all')
+  const allowedRoles = featureRoles[feature] || [] // 根据功能名称取出允许访问的角色数组
+  return allowedRoles.includes(role) // 当前角色出现在允许列表中时返回 true，否则返回 false
 }
 
 // 更新时间
@@ -234,29 +246,75 @@ const goToHome = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 }
 
+// 从后端获取当前用户的未读消息数量，用于初始化右上角小红点
+const fetchUnreadCount = async () => {
+  // 如果当前用户未登录，则直接将未读数量重置为0
+  if (!userStore.isLoggedIn || !userStore.userId) { // 判断用户是否已登录并且拥有有效的用户ID
+    unreadCount.value = 0 // 未登录时未读数量恒为0
+    return // 不再继续请求后端接口
+  }
+  try {
+    const res: any = await request.get('/api/messages/unread-count') // 调用后端GET /api/messages/unread-count 接口
+    unreadCount.value = Number(res.unreadCount || 0) // 将返回的未读数量转换为数字并赋值（为空时按0处理）
+  } catch (error) {
+    console.error('获取未读消息数量失败:', error) // 如果请求失败，在控制台打印错误信息
+  }
+}
+
+// 处理通过 WebSocket 收到的“未读消息变化”事件
+const handleMessageWsEvent = async (payload: any) => {
+  // 每当后端推送一条“未读消息变化”事件时，重新向后端请求未读数量，保证前端与数据库状态一致
+  try {
+    await fetchUnreadCount() // 调用封装好的函数刷新未读数量
+  } catch (error) {
+    console.error('处理消息中心 WebSocket 事件失败:', error) // 如果刷新失败，记录错误日志但不中断其它逻辑
+  }
+}
+
+// 跳转到消息中心页面
+const goToMessages = () => {
+  router.push('/messages') // 使用路由跳转到消息中心列表页面
+}
+
 // 退出登录
 const handleLogout = async () => {
   try {
-    await userStore.logout()
-    router.push('/')
-    showDropdown.value = false
+    await userStore.logout() // 调用用户Store的登出方法，清理登录状态与本地缓存
+    unreadCount.value = 0 // 登出后重置未读消息数量为0
+    disconnectMessageWebSocket() // 断开消息中心 WebSocket 连接，释放资源
+    router.push('/') // 跳转回首页
+    showDropdown.value = false // 关闭用户下拉菜单
   } catch (error) {
-    console.error('退出登录失败:', error)
+    console.error('退出登录失败:', error) // 登出过程中发生异常时打印错误信息
   }
 }
 
 // 组件挂载
 onMounted(() => {
-  updateTime()
-  timeInterval = window.setInterval(updateTime, 1000)
-  getLocation()
+  // 从本地存储中初始化用户信息，防止刷新页面后导航栏丢失登录状态
+  // @ts-expect-error 兼容旧版Store中可能不存在该方法的情况
+  if (typeof userStore.initUserFromStorage === 'function') { // 判断Store中是否存在该初始化方法
+    // @ts-ignore
+    userStore.initUserFromStorage() // 调用初始化方法，从本地缓存中恢复用户登录信息
+  }
+
+  updateTime() // 首次立即更新时间显示
+  timeInterval = window.setInterval(updateTime, 1000) // 每隔1秒更新时间文本
+  getLocation() // 初始化定位信息（当前为模拟实现）
+
+  // 如果当前用户已登录，则初始化未读消息数量并建立消息中心 WebSocket 连接
+  if (userStore.isLoggedIn && userStore.userId) { // 确保存在有效用户ID后再建立WebSocket连接
+    fetchUnreadCount() // 先调用一次接口获取当前未读消息数量
+    connectMessageWebSocket(userStore.userId, handleMessageWsEvent) // 建立WebSocket连接并订阅未读状态变化事件
+  }
 })
 
 // 组件卸载
 onUnmounted(() => {
-  if (timeInterval) {
-    clearInterval(timeInterval)
+  if (timeInterval) { // 如果存在定时器
+    clearInterval(timeInterval) // 清除定时器，避免内存泄漏
   }
+  disconnectMessageWebSocket() // 组件卸载时断开消息中心 WebSocket 连接
 })
 </script>
 
@@ -366,6 +424,42 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 15px;
+}
+
+/* 消息中心小铃铛图标外层容器 */
+.message-bell {
+  position: relative; /* 为小红点绝对定位提供参照 */
+  width: 32px; /* 设定一个合适的宽度 */
+  height: 32px; /* 设定一个合适的高度 */
+  border-radius: 50%; /* 圆形背景 */
+  background: #f8f9fa; /* 使用浅灰背景与整体风格统一 */
+  display: flex; /* 使用flex让图标居中 */
+  align-items: center; /* 垂直居中图标 */
+  justify-content: center; /* 水平居中图标 */
+  cursor: pointer; /* 鼠标悬停时显示为可点击 */
+  transition: background 0.3s, transform 0.2s; /* 增加背景色和轻微位移动画 */
+}
+
+.message-bell i {
+  color: #666; /* 铃铛图标使用中性灰色 */
+  font-size: 16px; /* 图标大小适中，避免过大抢眼 */
+}
+
+.message-bell:hover {
+  background: #f1e4f7; /* 悬停时背景略带粉紫色，呼应主色调 */
+  transform: translateY(-1px); /* 轻微上移增强交互感 */
+}
+
+/* 未读消息小红点样式 */
+.message-badge {
+  position: absolute; /* 绝对定位在铃铛右上角 */
+  top: 4px; /* 调整垂直位置 */
+  right: 4px; /* 调整水平位置 */
+  width: 8px; /* 小圆点宽度 */
+  height: 8px; /* 小圆点高度 */
+  border-radius: 50%; /* 圆形小点 */
+  background-color: #ff4d4f; /* 使用亮红色表示有未读消息 */
+  box-shadow: 0 0 0 2px #fff; /* 外边加一圈白色描边，让小红点在浅背景上更清晰 */
 }
 
 .search-bar {

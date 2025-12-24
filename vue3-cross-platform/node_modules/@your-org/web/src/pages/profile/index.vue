@@ -55,7 +55,7 @@
             </button>
             </div>
 
-          <!-- 毕业提醒 -->
+          <!-- 毕业提醒：引导即将毕业的学生去重新发起学生身份认证 -->
           <div class="alert-box" v-if="userInfo.role === 'student'">
             <div class="alert-content">
               <i class="fas fa-exclamation-circle"></i>
@@ -65,7 +65,8 @@
           </div>
             </div>
             <div class="alert-actions">
-              <button class="btn-primary" @click="goToPage('/auth')">申请重新认证</button>
+              <!-- 直接跳转到“学生身份认证申请”专用页面，便于一键发起申请 -->
+              <button class="btn-primary" @click="goToPage('/auth/student-apply')">申请重新认证</button>
               <button class="btn-secondary" @click="dismissAlert">稍后提醒</button>
             </div>
           </div>
@@ -627,9 +628,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useUserStore } from '@campus/common'
+import { ref, computed, onMounted } from 'vue' // 引入 ref、computed、onMounted 组合式 API，用于创建响应式数据和生命周期钩子
+import { useRouter } from 'vue-router' // 引入 useRouter，用于在脚本中进行页面跳转
+import { useUserStore, getAuthApplyRecords } from '@campus/common' // 引入用户 Store 和获取认证申请记录的接口方法
+import type { AuthApplyRecordListInfo } from '@campus/common' // 引入认证申请记录列表的类型，方便对接口返回值做类型约束
 import NavBar from '@/components/common/NavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 import FloatingMenu from '@/components/common/FloatingMenu.vue'
@@ -827,22 +829,66 @@ const filteredMessages = computed(() => {
   })
 })
 
-// 申请列表
-const appFilter = ref('all')
-const applications = ref([
-  { id: 1, title: '学生身份认证', description: '申请验证学生身份，享受校园专属服务', category: '身份认证', status: '已通过', date: '2024-05-10' },
-  { id: 2, title: '校园图书馆助理', description: '申请图书馆助理兼职岗位', category: '兼职申请', status: '审核中', date: '2024-05-18' },
-  { id: 3, title: '校园咖啡厅兼职', description: '申请咖啡师助理兼职岗位', category: '兼职申请', status: '已拒绝', date: '2024-04-25' }
-])
+// 申请列表当前筛选标签（all：全部；auth：身份认证；parttime：兼职申请）
+const appFilter = ref<'all' | 'auth' | 'parttime'>('all') // appFilter：控制“我的申请”中展示哪一类记录
+
+// “我的申请”列表项在前端展示层使用的数据结构定义
+interface ApplicationViewItem { // ApplicationViewItem：前端用于渲染“我的申请”每一行的数据结构
+  id: number // id：申请记录的唯一标识
+  title: string // title：申请标题（例如“学生身份认证”）
+  description: string // description：申请说明或审核备注（用于列表中的简介文字）
+  category: string // category：申请类别（例如“身份认证”、“兼职申请”）
+  status: string // status：中文状态（例如“已通过”“审核中”“已拒绝”）
+  date: string // date：申请时间（格式化后的日期字符串）
+}
+
+// 实际用于渲染“我的申请”列表的数据，初始为空，后续由接口填充
+const applications = ref<ApplicationViewItem[]>([]) // applications：承载“我的申请”列表的响应式数组
 
 const filteredApplications = computed(() => {
+  // 当筛选条件为 all 时，直接返回全部申请记录
   if (appFilter.value === 'all') return applications.value
+  // 其余情况按照类别字段进行过滤
   return applications.value.filter(app => {
-    if (appFilter.value === 'auth') return app.category === '身份认证'
-    if (appFilter.value === 'parttime') return app.category === '兼职申请'
-    return false
+    if (appFilter.value === 'auth') return app.category === '身份认证' // 仅展示身份认证相关记录
+    if (appFilter.value === 'parttime') return app.category === '兼职申请' // 仅展示兼职申请相关记录（目前暂无真实数据）
+    return false // 其他情况不返回任何记录
   })
 })
+
+// 将后端返回的英文状态码映射为中文友好状态文案
+const mapStatusToText = (status: AuthApplyRecordListInfo['list'][number]['status']): string => {
+  if (status === 'APPROVED') return '已通过' // 审核通过
+  if (status === 'PENDING') return '审核中' // 正在审核
+  if (status === 'REJECTED') return '已拒绝' // 审核未通过
+  return '未知状态' // 兜底文案，防止出现未识别的状态
+}
+
+// 简单的日期格式化工具：从完整时间字符串中截取“年月日”部分
+const formatDate = (time: any): string => {
+  const str = String(time || '') // 将时间转换为字符串，避免空值报错
+  return str.length >= 10 ? str.slice(0, 10) : str // 只取前 10 位（形如 2024-05-10）
+}
+
+// 从后端加载当前登录用户的身份认证申请记录，并转换为前端展示格式
+const loadAuthApplications = async () => {
+  try {
+    // 调用公共 SDK 中封装好的接口，加载第一页最多 20 条认证申请记录
+    const result: AuthApplyRecordListInfo = await getAuthApplyRecords(1, 20)
+    // 将后端返回的数据映射为前端展示所需结构
+    applications.value = (result.list || []).map(app => ({
+      id: app.id, // 使用申请记录的主键 ID
+      title: app.applyRole === 'STUDENT' ? '学生身份认证' : '身份认证', // 根据申请角色生成标题
+      description: app.auditRemark || '申请验证学生身份，享受校园专属服务', // 优先展示审核备注，否则使用默认说明
+      category: '身份认证', // 当前仅接入身份认证类记录
+      status: mapStatusToText(app.status), // 将英文状态码转换为中文状态
+      date: formatDate(app.createTime) // 使用创建时间作为申请时间展示
+    }))
+  } catch (error) {
+    // 接口调用失败时仅在控制台输出错误，不打断页面正常渲染
+    console.error('加载认证申请记录失败：', error)
+  }
+}
 
 // 获取状态样式类
 const getStatusClass = (status: string) => {
@@ -920,6 +966,8 @@ onMounted(() => {
   cancelEdit()
   // TODO: 加载用户信息
   // loadUserInfo()
+  // 加载“我的申请”中来自后端的身份认证申请记录
+  loadAuthApplications()
 })
 </script>
 

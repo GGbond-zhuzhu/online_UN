@@ -67,81 +67,112 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+// 引入 Vue 的组合式 API
+import { computed, onMounted } from 'vue' // 从 vue 导入 computed 和 onMounted
 import { useRouter } from 'vue-router'
 import NavBar from '@/components/common/NavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 import FloatingMenu from '@/components/common/FloatingMenu.vue'
+// 引入 common 包中封装好的二手 Store
+import { useSecondhandStore } from '@campus/common' // 从 @campus/common 导入二手相关 Pinia Store
 
 const router = useRouter()
 
-// 收藏列表数据
-const favoritesList = ref([
-  {
-    id: 1,
-    title: '高等数学教材',
-    desc: '第七版上下册',
-    price: 25,
-    tag: '9成新',
-    icon: 'fas fa-book',
-    seller: '张同学',
-    rating: 4.5
-  },
-  {
-    id: 2,
-    title: '联想笔记本电脑',
-    desc: 'i5处理器轻薄本',
-    price: 2200,
-    tag: '8成新',
-    icon: 'fas fa-laptop',
-    seller: '李同学',
-    rating: 4.0
-  },
-  {
-    id: 3,
-    title: '山地自行车',
-    desc: '24速变速送锁',
-    price: 380,
-    tag: '7成新',
-    icon: 'fas fa-bicycle',
-    seller: '王同学',
-    rating: 4.8
-  },
-  {
-    id: 4,
-    title: '校庆纪念卫衣',
-    desc: 'L码全新未拆',
-    price: 89,
-    tag: '全新',
-    icon: 'fas fa-tshirt',
-    seller: '赵同学',
-    rating: 4.2
+interface FavoriteItem {
+  id: number // 商品 ID（用于跳转和取消收藏）
+  title: string // 商品标题
+  desc: string // 商品描述
+  price: number // 商品价格
+  tag: string // 标签文案（例如“在售”“已下架”）
+  icon: string // 左侧类目图标（Font Awesome 类名）
+  seller: string // 卖家名称
+  rating: number // 卖家评分（此处使用固定值占位）
+}
+
+// 获取二手 Store 实例，用于统一管理收藏列表数据
+const secondhandStore = useSecondhandStore() // 调用 useSecondhandStore 获取 Store 实例
+
+// 将 Store 中的收藏商品映射为当前页面所需的展示结构
+const favoritesList = computed<FavoriteItem[]>(() => {
+  // 从 Store 中取得原始收藏列表（SecondhandGoods[]）
+  const list = secondhandStore.favoriteList // 直接访问 Store 中的收藏数组
+  // 将原始数据映射为页面展示模型
+  return list.map((item) => ({
+    id: item.id, // 使用商品 ID 作为主键
+    title: item.title, // 商品标题
+    desc: item.description || '', // 描述字段，后端可能为空，这里做兜底
+    price: item.price || 0, // 价格字段，缺省时使用 0 兜底
+    tag: item.status === 'ON_SALE' ? '在售' : '已下架', // 根据状态展示不同标签
+    icon: getCategoryIcon(item.category), // 根据分类选择对应的 Font Awesome 图标
+    seller: item.publisherName || '匿名用户', // 卖家名称，缺省时显示“匿名用户”
+    rating: 4.5 // 此处先使用固定评分占位，后续可与后端真实评分字段打通
+  })) // 返回新的数组供模板使用
+})
+
+// 透传 Store 的 loading 状态，方便后续在页面上做“加载中”提示
+const loading = computed(() => secondhandStore.loading) // 使用 Store 中的 loading 状态
+
+// 分类图标映射
+const getCategoryIcon = (category: string): string => {
+  const map: Record<string, string> = {
+    BOOKS: 'fas fa-book',
+    ELECTRONICS: 'fas fa-laptop',
+    CLOTHING: 'fas fa-tshirt',
+    DAILY: 'fas fa-home',
+    SPORTS: 'fas fa-bicycle',
+    OTHER: 'fas fa-box'
   }
-])
+  return map[category] || 'fas fa-box'
+}
 
 // 跳转到商品详情
 const goToDetail = (id: number) => {
   router.push(`/secondhand/detail/${id}`)
 }
 
-// 取消收藏
-const toggleFavorite = (id: number) => {
-  const index = favoritesList.value.findIndex(item => item.id === id)
-  if (index > -1) {
-    favoritesList.value.splice(index, 1)
+// 取消收藏（单个）
+const toggleFavorite = async (id: number) => {
+  try {
+    // 调用 Store 中的取消收藏方法，自动同步更新全局收藏状态
+    await secondhandStore.removeFavorite(id) // 根据商品 ID 调用取消收藏接口
+    // 本地映射列表会自动因为 Store 的变化而更新，无需手动过滤
+  } catch (error) {
+    console.error('取消收藏失败:', error)
+    alert('取消收藏失败，请稍后重试')
   }
 }
 
-// 清空所有收藏
-const clearFavorites = () => {
-  if (confirm('确定要清空所有收藏吗？')) {
-    favoritesList.value = []
+// 清空所有收藏（逐个取消）
+const clearFavorites = async () => {
+  // 如果当前收藏列表为空，则不进行任何操作
+  if (!favoritesList.value.length) {
+    return
+  }
+  // 弹窗确认，避免误操作清空所有收藏
+  if (!confirm('确定要清空所有收藏吗？')) {
+    return
+  }
+  try {
+    // 调用 Store 中封装好的“清空收藏列表”方法
+    await secondhandStore.clearFavoritesAll() // 内部会逐个调用取消收藏接口并清空本地状态
+  } catch (error) {
+    console.error('清空收藏失败:', error)
+    alert('清空收藏失败，请稍后重试')
+  }
+}
+
+// 从后端加载收藏列表
+const loadFavorites = async () => {
+  try {
+    // 通过 Store 统一加载收藏列表（这里约定第一页最多 50 条）
+    await secondhandStore.loadFavorites(1, 50) // 调用 Store 中封装好的加载方法
+  } catch (error) {
+    console.error('加载收藏列表失败:', error)
   }
 }
 
 onMounted(() => {
-  // 从本地存储或API加载收藏列表
-  // loadFavorites()
+  loadFavorites()
 })
 </script>
 

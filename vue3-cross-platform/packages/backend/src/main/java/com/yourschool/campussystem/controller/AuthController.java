@@ -221,5 +221,55 @@ public class AuthController {
         Map<String, Object> response = authService.emailLogin(email, code, codeId, request);
         return ApiResponse.success("登录成功", response);
     }
+
+    @Operation(summary = "发送重置密码邮箱验证码", 
+               description = "用于“忘记密码”场景，向用户注册邮箱发送重置密码验证码。" +
+                       "开发环境下如果未配置邮箱服务，会直接在响应中返回验证码，方便测试使用。")
+    @PostMapping("/password/reset/send-code")
+    public ApiResponse<Map<String, Object>> sendResetPasswordCode(
+            @Parameter(description = "请求参数（仅支持邮箱方式）", required = true)
+            @RequestBody Map<String, String> params) {
+
+        String email = params.get("email"); // 从请求体中读取邮箱地址
+        if (email == null || email.isEmpty()) { // 校验邮箱是否为空
+            return ApiResponse.error(com.yourschool.campussystem.common.ErrorCode.BAD_REQUEST, "邮箱地址不能为空");
+        }
+
+        Map<String, Object> response = authService.sendResetPasswordEmailCode(email); // 调用服务发送重置密码验证码
+        // 根据是否返回验证码字段判断当前是否处于“模拟模式”（未真正发送邮件）
+        String message = response.containsKey("code")
+                ? "重置密码验证码已发送（模拟模式，验证码已返回在响应中）"
+                : "重置密码验证码已发送到邮箱";
+        return ApiResponse.success(message, response); // 返回封装后的成功响应
+    }
+
+    @Operation(summary = "邮箱重置密码", 
+               description = "通过邮箱验证码重置登录密码。验证码校验成功后，将使用新密码覆盖原有密码。")
+    @PostMapping("/password/reset/confirm")
+    public ApiResponse<Map<String, Object>> resetPasswordByEmail(
+            @Parameter(description = "重置密码参数", required = true)
+            @RequestBody Map<String, String> params) {
+
+        String email = params.get("email"); // 用户邮箱
+        String code = params.get("code"); // 邮箱验证码
+        String codeId = params.get("codeId"); // 验证码ID
+        String newPassword = params.get("newPassword"); // 新密码明文
+
+        if (email == null || email.isEmpty()) { // 校验邮箱
+            return ApiResponse.error(com.yourschool.campussystem.common.ErrorCode.BAD_REQUEST, "邮箱地址不能为空");
+        }
+        if (code == null || code.isEmpty()) { // 校验验证码
+            return ApiResponse.error(com.yourschool.campussystem.common.ErrorCode.BAD_REQUEST, "验证码不能为空");
+        }
+        if (codeId == null || codeId.isEmpty()) { // 校验验证码ID
+            return ApiResponse.error(com.yourschool.campussystem.common.ErrorCode.BAD_REQUEST, "验证码ID不能为空");
+        }
+        if (newPassword == null || newPassword.isEmpty()) { // 校验新密码
+            return ApiResponse.error(com.yourschool.campussystem.common.ErrorCode.BAD_REQUEST, "新密码不能为空");
+        }
+
+        Map<String, Object> response = authService.resetPasswordByEmail(email, code, codeId, newPassword); // 调用服务完成重置
+        return ApiResponse.success("密码重置成功", response); // 返回成功提示和基础信息
+    }
 }
 

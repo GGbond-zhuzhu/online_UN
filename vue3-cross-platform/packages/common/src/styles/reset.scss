@@ -1,0 +1,98 @@
+@use './variables.scss' as vars; // 引入颜色和间距变量，方便在重置样式中使用
+
+/* ======================== 全局基础重置（Reset） ========================  保证不同浏览器下表现一致 */
+* , *::before, *::after { // 选中所有元素及其伪元素
+  margin: 0; /* 清除默认外边距，避免各浏览器默认样式不同 */
+  padding: 0; /* 清除默认内边距，保证布局可控 */
+  box-sizing: border-box; /* 使用 border-box 盒模型，宽高更直观 */
+}
+
+html, body { // HTML 和 BODY 统一占满视口高度
+  height: 100%; /* 让页面最小高度撑满整个视口 */
+}
+
+body { // 页面主体通用样式
+  background-color: vars.$color-bg-page; /* 使用公共变量设置页面背景色 */
+  color: vars.$color-text-main; /* 使用公共变量设置主文字颜色 */
+  font-family: 'PingFang SC', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; /* 统一中文/西文字体 */
+  line-height: 1.5; /* 设置基础行高，提升可读性 */
+  -webkit-font-smoothing: antialiased; /* 抗锯齿渲染，让文字更清晰（WebKit 内核） */
+}
+
+a { // 超链接的基础样式
+  color: inherit; /* 默认继承父级文字颜色，统一控制 */
+  text-decoration: none; /* 去掉下划线，使用 hover 状态单独控制 */
+}
+
+a:hover { // 鼠标悬停在链接上时
+  color: vars.$color-primary; /* 使用主色高亮 */
+}
+
+ul, ol { // 列表元素的基础样式
+  list-style: none; /* 去掉默认的圆点/数字样式，由业务自行定义 */
+}
+
+img { // 图片的通用样式
+  max-width: 100%; /* 图片最大宽度不超过容器，避免撑破布局 */
+  display: block; /* 避免图片底部出现空隙（行内元素特性） */
+}
+
+button, input, textarea, select { // 表单元素的基础样式
+  font: inherit; /* 使用与 body 一致的字体设置 */
+  outline: none; /* 去掉默认的外描边，由业务自行处理焦点样式 */
+}
+
+button { // 按钮的通用重置
+  border: none; /* 去掉默认边框 */
+  cursor: pointer; /* 鼠标悬停时显示手型，提示可点击 */
+  background: transparent; /* 背景色由具体按钮类控制 */
+}
+
+input::placeholder, textarea::placeholder { // 输入框占位符样式
+  color: vars.$color-text-muted; /* 使用较浅的辅助文字颜色 */
+}
+
+/* ======================== 布局辅助类（全局可复用） ======================== */
+
+.campus-container { // 全局内容容器（对齐 web 端 container 使用习惯）
+  max-width: 1200px; /* 版心最大宽度，适配常见桌面分辨率 */
+  margin: 0 auto; /* 水平居中容器 */
+  padding: 0 vars.$space-lg; /* 左右留出适当内边距 */
+}
+
+.campus-section { // 通用的页面区块容器
+  margin-bottom: vars.$space-xl; /* 区块之间留出较大间距 */
+}
+
+.campus-card { // 通用卡片样式（用于信息展示区域）
+  background-color: vars.$color-bg-card; /* 使用白色卡片背景 */
+  border-radius: vars.$radius-medium; /* 使用中等圆角，增强卡片感 */
+  box-shadow: vars.$shadow-card; /* 统一卡片阴影 */
+  padding: vars.$space-lg; /* 统一内边距，保证内容呼吸感 */
+}
+
+.campus-tag { // 通用标签样式（如“全新”、“热门”等）
+  display: inline-flex; /* 使用 inline-flex 便于与文字同行显示 */
+  align-items: center; /* 垂直居中文本 */
+  padding: 2px 10px; /* 水平方向稍大一点的内边距 */
+  border-radius: vars.$radius-pill; /* 胶囊形状圆角 */
+  font-size: 12px; /* 较小的标签文字 */
+  background-color: vars.$color-bg-muted; /* 使用浅灰背景 */
+  color: vars.$color-text-secondary; /* 使用次要文字颜色 */
+}
+
+.text-muted { // 弱化文字，例如说明性文字
+  color: vars.$color-text-muted; /* 使用统一的浅色文字 */
+}
+
+.text-primary { // 主色高亮文字
+  color: vars.$color-primary; /* 使用主品牌色 */
+}
+
+/* ======================== 响应式基础处理 ======================== */
+
+@media (max-width: vars.$breakpoint-md) { // 当屏幕宽度小于平板断点时
+  .campus-container { // 容器在移动端的内边距调整
+    padding: 0 vars.$space-md; /* 缩小左右内边距，提升可用空间 */
+  }
+}

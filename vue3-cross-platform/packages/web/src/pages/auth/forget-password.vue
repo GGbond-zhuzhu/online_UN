@@ -187,12 +187,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRouter } from 'vue-router'
-import LoginNavBar from '@/components/common/LoginNavBar.vue'
-import AppFooter from '@/components/common/AppFooter.vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue' // 引入ref、computed和生命周期，用于管理页面状态和生命周期
+import { useRouter } from 'vue-router' // 引入路由工具，用于在重置完成后跳转到登录页
+import { request } from '@campus/common' // 引入统一封装的请求工具，用于调用后端重置密码相关接口
+import LoginNavBar from '@/components/common/LoginNavBar.vue' // 顶部登录页导航栏组件
+import AppFooter from '@/components/common/AppFooter.vue' // 底部页脚组件
 
-const router = useRouter()
+const router = useRouter() // 创建路由实例，后续用于页面跳转
 
 // 当前步骤
 const currentStep = ref(1)
@@ -203,10 +204,11 @@ const errorMessage = ref('')
 const countdown = ref(0) // 验证码倒计时
 const successCountdown = ref(5) // 成功提示倒计时
 
-// 验证身份表单
+// 验证身份表单（找回密码第一步）
 const verifyForm = ref({
-  account: '',
-  verifyCode: ''
+  account: '', // 用户输入的账号，这里推荐使用邮箱地址
+  verifyCode: '', // 用户输入的邮箱验证码
+  codeId: '' // 发送验证码接口返回的验证码ID，后续重置密码时需要携带
 })
 
 // 重置密码表单
@@ -264,60 +266,60 @@ const checkPasswordStrength = () => {
   }
 }
 
-// 发送验证码
+// 发送验证码（仅支持邮箱方式）
 const sendVerifyCode = async () => {
-  if (!verifyForm.value.account) {
-    errorMessage.value = '请输入手机号或邮箱'
+  if (!verifyForm.value.account) { // 检查是否填写了账号
+    errorMessage.value = '请输入邮箱地址'
     return
   }
 
-  // 验证手机号或邮箱格式
-  const phoneRegex = /^1[3-9]\d{9}$/
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  
-  if (!phoneRegex.test(verifyForm.value.account) && !emailRegex.test(verifyForm.value.account)) {
-    errorMessage.value = '请输入正确的手机号或邮箱'
+  // 只支持邮箱找回密码：使用简单的邮箱格式校验
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/ // 定义基础邮箱正则，用于校验输入格式
+  if (!emailRegex.test(verifyForm.value.account)) { // 如果格式不符合
+    errorMessage.value = '当前仅支持通过邮箱找回密码，请输入正确的邮箱地址'
     return
   }
 
   try {
-    errorMessage.value = ''
-    // 模拟发送验证码API
-    countdown.value = 60
-    const timer = setInterval(() => {
-      countdown.value--
-      if (countdown.value <= 0) {
-        clearInterval(timer)
+    errorMessage.value = '' // 清空之前的错误信息
+    loading.value = true // 设置加载状态，避免重复点击
+
+    // 调用后端发送重置密码验证码接口：POST /api/auth/password/reset/send-code
+    const res: any = await request.post('/api/auth/password/reset/send-code', {
+      email: verifyForm.value.account.trim() // 传递邮箱地址给后端
+    })
+
+    // 记录返回的验证码ID，后续重置密码时需要一起提交
+    if (res && res.codeId) { // 如果后端返回了codeId字段
+      verifyForm.value.codeId = String(res.codeId) // 将验证码ID保存到表单中
+    }
+
+    // 启动60秒倒计时，限制验证码发送频率
+    countdown.value = 60 // 倒计时起始值60秒
+    const timer = setInterval(() => { // 每秒执行一次
+      countdown.value-- // 剩余秒数减一
+      if (countdown.value <= 0) { // 当倒计时结束
+        clearInterval(timer) // 清除定时器
       }
     }, 1000)
-    
-    await new Promise(resolve => setTimeout(resolve, 1000))
   } catch (error: any) {
-    errorMessage.value = error.message || '发送验证码失败'
+    errorMessage.value = error?.message || '发送验证码失败，请稍后重试' // 显示错误提示
+  } finally {
+    loading.value = false // 无论成功失败都重置加载状态
   }
 }
 
-// 验证身份
+// 验证身份（前端步骤切换，真正验证在重置密码接口中完成）
 const handleVerifyIdentity = async () => {
-  errorMessage.value = ''
+  errorMessage.value = '' // 清空错误信息
   
-  if (!verifyForm.value.account || !verifyForm.value.verifyCode) {
-    errorMessage.value = '请填写完整信息'
+  if (!verifyForm.value.account || !verifyForm.value.verifyCode) { // 确保账号和验证码都已填写
+    errorMessage.value = '请填写完整的邮箱和验证码'
     return
   }
 
-  try {
-    loading.value = true
-    // 模拟验证身份API
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // 验证成功，进入下一步
-    currentStep.value = 2
-  } catch (error: any) {
-    errorMessage.value = error.message || '验证失败，请检查验证码'
-  } finally {
-    loading.value = false
-  }
+  // 这里不调用后端，仅做基础校验后进入下一步，真正的验证码校验放在重置密码接口中统一处理
+  currentStep.value = 2 // 切换到“重置密码”步骤
 }
 
 // 重置密码
@@ -341,14 +343,21 @@ const handleResetPassword = async () => {
 
   try {
     loading.value = true
-    // 模拟重置密码API
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    // 重置成功，进入完成步骤
-    currentStep.value = 3
-    startSuccessCountdown()
+    // 调用后端重置密码接口：POST /api/auth/password/reset/confirm
+    const payload = {
+      email: verifyForm.value.account.trim(), // 使用第一步中填写的邮箱
+      code: verifyForm.value.verifyCode.trim(), // 用户输入的验证码
+      codeId: verifyForm.value.codeId, // 第一阶段发送验证码返回的codeId
+      newPassword: passwordForm.value.newPassword.trim() // 用户输入的新密码
+    }
+
+    await request.post('/api/auth/password/reset/confirm', payload) // 提交重置密码请求
+
+    // 重置成功，进入完成步骤并启动倒计时
+    currentStep.value = 3 // 切换到“完成”步骤
+    startSuccessCountdown() // 开始成功提示倒计时，自动跳转到登录页
   } catch (error: any) {
-    errorMessage.value = error.message || '重置密码失败，请重试'
+    errorMessage.value = error?.message || '重置密码失败，请检查验证码是否正确或稍后再试' // 显示错误提示信息
   } finally {
     loading.value = false
   }

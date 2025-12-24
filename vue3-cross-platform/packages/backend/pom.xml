@@ -36,10 +36,15 @@
 
     <dependencies>
         <!-- ==================== Spring Boot 核心依赖 ==================== -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
+        <dependency> <!-- 引入Spring Boot Web起步依赖，用于提供REST接口功能 -->
+            <groupId>org.springframework.boot</groupId> <!-- 依赖所属的组织ID -->
+            <artifactId>spring-boot-starter-web</artifactId> <!-- Web起步依赖的名称 -->
+        </dependency> <!-- 结束Web起步依赖配置 -->
+
+        <dependency> <!-- 引入Spring Boot WebSocket起步依赖，用于支持WebSocket即时通信 -->
+            <groupId>org.springframework.boot</groupId> <!-- 依赖所属的组织ID -->
+            <artifactId>spring-boot-starter-websocket</artifactId> <!-- WebSocket起步依赖的名称 -->
+        </dependency> <!-- 结束WebSocket起步依赖配置 -->
 
         <dependency>
             <groupId>org.springframework.boot</groupId>

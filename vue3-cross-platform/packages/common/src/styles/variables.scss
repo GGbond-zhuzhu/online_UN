@@ -1,0 +1,96 @@
+// ======================== 全局样式变量（颜色、间距、阴影等） ========================  // 定义整个项目通用的视觉风格
+
+// ===== 颜色相关 =====  // 统一维护平台主色、副色与文本颜色
+$color-primary: #d81b60; // 平台主色（粉红色），用于按钮、高亮文字、价格等
+$color-primary-light: #fce4ec; // 主色的浅色，用于浅色背景和 hover 状态
+$color-primary-dark: #c2185b; // 主色的深色，用于按下状态或重点强调
+
+$color-secondary: #4a90e2; // 次要高亮色（蓝色），用于定位、链接等
+$color-success: #4caf50; // 成功 / 通过 状态颜色
+$color-warning: #ff9800; // 警告 / 提示 状态颜色
+$color-danger: #f44336; // 错误 / 危险 状态颜色
+
+$color-bg-page: #f5f5f5; // 页面通用背景色（大面积灰白底）
+$color-bg-card: #ffffff; // 卡片/内容区域背景色
+$color-bg-muted: #f8f9fa; // 弱化背景色（标签、提示条等）
+
+$color-text-main: #333333; // 主要文字颜色
+$color-text-secondary: #666666; // 次要文字颜色
+$color-text-muted: #999999; // 次次要/辅助文字颜色
+
+$color-border-light: #eeeeee; // 浅色边框颜色
+$color-border-normal: #dddddd; // 普通边框颜色
+
+// ===== 阴影与圆角 =====  // 提供统一的卡片阴影和圆角半径
+$shadow-card: 0 4px 16px rgba(0, 0, 0, 0.06); // 卡片通用阴影
+$shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.12); // 更高层级的悬浮阴影
+
+$radius-small: 6px; // 小尺寸圆角（按钮、标签）
+$radius-medium: 12px; // 中等圆角（卡片、输入框）
+$radius-large: 20px; // 大圆角（弹窗、移动端卡片）
+$radius-pill: 999px; // 胶囊形状圆角
+
+// ===== 间距（Spacing） =====  // 统一控制内外边距的尺寸体系
+$space-xxs: 4px; // 极小间距，用于图标与文字间隔
+$space-xs: 8px; // 较小间距
+$space-sm: 12px; // 小间距
+$space-md: 16px; // 中等间距（最常用）
+$space-lg: 24px; // 大间距
+$space-xl: 32px; // 超大间距
+$space-xxl: 40px; // 特大间距（版心上下留白）
+
+// ===== 响应式断点 =====  // 与页面中常用的 1200 / 992 / 768 / 480 等宽度保持一致
+$breakpoint-xl: 1200px; // 桌面大屏
+$breakpoint-lg: 992px;  // 普通桌面
+$breakpoint-md: 768px;  // 平板
+$breakpoint-sm: 576px;  // 大屏手机
+$breakpoint-xs: 480px;  // 小屏手机
+
+// ======================== 导出为 CSS 变量 ========================  // 方便在纯 CSS / UniApp 中直接使用
+:root { // 使用 :root 定义全局 CSS 变量
+  /* 颜色变量：前缀统一使用 --campus- 保证命名唯一 */
+  --campus-color-primary: #{$color-primary}; // 主色：粉红色
+  --campus-color-primary-light: #{$color-primary-light}; // 主色浅色
+  --campus-color-primary-dark: #{$color-primary-dark}; // 主色深色
+
+  --campus-color-secondary: #{$color-secondary}; // 次色：蓝色
+  --campus-color-success: #{$color-success}; // 成功色
+  --campus-color-warning: #{$color-warning}; // 警告色
+  --campus-color-danger: #{$color-danger}; // 错误色
+
+  --campus-color-bg-page: #{$color-bg-page}; // 页面背景色
+  --campus-color-bg-card: #{$color-bg-card}; // 卡片背景色
+  --campus-color-bg-muted: #{$color-bg-muted}; // 弱化背景
+
+  --campus-color-text-main: #{$color-text-main}; // 主要文字颜色
+  --campus-color-text-secondary: #{$color-text-secondary}; // 次要文字颜色
+  --campus-color-text-muted: #{$color-text-muted}; // 辅助文字颜色
+
+  --campus-color-border-light: #{$color-border-light}; // 浅色边框
+  --campus-color-border-normal: #{$color-border-normal}; // 普通边框
+
+  /* 圆角与阴影 */
+  --campus-radius-small: #{$radius-small}; // 小圆角
+  --campus-radius-medium: #{$radius-medium}; // 中圆角
+  --campus-radius-large: #{$radius-large}; // 大圆角
+  --campus-radius-pill: #{$radius-pill}; // 胶囊圆角
+
+  --campus-shadow-card: #{$shadow-card}; // 卡片阴影
+  --campus-shadow-elevated: #{$shadow-elevated}; // 悬浮阴影
+
+  /* 间距体系 */
+  --campus-space-xxs: #{$space-xxs}; // 极小间距
+  --campus-space-xs: #{$space-xs}; // 较小间距
+  --campus-space-sm: #{$space-sm}; // 小间距
+  --campus-space-md: #{$space-md}; // 中等间距
+  --campus-space-lg: #{$space-lg}; // 大间距
+  --campus-space-xl: #{$space-xl}; // 超大间距
+  --campus-space-xxl: #{$space-xxl}; // 特大间距
+
+  /* 响应式断点（仅作为参考，媒体查询仍使用 SCSS 变量） */
+  --campus-breakpoint-xl: #{$breakpoint-xl}; // 大屏断点
+  --campus-breakpoint-lg: #{$breakpoint-lg}; // 桌面断点
+  --campus-breakpoint-md: #{$breakpoint-md}; // 平板断点
+  --campus-breakpoint-sm: #{$breakpoint-sm}; // 大屏手机断点
+  --campus-breakpoint-xs: #{$breakpoint-xs}; // 小屏手机断点
+}

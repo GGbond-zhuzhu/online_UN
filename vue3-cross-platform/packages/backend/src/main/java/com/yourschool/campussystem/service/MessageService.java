@@ -37,4 +37,10 @@ public interface MessageService {
      * @return 未读消息数量
      */
     Long getUnreadCount(Long userId);
+
+    /**
+     * 通过WebSocket推送一次“未读消息状态变更”事件
+     * @param userId 用户ID
+     */
+    void pushUnreadEvent(Long userId);
 }

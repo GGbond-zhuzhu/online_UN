@@ -38,7 +38,7 @@
               <h3 class="job-title">{{ item.jobTitle }}</h3>
               <button
                 class="btn-favorite active"
-                @click.stop="toggleFavorite(item.id)"
+                @click.stop="toggleFavorite(item.jobId)"
               >
                 <i class="fas fa-heart"></i>
               </button>
@@ -69,66 +69,67 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+// 引入 Vue 的组合式 API，用于创建响应式视图数据和处理生命周期
+import { computed, onMounted } from 'vue' // 从 vue 中导入 computed 和 onMounted
 import { useRouter } from 'vue-router'
 import NavBar from '@/components/common/NavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 import FloatingMenu from '@/components/common/FloatingMenu.vue'
+// 引入公共兼职 Store，统一管理兼职收藏列表和相关操作
+import { useParttimeStore } from '@campus/common' // 从 @campus/common 导入 useParttimeStore
 
 const router = useRouter()
 
 // 收藏列表
-const favoritesList = ref([
-  {
-    id: 1,
-    jobId: 1,
-    jobTitle: '校园推广专员',
-    companyName: '某教育公司',
-    salary: '150-200元/天',
-    location: '校内',
-    description: '负责校园推广活动，协助品牌宣传'
-  },
-  {
-    id: 2,
-    jobId: 2,
-    jobTitle: '数据录入员',
-    companyName: '某科技公司',
-    salary: '20-30元/小时',
-    location: '线上',
-    description: '负责数据录入和整理工作'
-  },
-  {
-    id: 3,
-    jobId: 3,
-    jobTitle: '客服助理',
-    companyName: '某服务公司',
-    salary: '3000-4000元/月',
-    location: '校外',
-    description: '负责客户咨询和服务工作'
-  }
-])
+const parttimeStore = useParttimeStore() // 获取公共兼职 Store，用于访问收藏数据和操作方法
+
+// 将 Store 中的收藏记录映射为当前页面所需的展示结构
+const favoritesList = computed(() => {
+  // 直接从 Store 中读取收藏列表（ParttimeFavoriteItem[]）
+  return parttimeStore.favoriteList.map((item) => ({
+    id: item.id, // 收藏记录ID（用于取消收藏）
+    jobId: item.jobId, // 兼职岗位ID（用于跳转详情和申请）
+    jobTitle: item.jobTitle, // 岗位标题
+    companyName: item.companyName, // 公司名称
+    salary: item.salary, // 薪资信息（如“20-30元/小时”）
+    location: item.location, // 工作地点（校内/校外/线上等）
+    description: item.description || '' // 岗位简介，后端可能为空，这里做兜底
+  }))
+})
 
 // 跳转到岗位详情
 const goToDetail = (jobId: number) => {
   router.push(`/parttime/detail/${jobId}`)
 }
 
-// 切换收藏状态
-const toggleFavorite = async (id: number) => {
-  const index = favoritesList.value.findIndex(item => item.id === id)
-  if (index > -1) {
-    favoritesList.value.splice(index, 1)
-    // TODO: 调用取消收藏API
-    // await toggleFavoriteAPI(id)
+// 切换收藏状态（取消收藏当前岗位）
+const toggleFavorite = async (jobId: number) => {
+  try {
+    // 调用公共 Store 中的取消收藏方法，自动同步更新收藏状态
+    await parttimeStore.removeFavorite(jobId) // 根据岗位 ID 取消收藏
+    // favoritesList 为 computed，会随着 Store 中数据变化自动刷新，无需手动删除
+  } catch (error) {
+    console.error('取消收藏失败:', error) // 打印错误信息，便于调试
+    alert('取消收藏失败，请稍后重试') // 给用户反馈操作结果
   }
 }
 
 // 清空收藏
-const clearFavorites = () => {
-  if (confirm('确定要清空所有收藏吗？')) {
-    favoritesList.value = []
-    // TODO: 调用清空收藏API
-    // await clearFavoritesAPI()
+const clearFavorites = async () => {
+  // 当当前没有任何收藏记录时，不执行清空逻辑
+  if (!favoritesList.value.length) {
+    return // 直接返回
+  }
+  // 弹出确认对话框，避免误操作清空所有收藏
+  if (!confirm('确定要清空所有收藏吗？')) {
+    return // 用户取消操作时直接返回
+  }
+  try {
+    // 调用公共 Store 中封装好的“清空收藏列表”方法
+    await parttimeStore.clearFavoritesAll() // 逐个调用取消收藏接口并清空本地状态
+  } catch (error) {
+    console.error('清空收藏失败:', error) // 打印错误信息
+    alert('清空收藏失败，请稍后重试') // 提示用户操作失败
   }
 }
 
@@ -138,8 +139,10 @@ const goToParttime = () => {
 }
 
 onMounted(() => {
-  // 加载收藏列表
-  // loadFavorites()
+  // 组件挂载时，通过公共 Store 加载真实的兼职收藏列表（第 1 页，最多 50 条）
+  parttimeStore.loadFavorites(1, 50).catch((error) => {
+    console.error('加载收藏列表失败:', error) // 打印错误信息，便于调试
+  })
 })
 </script>
 

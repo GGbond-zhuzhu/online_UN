@@ -211,7 +211,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw e;
         } catch (Exception e) {
             log.error("登录过程发生异常: username={}", loginDTO.getUsername(), e);
-            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR);
+            // 输出详细的异常堆栈信息，方便调试
+            e.printStackTrace();
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, 
+                    "登录失败：" + (e.getMessage() != null ? e.getMessage() : "系统异常"));
         }
     }
 

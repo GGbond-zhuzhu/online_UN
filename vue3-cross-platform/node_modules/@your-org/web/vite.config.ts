@@ -46,8 +46,11 @@ export default defineConfig({
   optimizeDeps: {
     disabled: true
   },
-  // 定义环境变量
+  // 定义全局常量与环境变量
   define: {
+    // 修复部分第三方库（如 sockjs-client）在浏览器环境中直接访问 Node.js 的 global 导致
+    // "ReferenceError: global is not defined" 的问题：将代码中的 global 替换为 window
+    global: 'window',
     // 如果.env文件被忽略，可以在这里定义默认值
     'import.meta.env.VITE_API_BASE_URL': JSON.stringify(
       process.env.VITE_API_BASE_URL || 'http://localhost:8080'

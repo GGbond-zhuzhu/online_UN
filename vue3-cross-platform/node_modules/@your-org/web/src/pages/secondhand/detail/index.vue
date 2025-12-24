@@ -171,11 +171,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue' // 从 vue 导入 ref/computed/onMounted，用于管理详情页的响应式数据和生命周期
 import { useRoute, useRouter } from 'vue-router'
 import NavBar from '@/components/common/NavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 import FloatingMenu from '@/components/common/FloatingMenu.vue'
+import {
+  getGoodsDetail, // 从 @campus/common 导入获取二手商品详情的接口函数
+  recordSecondhandBrowse, // 导入记录浏览行为的接口函数
+  collectGoods, // 导入收藏商品的接口函数
+  uncollectGoods, // 导入取消收藏商品的接口函数
+  type SecondhandGoods // 导入二手商品的类型定义（当前文件中预留类型使用）
+} from '@campus/common'
 
 const route = useRoute()
 const router = useRouter()
@@ -184,63 +191,40 @@ const router = useRouter()
 const currentImageIndex = ref(0)
 const isFavorite = ref(false)
 
-// 商品数据
+// 商品数据（从后端接口加载）
 const product = ref({
-  id: 1,
-  title: '高等数学教材',
-  desc: '第七版上下册',
-  price: 25,
-  condition: '9成新',
-  category: 'books',
+  id: 0,
+  title: '',
+  desc: '',
+  price: 0,
+  condition: '',
+  category: 'others',
   campus: 'main',
-  publishTime: '2天前',
-  views: 128,
-  seller: '张同学',
+  publishTime: '',
+  views: 0,
+  seller: '',
+  sellerId: 0, // 卖家用户ID（用于发起聊天时传给聊天页面）
   sellerRating: 4.5,
-  soldCount: 12,
+  soldCount: 0,
   goodRate: 95,
-  description: '高等数学第七版上下册，9成新，无笔记，无破损。包含教材和习题册，适合大一学生使用。',
-  purchaseTime: '2023年9月',
-  usage: '使用一学期，保存完好',
+  description: '',
+  purchaseTime: '',
+  usage: '',
   tradeMethod: '面交/快递',
-  images: [
-    'https://via.placeholder.com/600x400?text=商品图片1',
-    'https://via.placeholder.com/600x400?text=商品图片2',
-    'https://via.placeholder.com/600x400?text=商品图片3'
-  ]
+  images: [] as string[]
 })
 
-// 推荐商品
+// 推荐商品（暂时使用简单的本地推荐数据，后续可接入“猜你喜欢”接口）
 const recommendedProducts = ref([
   {
-    id: 2,
-    title: '线性代数教材',
-    desc: '第五版',
-    priceValue: 20,
-    tag: '8成新',
+    id: 0,
+    title: '猜你喜欢 · 教材',
+    desc: '看看同类型的其他教材',
+    priceValue: 0,
+    tag: '推荐',
     icon: 'fas fa-book',
-    seller: '李同学',
-    rating: 4.0
-  },
-  {
-    id: 3,
-    title: '概率论与数理统计',
-    desc: '第三版',
-    priceValue: 22,
-    tag: '9成新',
-    icon: 'fas fa-book',
-    seller: '王同学',
-    rating: 4.8
-  },
-  {
-    id: 4,
-    title: '大学物理教材',
-    desc: '上下册',
-    priceValue: 30,
-    tag: '全新',
-    icon: 'fas fa-book',
-    seller: '赵同学',
-    rating: 4.2
+    seller: '系统推荐',
+    rating: 4.5
   }
 ])
 
@@ -272,18 +256,21 @@ const getCampusLabel = (campus: string) => {
 }
 
 const contactSeller = () => {
-  // 跳转到聊天页面
-  // router.push(`/chat?sellerId=${product.value.sellerId}`)
-  // 暂时显示提示
-  if (navigator.share) {
-    navigator.share({
-      title: product.value.title,
-      text: `我想咨询一下${product.value.title}`,
-      url: window.location.href
-    }).catch(() => {
-      // 分享失败，可以跳转到聊天页面或显示联系方式
-    })
+  // 当用户点击“联系卖家 / 立即咨询”时，尝试跳转到聊天页面
+  const sellerId = (product.value as any).sellerId // 从商品数据中读取卖家用户ID
+  if (!sellerId) {
+    // 如果当前商品还没有正确加载出卖家ID，则先给出提示，避免跳转到空聊天页
+    alert('暂时无法获取卖家信息，请稍后重试') // 提示用户稍后再试
+    return // 直接结束函数执行
   }
+
+  // 使用路由跳转到聊天页面，并通过 query 传入 targetUserId
+  router.push({
+    name: 'chat', // 使用在路由中配置好的“聊天”路由名称
+    query: {
+      targetUserId: sellerId // 告诉聊天页面当前要和哪位用户聊天
+    }
+  })
 }
 
 const viewSellerProfile = () => {
@@ -292,14 +279,29 @@ const viewSellerProfile = () => {
 }
 
 const toggleFavorite = async () => {
+  // 当用户点击“收藏/已收藏”按钮时触发本函数
+  const goodsId = product.value.id // 从当前商品数据中读取商品ID，用于调用后端收藏接口
+  if (!goodsId) {
+    // 如果当前商品还没有正确加载出ID（例如接口失败），则不给予继续收藏操作
+    alert('当前商品信息异常，暂时无法收藏') // 给出简单提示，避免用户困惑
+    return // 直接结束函数执行
+  }
+
   try {
-    isFavorite.value = !isFavorite.value
-    // TODO: 调用收藏API
-    // await toggleFavoriteAPI(product.value.id)
+    if (!isFavorite.value) {
+      // 当前未收藏 -> 调用“收藏”接口
+      await collectGoods(goodsId) // 向后端发送收藏请求
+      isFavorite.value = true // 本地标记为已收藏，更新按钮文案和图标
+      alert('已加入收藏') // 给用户一个成功提示
+    } else {
+      // 当前已收藏 -> 调用“取消收藏”接口
+      await uncollectGoods(goodsId) // 向后端发送取消收藏请求
+      isFavorite.value = false // 本地标记为未收藏
+      alert('已取消收藏') // 提示用户取消成功
+    }
   } catch (error) {
-    console.error('收藏操作失败:', error)
-    // 回滚状态
-    isFavorite.value = !isFavorite.value
+    console.error('收藏操作失败:', error) // 控制台打印详细错误信息，便于排查问题
+    alert('收藏操作失败，请稍后重试') // 给用户一个通用失败提示
   }
 }
 
@@ -328,12 +330,66 @@ const goToDetail = (id: number) => {
   router.push(`/secondhand/detail/${id}`)
 }
 
+// 加载商品详情
+const loadProduct = async (id: number) => {
+  try {
+    const detail = (await getGoodsDetail(id)) as unknown as any
+
+    // 后端分类枚举 -> 前端分类键
+    const categoryMap: Record<string, string> = {
+      BOOKS: 'books',
+      ELECTRONICS: 'digital',
+      CLOTHING: 'clothing',
+      DAILY: 'daily',
+      SPORTS: 'sports',
+      STUDY: 'others',
+      OTHER: 'others'
+    }
+
+    const images: string[] = detail.imageUrls || detail.images || []
+
+    product.value = {
+      id: detail.id,
+      title: detail.title || '',
+      desc: detail.description || '',
+      price: detail.price || 0,
+      condition: '9成新',
+      category: categoryMap[detail.category] || 'others',
+      campus: 'main',
+      publishTime: detail.publishTime || '',
+      views: detail.viewCount || 0,
+      seller: detail.publisherName || '匿名用户',
+      sellerId: detail.publisherId || 0, // 从后端详情中取出发布者ID，作为卖家ID保存下来
+      sellerRating: 4.5,
+      soldCount: 0,
+      goodRate: 95,
+      description: detail.description || '',
+      purchaseTime: '',
+      usage: '',
+      tradeMethod: '面交/快递',
+      images: images.length ? images : [
+        'https://via.placeholder.com/600x400?text=商品图片'
+      ]
+    }
+
+    // 如果接口返回是否已收藏的信息，可以在这里初始化 isFavorite
+    if (typeof detail.isFavorited === 'boolean') {
+      isFavorite.value = detail.isFavorited
+    }
+  } catch (error) {
+    console.error('加载商品详情失败:', error)
+  }
+}
+
 onMounted(() => {
-  // 从路由参数获取商品ID
-  const productId = route.params.id
-  if (productId) {
-    // 根据ID加载商品数据
-    // loadProduct(productId)
+  const idParam = Number(route.params.id)
+  if (!Number.isNaN(idParam) && idParam > 0) {
+    // 先加载商品详情，再记录浏览行为
+    loadProduct(idParam).then(() => {
+      recordSecondhandBrowse(idParam).catch((error) => {
+        console.error('记录浏览行为失败:', error)
+      })
+    })
   }
 })
 </script>

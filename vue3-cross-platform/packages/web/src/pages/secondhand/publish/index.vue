@@ -290,9 +290,11 @@ import { useRouter } from 'vue-router'
 import NavBar from '@/components/common/NavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 import FloatingMenu from '@/components/common/FloatingMenu.vue'
+import { publishGoods } from '@your-org/common'
 
 const router = useRouter()
 const fileInput = ref<HTMLInputElement | null>(null)
+const isSubmitting = ref(false)
 
 // 表单数据
 const form = reactive({
@@ -315,7 +317,7 @@ const triggerFileInput = () => {
   fileInput.value?.click()
 }
 
-// 处理图片上传
+// 处理图片上传（本地预览 + Base64保存，直接写入数据库）
 const handleImageUpload = (event: Event) => {
   const target = event.target as HTMLInputElement
   const files = target.files
@@ -325,16 +327,19 @@ const handleImageUpload = (event: Event) => {
   const filesToAdd = Array.from(files).slice(0, remainingSlots)
 
   filesToAdd.forEach((file) => {
-    if (file.type.startsWith('image/')) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const result = e.target?.result as string
-        if (result && form.images.length < 6) {
-          form.images.push(result)
-        }
-      }
-      reader.readAsDataURL(file)
+    if (!file.type.startsWith('image/')) {
+      return
     }
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const result = e.target?.result as string
+      if (result && form.images.length < 6) {
+        // 直接保存为Base64数据URL，后端存到imageUrls字段
+        form.images.push(result)
+      }
+    }
+    reader.readAsDataURL(file)
   })
 
   // 清空input，允许重复选择同一文件
@@ -378,27 +383,60 @@ const validateForm = () => {
 }
 
 // 提交表单
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (!validateForm()) {
     return
   }
 
-  // 构建提交数据
-  const submitData = {
-    ...form,
-    tradeMethod: form.tradeMethods.length > 0 ? form.tradeMethods.join('/') : '面交'
+  if (isSubmitting.value) {
+    return
   }
 
+  isSubmitting.value = true
+
   try {
-    // TODO: 调用API提交
-    // await publishProduct(submitData)
-    
-    // 暂时使用模拟成功
+    // 前端分类值 -> 后端枚举值 映射
+    const categoryMap: Record<string, string> = {
+      books: 'BOOKS',
+      digital: 'ELECTRONICS',
+      clothing: 'CLOTHING',
+      daily: 'DAILY',
+      sports: 'SPORTS',
+      others: 'OTHER'
+    }
+
+    const backendCategory = categoryMap[form.category] || 'OTHER'
+
+    // 构建提交数据，映射到后端DTO格式 SecondhandPublishDTO
+    const submitData: any = {
+      title: form.title.trim(),
+      description: form.description.trim(),
+      price: form.price!, // 已在校验中保证存在且大于0
+      originalPrice: form.price!, // 简单设置原价=现价，后续可在管理页面修改
+      category: backendCategory, // 后端使用枚举
+      status: 'ON_SALE', // 默认上架
+      imageUrls: form.images, // 直接把Base64图片作为imageUrls写入数据库
+      contactPhone: form.phone.trim() || undefined,
+      contactWechat: form.wechat.trim() || undefined,
+      location: form.campus ? `${form.campus}校区` : undefined
+    }
+
+    // 调用后端发布接口
+    const goods = await publishGoods(submitData as any)
+
     alert('发布成功！')
-    router.push('/secondhand')
+    // 跳转到商品详情页
+    if ((goods as any)?.id) {
+      router.push(`/secondhand/detail/${(goods as any).id}`)
+    } else {
+      // 如果未返回ID，则回到二手列表
+      router.push('/secondhand')
+    }
   } catch (error) {
     console.error('发布失败:', error)
     alert('发布失败，请稍后重试')
+  } finally {
+    isSubmitting.value = false
   }
 }
 
@@ -765,15 +803,11 @@ const handleCancel = () => {
   border-color: #ddd;
 }
 
-.submit-btn {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
-}
-
 .submit-btn:hover {
-  background: var(--primary-dark);
-  border-color: var(--primary-dark);
+  /* 选中效果和前两个按钮保持一致 */
+  background: #f5f5f5;
+  color: var(--muted);
+  border-color: #ddd;
 }
 
 /* 提示卡片 */

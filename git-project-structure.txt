@@ -1,0 +1,4145 @@
+﻿
+【项目核心信息】
+1. 技术栈：前端（双端：UniApp+Vue3+TS+Pinia / Vue3+Vite+TS+VueRouter）、后端（SpringBoot3.x+MyBatis-Plus+MySQL+JWT+Knife4j）
+2. 业务定位：校园集成系统（4个子系统：校园E卡通、二手交易、兼职、行程管理；5种角色：游客/学生/教师/管理员/高校）
+3. 核心约定：
+登录进去统一是游客身份（可以申请游客临时E卡通、可以浏览二手信息和兼职信息等但不能申请、可以进行行程管理），进去进行身份认证后才可以进行本校二手平台和兼职信息的操作。
+   - 接口规范：RESTful风格，统一响应体{code, msg, data}，JWT权限校验（请求头Authorization: Bearer {token}）
+   - 角色权限：二手交易/兼职仅认证学校用户可发布/申请，游客仅浏览；行程支持团队创建+成员行程同步；校园卡需定位校验（校内正常使用，校外申请游客卡）
+
+
+
+# 开发者模式使用说明
+
+## 📋 概述
+
+开发者模式是一个特殊的权限模式，允许开发者绕过所有权限检查，访问和测试系统中的所有功能和界面。这对于开发和调试非常有用。
+
+## ✨ 功能特性
+
+- ✅ **绕过所有权限检查**：开发者可以访问所有需要登录或特定角色的页面
+- ✅ **拥有所有角色权限**：自动通过所有角色权限验证
+- ✅ **拥有所有功能权限**：可以执行所有操作（浏览、申请、发布等）
+- ✅ **跨平台支持**：同时支持Web端和App端（uni-app）
+
+## 🚀 如何启用开发者模式
+
+### 方法一：通过浏览器控制台（Web端）- 推荐 ⭐
+
+这是最简单直接的方法：
+
+1. 打开浏览器开发者工具（F12）
+2. 切换到"控制台"（Console）标签页
+3. 输入以下代码并回车：
+
+```javascript
+// 方式1：最简单的方法（推荐）
+localStorage.setItem('campus_system_developer_mode', 'true');
+location.reload();
+```
+
+执行后页面会自动刷新，开发者模式就会生效。
+
+**验证是否启用成功**：
+刷新后，在控制台输入：
+```javascript
+console.log('开发者模式:', localStorage.getItem('campus_system_developer_mode'));
+// 应该输出: 开发者模式: true
+```
+
+### 方法二：通过Vue DevTools（如果已安装）
+
+如果你安装了Vue DevTools浏览器扩展，可以：
+
+1. 打开Vue DevTools
+2. 找到Pinia标签页
+3. 找到`user` store
+4. 调用`enableDeveloperMode()`方法
+
+或者直接在控制台执行：
+
+```javascript
+// 尝试通过Vue实例获取store（需要Vue DevTools）
+const app = document.querySelector('#app').__vue_app__;
+if (app) {
+  const pinia = app.config.globalProperties.$pinia;
+  if (pinia) {
+    const { useUserStore } = await import('/src/common/src/pinia/user.ts');
+    const userStore = useUserStore();
+    userStore.enableDeveloperMode();
+  }
+}
+```
+
+**注意**：这种方式比较复杂，推荐使用方法一。
+
+### 方法三：在代码中临时添加（开发环境）
+
+在应用的入口文件中（如 `main.ts` 或 `App.vue`）添加：
+
+```typescript
+// 仅在开发环境启用
+if (import.meta.env.DEV) {
+  import('@campus/common').then(({ useUserStore }) => {
+    const userStore = useUserStore();
+    // 取消注释下面这行来启用开发者模式
+    // userStore.enableDeveloperMode();
+  });
+}
+```
+
+### 方法四：App端（uni-app）
+
+在uni-app中，可以通过以下方式启用：
+
+```javascript
+// 在App.vue或main.js中
+import { useUserStore } from '@/common/store/user';
+
+// 开发环境自动启用
+if (process.env.NODE_ENV === 'development') {
+  const userStore = useUserStore();
+  // 取消注释下面这行来启用开发者模式
+  // userStore.enableDeveloperMode();
+}
+```
+
+或者直接在控制台执行：
+
+```javascript
+// 设置存储
+uni.setStorageSync('campus_system_developer_mode', 'true');
+// 重新加载应用
+uni.reLaunch({ url: '/pages/index/index' });
+```
+
+## 🔧 如何禁用开发者模式
+
+### Web端（最简单）
+
+在浏览器控制台执行：
+
+```javascript
+// 直接删除localStorage并刷新页面
+localStorage.removeItem('campus_system_developer_mode');
+location.reload();
+```
+
+或者使用书签栏脚本（如果已创建）一键切换。
+
+### App端
+
+```javascript
+// 方式1：通过store
+const userStore = useUserStore();
+userStore.disableDeveloperMode();
+
+// 方式2：直接删除存储
+uni.removeStorageSync('campus_system_developer_mode');
+uni.reLaunch({ url: '/pages/index/index' });
+```
+
+## 📝 使用示例
+
+### 检查开发者模式状态
+
+**在浏览器控制台**：
+
+```javascript
+// 方式1：直接检查localStorage
+console.log('开发者模式:', localStorage.getItem('campus_system_developer_mode') === 'true' ? '✅ 已启用' : '❌ 已禁用');
+
+// 方式2：检查页面中的实际状态（需要页面已加载）
+// 注意：这种方式需要在Vue组件中才能使用
+```
+
+### 快速切换脚本
+
+创建一个可以复制粘贴的脚本：
+
+```javascript
+// 一键切换开发者模式（复制到控制台执行）
+(function(){
+  const key = 'campus_system_developer_mode';
+  const isEnabled = localStorage.getItem(key) === 'true';
+  localStorage.setItem(key, isEnabled ? 'false' : 'true');
+  console.log('✅ 开发者模式已' + (isEnabled ? '禁用' : '启用'));
+  console.log('🔄 正在刷新页面...');
+  setTimeout(() => location.reload(), 500);
+})();
+```
+
+## ⚠️ 注意事项
+
+1. **仅用于开发环境**：开发者模式应该只在开发和测试时使用，**不要在生产环境中启用**
+2. **安全性**：开发者模式会绕过所有权限检查，请确保只在安全的环境中使用
+3. **存储持久化**：开发者模式状态会保存在localStorage（Web）或uni存储（App）中，清除浏览器数据会清除该状态
+4. **不影响后端**：开发者模式只影响前端权限检查，后端API的权限验证仍然有效
+
+## 🔍 技术实现
+
+### 权限检查逻辑
+
+开发者模式在以下位置生效：
+
+1. **路由守卫**：`packages/web/src/router/index.ts` 和 `packages/app/src/router/index.ts`
+   - 开发者模式会绕过所有路由权限检查
+
+2. **权限检查方法**：`packages/common/src/pinia/user.ts`
+   - `hasPermission()`: 开发者模式返回 `true`
+   - `hasRole()`: 开发者模式返回 `true`
+
+3. **用户状态管理**：
+   - `isDeveloper`: 计算属性，返回开发者模式状态
+   - `enableDeveloperMode()`: 启用开发者模式
+   - `disableDeveloperMode()`: 禁用开发者模式
+   - `toggleDeveloperMode()`: 切换开发者模式
+
+### 存储键名
+
+- Web端：`campus_system_developer_mode` (localStorage)
+- App端：`campus_system_developer_mode` (uni.setStorageSync)
+
+## 🎯 快速启用脚本
+
+### 方法1：浏览器书签栏脚本（一键切换）
+
+创建一个书签栏脚本，点击即可启用/禁用开发者模式：
+
+1. 在浏览器中新建书签
+2. 名称填写：`切换开发者模式`
+3. 网址填写以下代码：
+
+```javascript
+javascript:(function(){
+  const key = 'campus_system_developer_mode';
+  const current = localStorage.getItem(key) === 'true';
+  localStorage.setItem(key, current ? 'false' : 'true');
+  alert('开发者模式已' + (current ? '禁用' : '启用') + '，页面将自动刷新');
+  location.reload();
+})();
+```
+
+使用时只需点击这个书签，就会自动切换开发者模式并刷新页面。
+
+### 方法2：控制台快捷命令
+
+在浏览器控制台直接执行（最简单）：
+
+```javascript
+// 启用开发者模式
+localStorage.setItem('campus_system_developer_mode', 'true'); location.reload();
+
+// 禁用开发者模式
+localStorage.removeItem('campus_system_developer_mode'); location.reload();
+
+// 检查状态
+console.log('开发者模式:', localStorage.getItem('campus_system_developer_mode') === 'true' ? '已启用' : '已禁用');
+```
+
+### 方法3：添加到代码中（开发环境自动启用）
+
+在 `packages/web/src/main.ts` 中添加：
+
+```typescript
+// 开发环境自动启用开发者模式（可选）
+if (import.meta.env.DEV) {
+  // 取消下面这行的注释来启用
+  // localStorage.setItem('campus_system_developer_mode', 'true');
+}
+```
+
+## 📚 相关文件
+
+- `packages/common/src/pinia/user.ts` - 用户状态管理（包含开发者模式逻辑）
+- `packages/web/src/router/index.ts` - Web端路由守卫
+- `packages/app/src/router/index.ts` - App端路由守卫
+- `packages/app/src/common/store/user.ts` - App端用户状态管理
+
+## 💡 提示
+
+- 启用开发者模式后，控制台会显示确认消息：`✅ 开发者模式已启用 - 您拥有所有权限`
+- 禁用时会显示：`❌ 开发者模式已禁用`
+- 开发者模式状态会在页面刷新后保持（因为存储在localStorage中）
+
+
+
+
+
+
+
+
+
+
+4. 文件结构：
+卷 Windows-SSD 的文件夹 PATH 列表
+卷序列号为 B675-5372
+C:\USERS\M1346\DESKTOP\WEB_APP
+│  filetree.txt
+│  
+└─vue3-cross-platform
+    │  .gitignore
+    │  .npmrc
+    │  filetree.txt
+    │  git-project-structure.txt
+    │  index.html
+    │  package-lock.json
+    │  package.json
+    │  pnpm-workspace.yaml
+    │  README.md
+    │  tsconfig.json
+    │  tsconfig.node.json
+    │  unh.config.js
+    │  vite.config.js
+    │  
+    ├─node_modules
+    │  │  .package-lock.json
+    │  │  
+    │  ├─.bin
+    │  │      esbuild
+    │  │      esbuild.cmd
+    │  │      esbuild.ps1
+    │  │      nanoid
+    │  │      nanoid.cmd
+    │  │      nanoid.ps1
+    │  │      parser
+    │  │      parser.cmd
+    │  │      parser.ps1
+    │  │      rollup
+    │  │      rollup.cmd
+    │  │      rollup.ps1
+    │  │      tsc
+    │  │      tsc.cmd
+    │  │      tsc.ps1
+    │  │      tsserver
+    │  │      tsserver.cmd
+    │  │      tsserver.ps1
+    │  │      vite
+    │  │      vite.cmd
+    │  │      vite.ps1
+    │  │      vue-demi-fix
+    │  │      vue-demi-fix.cmd
+    │  │      vue-demi-fix.ps1
+    │  │      vue-demi-switch
+    │  │      vue-demi-switch.cmd
+    │  │      vue-demi-switch.ps1
+    │  │      
+    │  ├─.vue-global-types
+    │  │      vue_3.5_0.d.ts
+    │  │      
+    │  ├─@babel
+    │  │  ├─helper-string-parser
+    │  │  │  │  LICENSE
+    │  │  │  │  package.json
+    │  │  │  │  README.md
+    │  │  │  │  
+    │  │  │  └─lib
+    │  │  │          index.js
+    │  │  │          index.js.map
+    │  │  │          
+    │  │  ├─helper-validator-identifier
+    │  │  │  │  LICENSE
+    │  │  │  │  package.json
+    │  │  │  │  README.md
+    │  │  │  │  
+    │  │  │  └─lib
+    │  │  │          identifier.js
+    │  │  │          identifier.js.map
+    │  │  │          index.js
+    │  │  │          index.js.map
+    │  │  │          keyword.js
+    │  │  │          keyword.js.map
+    │  │  │          
+    │  │  ├─parser
+    │  │  │  │  CHANGELOG.md
+    │  │  │  │  LICENSE
+    │  │  │  │  package.json
+    │  │  │  │  README.md
+    │  │  │  │  
+    │  │  │  ├─bin
+    │  │  │  │      babel-parser.js
+    │  │  │  │      
+    │  │  │  ├─lib
+    │  │  │  │      index.js
+    │  │  │  │      index.js.map
+    │  │  │  │      
+    │  │  │  └─typings
+    │  │  │          babel-parser.d.ts
+    │  │  │          
+    │  │  └─types
+    │  │      │  LICENSE
+    │  │      │  package.json
+    │  │      │  README.md
+    │  │      │  
+    │  │      └─lib
+    │  │          │  index-legacy.d.ts
+    │  │          │  index.d.ts
+    │  │          │  index.js
+    │  │          │  index.js.flow
+    │  │          │  index.js.map
+    │  │          │  
+    │  │          ├─asserts
+    │  │          │  │  assertNode.js
+    │  │          │  │  assertNode.js.map
+    │  │          │  │  
+    │  │          │  └─generated
+    │  │          │          index.js
+    │  │          │          index.js.map
+    │  │          │          
+    │  │          ├─ast-types
+    │  │          │  └─generated
+    │  │          │          index.js
+    │  │          │          index.js.map
+    │  │          │          
+    │  │          ├─builders
+    │  │          │  │  productions.js
+    │  │          │  │  productions.js.map
+    │  │          │  │  validateNode.js
+    │  │          │  │  validateNode.js.map
+    │  │          │  │  
+    │  │          │  ├─flow
+    │  │          │  │      createFlowUnionType.js
+    │  │          │  │      createFlowUnionType.js.map
+    │  │          │  │      createTypeAnnotationBasedOnTypeof.js
+    │  │          │  │      createTypeAnnotationBasedOnTypeof.js.map
+    │  │          │  │      
+    │  │          │  ├─generated
+    │  │          │  │      index.js
+    │  │          │  │      index.js.map
+    │  │          │  │      lowercase.js
+    │  │          │  │      lowercase.js.map
+    │  │          │  │      uppercase.js
+    │  │          │  │      uppercase.js.map
+    │  │          │  │      
+    │  │          │  ├─react
+    │  │          │  │      buildChildren.js
+    │  │          │  │      buildChildren.js.map
+    │  │          │  │      
+    │  │          │  └─typescript
+    │  │          │          createTSUnionType.js
+    │  │          │          createTSUnionType.js.map
+    │  │          │          
+    │  │          ├─clone
+    │  │          │      clone.js
+    │  │          │      clone.js.map
+    │  │          │      cloneDeep.js
+    │  │          │      cloneDeep.js.map
+    │  │          │      cloneDeepWithoutLoc.js
+    │  │          │      cloneDeepWithoutLoc.js.map
+    │  │          │      cloneNode.js
+    │  │          │      cloneNode.js.map
+    │  │          │      cloneWithoutLoc.js
+    │  │          │      cloneWithoutLoc.js.map
+    │  │          │      
+    │  │          ├─comments
+    │  │          │      addComment.js
+    │  │          │      addComment.js.map
+    │  │          │      addComments.js
+    │  │          │      addComments.js.map
+    │  │          │      inheritInnerComments.js
+    │  │          │      inheritInnerComments.js.map
+    │  │          │      inheritLeadingComments.js
+    │  │          │      inheritLeadingComments.js.map
+    │  │          │      inheritsComments.js
+    │  │          │      inheritsComments.js.map
+    │  │          │      inheritTrailingComments.js
+    │  │          │      inheritTrailingComments.js.map
+    │  │          │      removeComments.js
+    │  │          │      removeComments.js.map
+    │  │          │      
+    │  │          ├─constants
+    │  │          │  │  index.js
+    │  │          │  │  index.js.map
+    │  │          │  │  
+    │  │          │  └─generated
+    │  │          │          index.js
+    │  │          │          index.js.map
+    │  │          │          
+    │  │          ├─converters
+    │  │          │      ensureBlock.js
+    │  │          │      ensureBlock.js.map
+    │  │          │      gatherSequenceExpressions.js
+    │  │          │      gatherSequenceExpressions.js.map
+    │  │          │      toBindingIdentifierName.js
+    │  │          │      toBindingIdentifierName.js.map
+    │  │          │      toBlock.js
+    │  │          │      toBlock.js.map
+    │  │          │      toComputedKey.js
+    │  │          │      toComputedKey.js.map
+    │  │          │      toExpression.js
+    │  │          │      toExpression.js.map
+    │  │          │      toIdentifier.js
+    │  │          │      toIdentifier.js.map
+    │  │          │      toKeyAlias.js
+    │  │          │      toKeyAlias.js.map
+    │  │          │      toSequenceExpression.js
+    │  │          │      toSequenceExpression.js.map
+    │  │          │      toStatement.js
+    │  │          │      toStatement.js.map
+    │  │          │      valueToNode.js
+    │  │          │      valueToNode.js.map
+    │  │          │      
+    │  │          ├─definitions
+    │  │          │      core.js
+    │  │          │      core.js.map
+    │  │          │      deprecated-aliases.js
+    │  │          │      deprecated-aliases.js.map
+    │  │          │      experimental.js
+    │  │          │      experimental.js.map
+    │  │          │      flow.js
+    │  │          │      flow.js.map
+    │  │          │      index.js
+    │  │          │      index.js.map
+    │  │          │      jsx.js
+    │  │          │      jsx.js.map
+    │  │          │      misc.js
+    │  │          │      misc.js.map
+    │  │          │      placeholders.js
+    │  │          │      placeholders.js.map
+    │  │          │      typescript.js
+    │  │          │      typescript.js.map
+    │  │          │      utils.js
+    │  │          │      utils.js.map
+    │  │          │      
+    │  │          ├─modifications
+    │  │          │  │  appendToMemberExpression.js
+    │  │          │  │  appendToMemberExpression.js.map
+    │  │          │  │  inherits.js
+    │  │          │  │  inherits.js.map
+    │  │          │  │  prependToMemberExpression.js
+    │  │          │  │  prependToMemberExpression.js.map
+    │  │          │  │  removeProperties.js
+    │  │          │  │  removeProperties.js.map
+    │  │          │  │  removePropertiesDeep.js
+    │  │          │  │  removePropertiesDeep.js.map
+    │  │          │  │  
+    │  │          │  ├─flow
+    │  │          │  │      removeTypeDuplicates.js
+    │  │          │  │      removeTypeDuplicates.js.map
+    │  │          │  │      
+    │  │          │  └─typescript
+    │  │          │          removeTypeDuplicates.js
+    │  │          │          removeTypeDuplicates.js.map
+    │  │          │          
+    │  │          ├─retrievers
+    │  │          │      getAssignmentIdentifiers.js
+    │  │          │      getAssignmentIdentifiers.js.map
+    │  │          │      getBindingIdentifiers.js
+    │  │          │      getBindingIdentifiers.js.map
+    │  │          │      getFunctionName.js
+    │  │          │      getFunctionName.js.map
+    │  │          │      getOuterBindingIdentifiers.js
+    │  │          │      getOuterBindingIdentifiers.js.map
+    │  │          │      
+    │  │          ├─traverse
+    │  │          │      traverse.js
+    │  │          │      traverse.js.map
+    │  │          │      traverseFast.js
+    │  │          │      traverseFast.js.map
+    │  │          │      
+    │  │          ├─utils
+    │  │          │  │  deprecationWarning.js
+    │  │          │  │  deprecationWarning.js.map
+    │  │          │  │  inherit.js
+    │  │          │  │  inherit.js.map
+    │  │          │  │  shallowEqual.js
+    │  │          │  │  shallowEqual.js.map
+    │  │          │  │  
+    │  │          │  └─react
+    │  │          │          cleanJSXElementLiteralChild.js
+    │  │          │          cleanJSXElementLiteralChild.js.map
+    │  │          │          
+    │  │          └─validators
+    │  │              │  buildMatchMemberExpression.js
+    │  │              │  buildMatchMemberExpression.js.map
+    │  │              │  is.js
+    │  │              │  is.js.map
+    │  │              │  isBinding.js
+    │  │              │  isBinding.js.map
+    │  │              │  isBlockScoped.js
+    │  │              │  isBlockScoped.js.map
+    │  │              │  isImmutable.js
+    │  │              │  isImmutable.js.map
+    │  │              │  isLet.js
+    │  │              │  isLet.js.map
+    │  │              │  isNode.js
+    │  │              │  isNode.js.map
+    │  │              │  isNodesEquivalent.js
+    │  │              │  isNodesEquivalent.js.map
+    │  │              │  isPlaceholderType.js
+    │  │              │  isPlaceholderType.js.map
+    │  │              │  isReferenced.js
+    │  │              │  isReferenced.js.map
+    │  │              │  isScope.js
+    │  │              │  isScope.js.map
+    │  │              │  isSpecifierDefault.js
+    │  │              │  isSpecifierDefault.js.map
+    │  │              │  isType.js
+    │  │              │  isType.js.map
+    │  │              │  isValidES3Identifier.js
+    │  │              │  isValidES3Identifier.js.map
+    │  │              │  isValidIdentifier.js
+    │  │              │  isValidIdentifier.js.map
+    │  │              │  isVar.js
+    │  │              │  isVar.js.map
+    │  │              │  matchesPattern.js
+    │  │              │  matchesPattern.js.map
+    │  │              │  validate.js
+    │  │              │  validate.js.map
+    │  │              │  
+    │  │              ├─generated
+    │  │              │      index.js
+    │  │              │      index.js.map
+    │  │              │      
+    │  │              └─react
+    │  │                      isCompatTag.js
+    │  │                      isCompatTag.js.map
+    │  │                      isReactComponent.js
+    │  │                      isReactComponent.js.map
+    │  │                      
+    │  ├─@esbuild
+    │  │  └─win32-x64
+    │  │          esbuild.exe
+    │  │          package.json
+    │  │          README.md
+    │  │          
+    │  ├─@jridgewell
+    │  │  └─sourcemap-codec
+    │  │      │  LICENSE
+    │  │      │  package.json
+    │  │      │  README.md
+    │  │      │  
+    │  │      ├─dist
+    │  │      │      sourcemap-codec.mjs
+    │  │      │      sourcemap-codec.mjs.map
+    │  │      │      sourcemap-codec.umd.js
+    │  │      │      sourcemap-codec.umd.js.map
+    │  │      │      
+    │  │      ├─src
+    │  │      │      scopes.ts
+    │  │      │      sourcemap-codec.ts
+    │  │      │      strings.ts
+    │  │      │      vlq.ts
+    │  │      │      
+    │  │      └─types
+    │  │              scopes.d.cts
+    │  │              scopes.d.cts.map
+    │  │              scopes.d.mts
+    │  │              scopes.d.mts.map
+    │  │              sourcemap-codec.d.cts
+    │  │              sourcemap-codec.d.cts.map
+    │  │              sourcemap-codec.d.mts
+    │  │              sourcemap-codec.d.mts.map
+    │  │              strings.d.cts
+    │  │              strings.d.cts.map
+    │  │              strings.d.mts
+    │  │              strings.d.mts.map
+    │  │              vlq.d.cts
+    │  │              vlq.d.cts.map
+    │  │              vlq.d.mts
+    │  │              vlq.d.mts.map
+    │  │              
+    │  ├─@rollup
+    │  │  ├─rollup-win32-x64-gnu
+    │  │  │      package.json
+    │  │  │      README.md
+    │  │  │      rollup.win32-x64-gnu.node
+    │  │  │      
+    │  │  └─rollup-win32-x64-msvc
+    │  │          package.json
+    │  │          README.md
+    │  │          rollup.win32-x64-msvc.node
+    │  │          
+    │  ├─@types
+    │  │  └─estree
+    │  │          flow.d.ts
+    │  │          index.d.ts
+    │  │          LICENSE
+    │  │          package.json
+    │  │          README.md
+    │  │          
+    │  ├─@vitejs
+    │  │  └─plugin-vue
+    │  │      │  LICENSE
+    │  │      │  package.json
+    │  │      │  README.md
+    │  │      │  
+    │  │      └─dist
+    │  │              index.cjs
+    │  │              index.d.cts
+    │  │              index.d.mts
+    │  │              index.d.ts
+    │  │              index.mjs
+    │  │              
+    │  ├─@vue
+    │  │  ├─compiler-core
+    │  │  │  │  index.js
+    │  │  │  │  LICENSE
+    │  │  │  │  package.json
+    │  │  │  │  README.md
+    │  │  │  │  
+    │  │  │  └─dist
+    │  │  │          compiler-core.cjs.js
+    │  │  │          compiler-core.cjs.prod.js
+    │  │  │          compiler-core.d.ts
+    │  │  │          compiler-core.esm-bundler.js
+    │  │  │          
+    │  │  ├─compiler-dom
+    │  │  │  │  index.js
+    │  │  │  │  LICENSE
+    │  │  │  │  package.json
+    │  │  │  │  README.md
+    │  │  │  │  
+    │  │  │  └─dist
+    │  │  │          compiler-dom.cjs.js
+    │  │  │          compiler-dom.cjs.prod.js
+    │  │  │          compiler-dom.d.ts
+    │  │  │          compiler-dom.esm-browser.js
+    │  │  │          compiler-dom.esm-browser.prod.js
+    │  │  │          compiler-dom.esm-bundler.js
+    │  │  │          compiler-dom.global.js
+    │  │  │          compiler-dom.global.prod.js
+    │  │  │          
+    │  │  ├─compiler-sfc
+    │  │  │  │  LICENSE
+    │  │  │  │  package.json
+    │  │  │  │  README.md
+    │  │  │  │  
+    │  │  │  └─dist
+    │  │  │          compiler-sfc.cjs.js
+    │  │  │          compiler-sfc.d.ts
+    │  │  │          compiler-sfc.esm-browser.js
+    │  │  │          
+    │  │  ├─compiler-ssr
+    │  │  │  │  LICENSE
+    │  │  │  │  package.json
+    │  │  │  │  README.md
+    │  │  │  │  
+    │  │  │  └─dist
+    │  │  │          compiler-ssr.cjs.js
+    │  │  │          compiler-ssr.d.ts
+    │  │  │          
+    │  │  ├─devtools-api
+    │  │  │  │  package.json
+    │  │  │  │  
+    │  │  │  └─lib
+    │  │  │      ├─cjs
+    │  │  │      │  │  const.js
+    │  │  │      │  │  env.js
+    │  │  │      │  │  index.js
+    │  │  │      │  │  plugin.js
+    │  │  │      │  │  proxy.js
+    │  │  │      │  │  time.js
+    │  │  │      │  │  
+    │  │  │      │  └─api
+    │  │  │      │          api.js
+    │  │  │      │          app.js
+    │  │  │      │          component.js
+    │  │  │      │          context.js
+    │  │  │      │          hooks.js
+    │  │  │      │          index.js
+    │  │  │      │          util.js
+    │  │  │      │          
+    │  │  │      └─esm
+    │  │  │          │  const.d.ts
+    │  │  │          │  const.js
+    │  │  │          │  env.d.ts
+    │  │  │          │  env.js
+    │  │  │          │  index.d.ts
+    │  │  │          │  index.js
+    │  │  │          │  plugin.d.ts
+    │  │  │          │  plugin.js
+    │  │  │          │  proxy.d.ts
+    │  │  │          │  proxy.js
+    │  │  │          │  time.d.ts
+    │  │  │          │  time.js
+    │  │  │          │  
+    │  │  │          └─api
+    │  │  │                  api.d.ts
+    │  │  │                  api.js
+    │  │  │                  app.d.ts
+    │  │  │                  app.js
+    │  │  │                  component.d.ts
+    │  │  │                  component.js
+    │  │  │                  context.d.ts
+    │  │  │                  context.js
+    │  │  │                  hooks.d.ts
+    │  │  │                  hooks.js
+    │  │  │                  index.d.ts
+    │  │  │                  index.js
+    │  │  │                  util.d.ts
+    │  │  │                  util.js
+    │  │  │                  
+    │  │  ├─reactivity
+    │  │  │  │  index.js
+    │  │  │  │  LICENSE
+    │  │  │  │  package.json
+    │  │  │  │  README.md
+    │  │  │  │  
+    │  │  │  └─dist
+    │  │  │          reactivity.cjs.js
+    │  │  │          reactivity.cjs.prod.js
+    │  │  │          reactivity.d.ts
+    │  │  │          reactivity.esm-browser.js
+    │  │  │          reactivity.esm-browser.prod.js
+    │  │  │          reactivity.esm-bundler.js
+    │  │  │          reactivity.global.js
+    │  │  │          reactivity.global.prod.js
+    │  │  │          
+    │  │  ├─runtime-core
+    │  │  │  │  index.js
+    │  │  │  │  LICENSE
+    │  │  │  │  package.json
+    │  │  │  │  README.md
+    │  │  │  │  
+    │  │  │  └─dist
+    │  │  │          runtime-core.cjs.js
+    │  │  │          runtime-core.cjs.prod.js
+    │  │  │          runtime-core.d.ts
+    │  │  │          runtime-core.esm-bundler.js
+    │  │  │          
+    │  │  ├─runtime-dom
+    │  │  │  │  index.js
+    │  │  │  │  LICENSE
+    │  │  │  │  package.json
+    │  │  │  │  README.md
+    │  │  │  │  
+    │  │  │  └─dist
+    │  │  │          runtime-dom.cjs.js
+    │  │  │          runtime-dom.cjs.prod.js
+    │  │  │          runtime-dom.d.ts
+    │  │  │          runtime-dom.esm-browser.js
+    │  │  │          runtime-dom.esm-browser.prod.js
+    │  │  │          runtime-dom.esm-bundler.js
+    │  │  │          runtime-dom.global.js
+    │  │  │          runtime-dom.global.prod.js
+    │  │  │          
+    │  │  ├─server-renderer
+    │  │  │  │  index.js
+    │  │  │  │  LICENSE
+    │  │  │  │  package.json
+    │  │  │  │  README.md
+    │  │  │  │  
+    │  │  │  └─dist
+    │  │  │          server-renderer.cjs.js
+    │  │  │          server-renderer.cjs.prod.js
+    │  │  │          server-renderer.d.ts
+    │  │  │          server-renderer.esm-browser.js
+    │  │  │          server-renderer.esm-browser.prod.js
+    │  │  │          server-renderer.esm-bundler.js
+    │  │  │          
+    │  │  └─shared
+    │  │      │  index.js
+    │  │      │  LICENSE
+    │  │      │  package.json
+    │  │      │  README.md
+    │  │      │  
+    │  │      └─dist
+    │  │              shared.cjs.js
+    │  │              shared.cjs.prod.js
+    │  │              shared.d.ts
+    │  │              shared.esm-bundler.js
+    │  │              
+    │  ├─@your-org
+    │  │  ├─common
+    │  │  │  │  filetree.txt
+    │  │  │  │  package.json
+    │  │  │  │  README.md
+    │  │  │  │  tsconfig.json
+    │  │  │  │  tsconfig.node.json
+    │  │  │  │  
+    │  │  │  └─src
+    │  │  │      ├─api
+    │  │  │      │  │  index.ts
+    │  │  │      │  │  
+    │  │  │      │  ├─auth
+    │  │  │      │  │      index.ts
+    │  │  │      │  │      
+    │  │  │      │  ├─ecard
+    │  │  │      │  │      index.ts
+    │  │  │      │  │      
+    │  │  │      │  ├─parttime
+    │  │  │      │  │      index.ts
+    │  │  │      │  │      
+    │  │  │      │  ├─schedule
+    │  │  │      │  │      index.ts
+    │  │  │      │  │      
+    │  │  │      │  └─secondhand
+    │  │  │      │          index.ts
+    │  │  │      │          
+    │  │  │      ├─components
+    │  │  │      │  ├─business
+    │  │  │      │  │      ParttimeCard.vue
+    │  │  │      │  │      ScheduleItem.vue
+    │  │  │      │  │      SecondhandCard.vue
+    │  │  │      │  │      
+    │  │  │      │  ├─common
+    │  │  │      │  │      AppFooter.vue
+    │  │  │      │  │      AppLogos.vue
+    │  │  │      │  │      InputEntry.vue
+    │  │  │      │  │      
+    │  │  │      │  └─permission
+    │  │  │      │          NoPermission.vue
+    │  │  │      │          RoleTip.vue
+    │  │  │      │          
+    │  │  │      ├─config
+    │  │  │      │      campus.ts
+    │  │  │      │      index.ts
+    │  │  │      │      role.ts
+    │  │  │      │      
+    │  │  │      ├─hooks
+    │  │  │      │      useAuth.ts
+    │  │  │      │      useEcard.ts
+    │  │  │      │      useLocation.ts
+    │  │  │      │      useRequest.ts
+    │  │  │      │      useScheduleTeam.ts
+    │  │  │      │      useWeather.ts
+    │  │  │      │      
+    │  │  │      ├─pinia
+    │  │  │      │      ecard.ts
+    │  │  │      │      index.ts
+    │  │  │      │      parttime.ts
+    │  │  │      │      scheduleTeam.ts
+    │  │  │      │      secondhand.ts
+    │  │  │      │      user.ts
+    │  │  │      │      
+    │  │  │      ├─styles
+    │  │  │      │      index.scss
+    │  │  │      │      reset.scss
+    │  │  │      │      variables.scss
+    │  │  │      │      
+    │  │  │      ├─types
+    │  │  │      │      auth.ts
+    │  │  │      │      ecard.ts
+    │  │  │      │      index.ts
+    │  │  │      │      parttime.ts
+    │  │  │      │      schedule.ts
+    │  │  │      │      secondhand.ts
+    │  │  │      │      
+    │  │  │      └─utils
+    │  │  │              auth.ts
+    │  │  │              format.ts
+    │  │  │              location.ts
+    │  │  │              storage.ts
+    │  │  │              
+    │  │  └─web
+    │  │      │  .env.development
+    │  │      │  index.html
+    │  │      │  package.json
+    │  │      │  README.md
+    │  │      │  tsconfig.json
+    │  │      │  tsconfig.node.json
+    │  │      │  vite.config.js
+    │  │      │  vite.config.ts
+    │  │      │  
+    │  │      ├─public
+    │  │      │  │  favicon.ico
+    │  │      │  │  
+    │  │      │  └─static
+    │  │      │          github.svg
+    │  │      │          logo.svg
+    │  │      │          tab-ecard-active.png
+    │  │      │          tab-ecard.png
+    │  │      │          tab-home-active.png
+    │  │      │          tab-home.png
+    │  │      │          tab-profile-active.png
+    │  │      │          tab-profile.png
+    │  │      │          tab-schedule-active.png
+    │  │      │          tab-schedule.png
+    │  │      │          tab-secondhand-active.png
+    │  │      │          tab-secondhand.png
+    │  │      │          vite.png
+    │  │      │          
+    │  │      └─src
+    │  │          │  App.vue
+    │  │          │  env.d.ts
+    │  │          │  main.ts
+    │  │          │  style.css
+    │  │          │  
+    │  │          ├─components
+    │  │          │  ├─business
+    │  │          │  │      DataTable.vue
+    │  │          │  │      ExcelImport.vue
+    │  │          │  │      PublishForm.vue
+    │  │          │  │      
+    │  │          │  ├─common
+    │  │          │  │      NavBar.vue
+    │  │          │  │      PageHeader.vue
+    │  │          │  │      SideBar.vue
+    │  │          │  │      
+    │  │          │  └─permission
+    │  │          │          NoPermissionPage.vue
+    │  │          │          
+    │  │          ├─pages
+    │  │          │  ├─admin
+    │  │          │  │      index.vue
+    │  │          │  │      
+    │  │          │  ├─auth
+    │  │          │  │      index.vue
+    │  │          │  │      login.vue
+    │  │          │  │      register.vue
+    │  │          │  │      
+    │  │          │  ├─ecard
+    │  │          │  │      index.vue
+    │  │          │  │      
+    │  │          │  ├─index
+    │  │          │  │      index.vue
+    │  │          │  │      
+    │  │          │  ├─parttime
+    │  │          │  │  │  index.vue
+    │  │          │  │  │  
+    │  │          │  │  ├─detail
+    │  │          │  │  │      index.vue
+    │  │          │  │  │      
+    │  │          │  │  └─publish
+    │  │          │  │          index.vue
+    │  │          │  │          
+    │  │          │  ├─profile
+    │  │          │  │      index.vue
+    │  │          │  │      
+    │  │          │  ├─schedule
+    │  │          │  │  │  index.vue
+    │  │          │  │  │  
+    │  │          │  │  ├─import
+    │  │          │  │  │      index.vue
+    │  │          │  │  │      
+    │  │          │  │  └─team
+    │  │          │  │          index.vue
+    │  │          │  │          
+    │  │          │  └─secondhand
+    │  │          │      │  index.vue
+    │  │          │      │  
+    │  │          │      ├─detail
+    │  │          │      │      index.vue
+    │  │          │      │      
+    │  │          │      └─publish
+    │  │          │              index.vue
+    │  │          │              
+    │  │          ├─router
+    │  │          │      index.ts
+    │  │          │      
+    │  │          ├─utils
+    │  │          │      excel.ts
+    │  │          │      location.ts
+    │  │          │      responsive.ts
+    │  │          │      
+    │  │          └─views
+    │  │                  Home.vue
+    │  │                  TestCommon.vue
+    │  │                  
+    │  ├─asynckit
+    │  │  │  bench.js
+    │  │  │  index.js
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  parallel.js
+    │  │  │  README.md
+    │  │  │  serial.js
+    │  │  │  serialOrdered.js
+    │  │  │  stream.js
+    │  │  │  
+    │  │  └─lib
+    │  │          abort.js
+    │  │          async.js
+    │  │          defer.js
+    │  │          iterate.js
+    │  │          readable_asynckit.js
+    │  │          readable_parallel.js
+    │  │          readable_serial.js
+    │  │          readable_serial_ordered.js
+    │  │          state.js
+    │  │          streamify.js
+    │  │          terminator.js
+    │  │          
+    │  ├─axios
+    │  │  │  CHANGELOG.md
+    │  │  │  index.d.cts
+    │  │  │  index.d.ts
+    │  │  │  index.js
+    │  │  │  LICENSE
+    │  │  │  MIGRATION_GUIDE.md
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  
+    │  │  ├─dist
+    │  │  │  │  axios.js
+    │  │  │  │  axios.js.map
+    │  │  │  │  axios.min.js
+    │  │  │  │  axios.min.js.map
+    │  │  │  │  
+    │  │  │  ├─browser
+    │  │  │  │      axios.cjs
+    │  │  │  │      axios.cjs.map
+    │  │  │  │      
+    │  │  │  ├─esm
+    │  │  │  │      axios.js
+    │  │  │  │      axios.js.map
+    │  │  │  │      axios.min.js
+    │  │  │  │      axios.min.js.map
+    │  │  │  │      
+    │  │  │  └─node
+    │  │  │          axios.cjs
+    │  │  │          axios.cjs.map
+    │  │  │          
+    │  │  └─lib
+    │  │      │  axios.js
+    │  │      │  utils.js
+    │  │      │  
+    │  │      ├─adapters
+    │  │      │      adapters.js
+    │  │      │      fetch.js
+    │  │      │      http.js
+    │  │      │      README.md
+    │  │      │      xhr.js
+    │  │      │      
+    │  │      ├─cancel
+    │  │      │      CanceledError.js
+    │  │      │      CancelToken.js
+    │  │      │      isCancel.js
+    │  │      │      
+    │  │      ├─core
+    │  │      │      Axios.js
+    │  │      │      AxiosError.js
+    │  │      │      AxiosHeaders.js
+    │  │      │      buildFullPath.js
+    │  │      │      dispatchRequest.js
+    │  │      │      InterceptorManager.js
+    │  │      │      mergeConfig.js
+    │  │      │      README.md
+    │  │      │      settle.js
+    │  │      │      transformData.js
+    │  │      │      
+    │  │      ├─defaults
+    │  │      │      index.js
+    │  │      │      transitional.js
+    │  │      │      
+    │  │      ├─env
+    │  │      │  │  data.js
+    │  │      │  │  README.md
+    │  │      │  │  
+    │  │      │  └─classes
+    │  │      │          FormData.js
+    │  │      │          
+    │  │      ├─helpers
+    │  │      │      AxiosTransformStream.js
+    │  │      │      AxiosURLSearchParams.js
+    │  │      │      bind.js
+    │  │      │      buildURL.js
+    │  │      │      callbackify.js
+    │  │      │      combineURLs.js
+    │  │      │      composeSignals.js
+    │  │      │      cookies.js
+    │  │      │      deprecatedMethod.js
+    │  │      │      estimateDataURLDecodedBytes.js
+    │  │      │      formDataToJSON.js
+    │  │      │      formDataToStream.js
+    │  │      │      fromDataURI.js
+    │  │      │      HttpStatusCode.js
+    │  │      │      isAbsoluteURL.js
+    │  │      │      isAxiosError.js
+    │  │      │      isURLSameOrigin.js
+    │  │      │      null.js
+    │  │      │      parseHeaders.js
+    │  │      │      parseProtocol.js
+    │  │      │      progressEventReducer.js
+    │  │      │      readBlob.js
+    │  │      │      README.md
+    │  │      │      resolveConfig.js
+    │  │      │      speedometer.js
+    │  │      │      spread.js
+    │  │      │      throttle.js
+    │  │      │      toFormData.js
+    │  │      │      toURLEncodedForm.js
+    │  │      │      trackStream.js
+    │  │      │      validator.js
+    │  │      │      ZlibHeaderTransformStream.js
+    │  │      │      
+    │  │      └─platform
+    │  │          │  index.js
+    │  │          │  
+    │  │          ├─browser
+    │  │          │  │  index.js
+    │  │          │  │  
+    │  │          │  └─classes
+    │  │          │          Blob.js
+    │  │          │          FormData.js
+    │  │          │          URLSearchParams.js
+    │  │          │          
+    │  │          ├─common
+    │  │          │      utils.js
+    │  │          │      
+    │  │          └─node
+    │  │              │  index.js
+    │  │              │  
+    │  │              └─classes
+    │  │                      FormData.js
+    │  │                      URLSearchParams.js
+    │  │                      
+    │  ├─call-bind-apply-helpers
+    │  │  │  .eslintrc
+    │  │  │  .nycrc
+    │  │  │  actualApply.d.ts
+    │  │  │  actualApply.js
+    │  │  │  applyBind.d.ts
+    │  │  │  applyBind.js
+    │  │  │  CHANGELOG.md
+    │  │  │  functionApply.d.ts
+    │  │  │  functionApply.js
+    │  │  │  functionCall.d.ts
+    │  │  │  functionCall.js
+    │  │  │  index.d.ts
+    │  │  │  index.js
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  reflectApply.d.ts
+    │  │  │  reflectApply.js
+    │  │  │  tsconfig.json
+    │  │  │  
+    │  │  ├─.github
+    │  │  │      FUNDING.yml
+    │  │  │      
+    │  │  └─test
+    │  │          index.js
+    │  │          
+    │  ├─combined-stream
+    │  │  │  License
+    │  │  │  package.json
+    │  │  │  Readme.md
+    │  │  │  yarn.lock
+    │  │  │  
+    │  │  └─lib
+    │  │          combined_stream.js
+    │  │          
+    │  ├─csstype
+    │  │      index.d.ts
+    │  │      index.js.flow
+    │  │      LICENSE
+    │  │      package.json
+    │  │      README.md
+    │  │      
+    │  ├─delayed-stream
+    │  │  │  .npmignore
+    │  │  │  License
+    │  │  │  Makefile
+    │  │  │  package.json
+    │  │  │  Readme.md
+    │  │  │  
+    │  │  └─lib
+    │  │          delayed_stream.js
+    │  │          
+    │  ├─dunder-proto
+    │  │  │  .eslintrc
+    │  │  │  .nycrc
+    │  │  │  CHANGELOG.md
+    │  │  │  get.d.ts
+    │  │  │  get.js
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  set.d.ts
+    │  │  │  set.js
+    │  │  │  tsconfig.json
+    │  │  │  
+    │  │  ├─.github
+    │  │  │      FUNDING.yml
+    │  │  │      
+    │  │  └─test
+    │  │          get.js
+    │  │          index.js
+    │  │          set.js
+    │  │          
+    │  ├─entities
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  readme.md
+    │  │  │  
+    │  │  └─lib
+    │  │      │  decode.d.ts
+    │  │      │  decode.d.ts.map
+    │  │      │  decode.js
+    │  │      │  decode.js.map
+    │  │      │  decode_codepoint.d.ts
+    │  │      │  decode_codepoint.d.ts.map
+    │  │      │  decode_codepoint.js
+    │  │      │  decode_codepoint.js.map
+    │  │      │  encode.d.ts
+    │  │      │  encode.d.ts.map
+    │  │      │  encode.js
+    │  │      │  encode.js.map
+    │  │      │  escape.d.ts
+    │  │      │  escape.d.ts.map
+    │  │      │  escape.js
+    │  │      │  escape.js.map
+    │  │      │  index.d.ts
+    │  │      │  index.d.ts.map
+    │  │      │  index.js
+    │  │      │  index.js.map
+    │  │      │  
+    │  │      ├─esm
+    │  │      │  │  decode.d.ts
+    │  │      │  │  decode.d.ts.map
+    │  │      │  │  decode.js
+    │  │      │  │  decode.js.map
+    │  │      │  │  decode_codepoint.d.ts
+    │  │      │  │  decode_codepoint.d.ts.map
+    │  │      │  │  decode_codepoint.js
+    │  │      │  │  decode_codepoint.js.map
+    │  │      │  │  encode.d.ts
+    │  │      │  │  encode.d.ts.map
+    │  │      │  │  encode.js
+    │  │      │  │  encode.js.map
+    │  │      │  │  escape.d.ts
+    │  │      │  │  escape.d.ts.map
+    │  │      │  │  escape.js
+    │  │      │  │  escape.js.map
+    │  │      │  │  index.d.ts
+    │  │      │  │  index.d.ts.map
+    │  │      │  │  index.js
+    │  │      │  │  index.js.map
+    │  │      │  │  package.json
+    │  │      │  │  
+    │  │      │  └─generated
+    │  │      │          decode-data-html.d.ts
+    │  │      │          decode-data-html.d.ts.map
+    │  │      │          decode-data-html.js
+    │  │      │          decode-data-html.js.map
+    │  │      │          decode-data-xml.d.ts
+    │  │      │          decode-data-xml.d.ts.map
+    │  │      │          decode-data-xml.js
+    │  │      │          decode-data-xml.js.map
+    │  │      │          encode-html.d.ts
+    │  │      │          encode-html.d.ts.map
+    │  │      │          encode-html.js
+    │  │      │          encode-html.js.map
+    │  │      │          
+    │  │      └─generated
+    │  │              decode-data-html.d.ts
+    │  │              decode-data-html.d.ts.map
+    │  │              decode-data-html.js
+    │  │              decode-data-html.js.map
+    │  │              decode-data-xml.d.ts
+    │  │              decode-data-xml.d.ts.map
+    │  │              decode-data-xml.js
+    │  │              decode-data-xml.js.map
+    │  │              encode-html.d.ts
+    │  │              encode-html.d.ts.map
+    │  │              encode-html.js
+    │  │              encode-html.js.map
+    │  │              
+    │  ├─es-define-property
+    │  │  │  .eslintrc
+    │  │  │  .nycrc
+    │  │  │  CHANGELOG.md
+    │  │  │  index.d.ts
+    │  │  │  index.js
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  tsconfig.json
+    │  │  │  
+    │  │  ├─.github
+    │  │  │      FUNDING.yml
+    │  │  │      
+    │  │  └─test
+    │  │          index.js
+    │  │          
+    │  ├─es-errors
+    │  │  │  .eslintrc
+    │  │  │  CHANGELOG.md
+    │  │  │  eval.d.ts
+    │  │  │  eval.js
+    │  │  │  index.d.ts
+    │  │  │  index.js
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  range.d.ts
+    │  │  │  range.js
+    │  │  │  README.md
+    │  │  │  ref.d.ts
+    │  │  │  ref.js
+    │  │  │  syntax.d.ts
+    │  │  │  syntax.js
+    │  │  │  tsconfig.json
+    │  │  │  type.d.ts
+    │  │  │  type.js
+    │  │  │  uri.d.ts
+    │  │  │  uri.js
+    │  │  │  
+    │  │  ├─.github
+    │  │  │      FUNDING.yml
+    │  │  │      
+    │  │  └─test
+    │  │          index.js
+    │  │          
+    │  ├─es-object-atoms
+    │  │  │  .eslintrc
+    │  │  │  CHANGELOG.md
+    │  │  │  index.d.ts
+    │  │  │  index.js
+    │  │  │  isObject.d.ts
+    │  │  │  isObject.js
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  RequireObjectCoercible.d.ts
+    │  │  │  RequireObjectCoercible.js
+    │  │  │  ToObject.d.ts
+    │  │  │  ToObject.js
+    │  │  │  tsconfig.json
+    │  │  │  
+    │  │  ├─.github
+    │  │  │      FUNDING.yml
+    │  │  │      
+    │  │  └─test
+    │  │          index.js
+    │  │          
+    │  ├─es-set-tostringtag
+    │  │  │  .eslintrc
+    │  │  │  .nycrc
+    │  │  │  CHANGELOG.md
+    │  │  │  index.d.ts
+    │  │  │  index.js
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  tsconfig.json
+    │  │  │  
+    │  │  └─test
+    │  │          index.js
+    │  │          
+    │  ├─esbuild
+    │  │  │  install.js
+    │  │  │  LICENSE.md
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  
+    │  │  ├─bin
+    │  │  │      esbuild
+    │  │  │      
+    │  │  └─lib
+    │  │          main.d.ts
+    │  │          main.js
+    │  │          
+    │  ├─estree-walker
+    │  │  │  CHANGELOG.md
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  
+    │  │  ├─dist
+    │  │  │  ├─esm
+    │  │  │  │      estree-walker.js
+    │  │  │  │      package.json
+    │  │  │  │      
+    │  │  │  └─umd
+    │  │  │          estree-walker.js
+    │  │  │          
+    │  │  ├─src
+    │  │  │      async.js
+    │  │  │      index.js
+    │  │  │      package.json
+    │  │  │      sync.js
+    │  │  │      walker.js
+    │  │  │      
+    │  │  └─types
+    │  │          async.d.ts
+    │  │          index.d.ts
+    │  │          sync.d.ts
+    │  │          tsconfig.tsbuildinfo
+    │  │          walker.d.ts
+    │  │          
+    │  ├─follow-redirects
+    │  │      debug.js
+    │  │      http.js
+    │  │      https.js
+    │  │      index.js
+    │  │      LICENSE
+    │  │      package.json
+    │  │      README.md
+    │  │      
+    │  ├─form-data
+    │  │  │  CHANGELOG.md
+    │  │  │  index.d.ts
+    │  │  │  License
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  
+    │  │  └─lib
+    │  │          browser.js
+    │  │          form_data.js
+    │  │          populate.js
+    │  │          
+    │  ├─function-bind
+    │  │  │  .eslintrc
+    │  │  │  .nycrc
+    │  │  │  CHANGELOG.md
+    │  │  │  implementation.js
+    │  │  │  index.js
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  
+    │  │  ├─.github
+    │  │  │      FUNDING.yml
+    │  │  │      SECURITY.md
+    │  │  │      
+    │  │  └─test
+    │  │          .eslintrc
+    │  │          index.js
+    │  │          
+    │  ├─get-intrinsic
+    │  │  │  .eslintrc
+    │  │  │  .nycrc
+    │  │  │  CHANGELOG.md
+    │  │  │  index.js
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  
+    │  │  ├─.github
+    │  │  │      FUNDING.yml
+    │  │  │      
+    │  │  └─test
+    │  │          GetIntrinsic.js
+    │  │          
+    │  ├─get-proto
+    │  │  │  .eslintrc
+    │  │  │  .nycrc
+    │  │  │  CHANGELOG.md
+    │  │  │  index.d.ts
+    │  │  │  index.js
+    │  │  │  LICENSE
+    │  │  │  Object.getPrototypeOf.d.ts
+    │  │  │  Object.getPrototypeOf.js
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  Reflect.getPrototypeOf.d.ts
+    │  │  │  Reflect.getPrototypeOf.js
+    │  │  │  tsconfig.json
+    │  │  │  
+    │  │  ├─.github
+    │  │  │      FUNDING.yml
+    │  │  │      
+    │  │  └─test
+    │  │          index.js
+    │  │          
+    │  ├─gopd
+    │  │  │  .eslintrc
+    │  │  │  CHANGELOG.md
+    │  │  │  gOPD.d.ts
+    │  │  │  gOPD.js
+    │  │  │  index.d.ts
+    │  │  │  index.js
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  tsconfig.json
+    │  │  │  
+    │  │  ├─.github
+    │  │  │      FUNDING.yml
+    │  │  │      
+    │  │  └─test
+    │  │          index.js
+    │  │          
+    │  ├─has-symbols
+    │  │  │  .eslintrc
+    │  │  │  .nycrc
+    │  │  │  CHANGELOG.md
+    │  │  │  index.d.ts
+    │  │  │  index.js
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  shams.d.ts
+    │  │  │  shams.js
+    │  │  │  tsconfig.json
+    │  │  │  
+    │  │  ├─.github
+    │  │  │      FUNDING.yml
+    │  │  │      
+    │  │  └─test
+    │  │      │  index.js
+    │  │      │  tests.js
+    │  │      │  
+    │  │      └─shams
+    │  │              core-js.js
+    │  │              get-own-property-symbols.js
+    │  │              
+    │  ├─has-tostringtag
+    │  │  │  .eslintrc
+    │  │  │  .nycrc
+    │  │  │  CHANGELOG.md
+    │  │  │  index.d.ts
+    │  │  │  index.js
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  shams.d.ts
+    │  │  │  shams.js
+    │  │  │  tsconfig.json
+    │  │  │  
+    │  │  ├─.github
+    │  │  │      FUNDING.yml
+    │  │  │      
+    │  │  └─test
+    │  │      │  index.js
+    │  │      │  tests.js
+    │  │      │  
+    │  │      └─shams
+    │  │              core-js.js
+    │  │              get-own-property-symbols.js
+    │  │              
+    │  ├─hasown
+    │  │  │  .eslintrc
+    │  │  │  .nycrc
+    │  │  │  CHANGELOG.md
+    │  │  │  index.d.ts
+    │  │  │  index.js
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  tsconfig.json
+    │  │  │  
+    │  │  └─.github
+    │  │          FUNDING.yml
+    │  │          
+    │  ├─magic-string
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  
+    │  │  └─dist
+    │  │          magic-string.cjs.d.ts
+    │  │          magic-string.cjs.js
+    │  │          magic-string.cjs.js.map
+    │  │          magic-string.es.d.mts
+    │  │          magic-string.es.mjs
+    │  │          magic-string.es.mjs.map
+    │  │          magic-string.umd.js
+    │  │          magic-string.umd.js.map
+    │  │          
+    │  ├─math-intrinsics
+    │  │  │  .eslintrc
+    │  │  │  abs.d.ts
+    │  │  │  abs.js
+    │  │  │  CHANGELOG.md
+    │  │  │  floor.d.ts
+    │  │  │  floor.js
+    │  │  │  isFinite.d.ts
+    │  │  │  isFinite.js
+    │  │  │  isInteger.d.ts
+    │  │  │  isInteger.js
+    │  │  │  isNaN.d.ts
+    │  │  │  isNaN.js
+    │  │  │  isNegativeZero.d.ts
+    │  │  │  isNegativeZero.js
+    │  │  │  LICENSE
+    │  │  │  max.d.ts
+    │  │  │  max.js
+    │  │  │  min.d.ts
+    │  │  │  min.js
+    │  │  │  mod.d.ts
+    │  │  │  mod.js
+    │  │  │  package.json
+    │  │  │  pow.d.ts
+    │  │  │  pow.js
+    │  │  │  README.md
+    │  │  │  round.d.ts
+    │  │  │  round.js
+    │  │  │  sign.d.ts
+    │  │  │  sign.js
+    │  │  │  tsconfig.json
+    │  │  │  
+    │  │  ├─.github
+    │  │  │      FUNDING.yml
+    │  │  │      
+    │  │  ├─constants
+    │  │  │      maxArrayLength.d.ts
+    │  │  │      maxArrayLength.js
+    │  │  │      maxSafeInteger.d.ts
+    │  │  │      maxSafeInteger.js
+    │  │  │      maxValue.d.ts
+    │  │  │      maxValue.js
+    │  │  │      
+    │  │  └─test
+    │  │          index.js
+    │  │          
+    │  ├─mime-db
+    │  │      db.json
+    │  │      HISTORY.md
+    │  │      index.js
+    │  │      LICENSE
+    │  │      package.json
+    │  │      README.md
+    │  │      
+    │  ├─mime-types
+    │  │      HISTORY.md
+    │  │      index.js
+    │  │      LICENSE
+    │  │      package.json
+    │  │      README.md
+    │  │      
+    │  ├─nanoid
+    │  │  │  index.browser.cjs
+    │  │  │  index.browser.js
+    │  │  │  index.cjs
+    │  │  │  index.d.cts
+    │  │  │  index.d.ts
+    │  │  │  index.js
+    │  │  │  LICENSE
+    │  │  │  nanoid.js
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  
+    │  │  ├─async
+    │  │  │      index.browser.cjs
+    │  │  │      index.browser.js
+    │  │  │      index.cjs
+    │  │  │      index.d.ts
+    │  │  │      index.js
+    │  │  │      index.native.js
+    │  │  │      package.json
+    │  │  │      
+    │  │  ├─bin
+    │  │  │      nanoid.cjs
+    │  │  │      
+    │  │  ├─non-secure
+    │  │  │      index.cjs
+    │  │  │      index.d.ts
+    │  │  │      index.js
+    │  │  │      package.json
+    │  │  │      
+    │  │  └─url-alphabet
+    │  │          index.cjs
+    │  │          index.js
+    │  │          package.json
+    │  │          
+    │  ├─picocolors
+    │  │      LICENSE
+    │  │      package.json
+    │  │      picocolors.browser.js
+    │  │      picocolors.d.ts
+    │  │      picocolors.js
+    │  │      README.md
+    │  │      types.d.ts
+    │  │      
+    │  ├─pinia
+    │  │  │  index.cjs
+    │  │  │  index.js
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  
+    │  │  └─dist
+    │  │          pinia.cjs
+    │  │          pinia.d.ts
+    │  │          pinia.esm-browser.js
+    │  │          pinia.iife.js
+    │  │          pinia.iife.prod.js
+    │  │          pinia.mjs
+    │  │          pinia.prod.cjs
+    │  │          
+    │  ├─postcss
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  
+    │  │  └─lib
+    │  │          at-rule.d.ts
+    │  │          at-rule.js
+    │  │          comment.d.ts
+    │  │          comment.js
+    │  │          container.d.ts
+    │  │          container.js
+    │  │          css-syntax-error.d.ts
+    │  │          css-syntax-error.js
+    │  │          declaration.d.ts
+    │  │          declaration.js
+    │  │          document.d.ts
+    │  │          document.js
+    │  │          fromJSON.d.ts
+    │  │          fromJSON.js
+    │  │          input.d.ts
+    │  │          input.js
+    │  │          lazy-result.d.ts
+    │  │          lazy-result.js
+    │  │          list.d.ts
+    │  │          list.js
+    │  │          map-generator.js
+    │  │          no-work-result.d.ts
+    │  │          no-work-result.js
+    │  │          node.d.ts
+    │  │          node.js
+    │  │          parse.d.ts
+    │  │          parse.js
+    │  │          parser.js
+    │  │          postcss.d.mts
+    │  │          postcss.d.ts
+    │  │          postcss.js
+    │  │          postcss.mjs
+    │  │          previous-map.d.ts
+    │  │          previous-map.js
+    │  │          processor.d.ts
+    │  │          processor.js
+    │  │          result.d.ts
+    │  │          result.js
+    │  │          root.d.ts
+    │  │          root.js
+    │  │          rule.d.ts
+    │  │          rule.js
+    │  │          stringifier.d.ts
+    │  │          stringifier.js
+    │  │          stringify.d.ts
+    │  │          stringify.js
+    │  │          symbols.js
+    │  │          terminal-highlight.js
+    │  │          tokenize.js
+    │  │          warn-once.js
+    │  │          warning.d.ts
+    │  │          warning.js
+    │  │          
+    │  ├─proxy-from-env
+    │  │      .eslintrc
+    │  │      .travis.yml
+    │  │      index.js
+    │  │      LICENSE
+    │  │      package.json
+    │  │      README.md
+    │  │      test.js
+    │  │      
+    │  ├─rollup
+    │  │  │  LICENSE.md
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  
+    │  │  └─dist
+    │  │      │  getLogFilter.d.ts
+    │  │      │  getLogFilter.js
+    │  │      │  loadConfigFile.d.ts
+    │  │      │  loadConfigFile.js
+    │  │      │  native.js
+    │  │      │  parseAst.d.ts
+    │  │      │  parseAst.js
+    │  │      │  rollup.d.ts
+    │  │      │  rollup.js
+    │  │      │  
+    │  │      ├─bin
+    │  │      │      rollup
+    │  │      │      
+    │  │      ├─es
+    │  │      │  │  getLogFilter.js
+    │  │      │  │  package.json
+    │  │      │  │  parseAst.js
+    │  │      │  │  rollup.js
+    │  │      │  │  
+    │  │      │  └─shared
+    │  │      │          node-entry.js
+    │  │      │          parseAst.js
+    │  │      │          watch.js
+    │  │      │          
+    │  │      └─shared
+    │  │              fsevents-importer.js
+    │  │              index.js
+    │  │              loadConfigFile.js
+    │  │              parseAst.js
+    │  │              rollup.js
+    │  │              watch-cli.js
+    │  │              watch.js
+    │  │              
+    │  ├─source-map-js
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  source-map.d.ts
+    │  │  │  source-map.js
+    │  │  │  
+    │  │  └─lib
+    │  │          array-set.js
+    │  │          base64-vlq.js
+    │  │          base64.js
+    │  │          binary-search.js
+    │  │          mapping-list.js
+    │  │          quick-sort.js
+    │  │          source-map-consumer.d.ts
+    │  │          source-map-consumer.js
+    │  │          source-map-generator.d.ts
+    │  │          source-map-generator.js
+    │  │          source-node.d.ts
+    │  │          source-node.js
+    │  │          util.js
+    │  │          
+    │  ├─typescript
+    │  │  │  LICENSE.txt
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  SECURITY.md
+    │  │  │  ThirdPartyNoticeText.txt
+    │  │  │  
+    │  │  ├─bin
+    │  │  │      tsc
+    │  │  │      tsserver
+    │  │  │      
+    │  │  └─lib
+    │  │      │  lib.d.ts
+    │  │      │  lib.decorators.d.ts
+    │  │      │  lib.decorators.legacy.d.ts
+    │  │      │  lib.dom.asynciterable.d.ts
+    │  │      │  lib.dom.d.ts
+    │  │      │  lib.dom.iterable.d.ts
+    │  │      │  lib.es2015.collection.d.ts
+    │  │      │  lib.es2015.core.d.ts
+    │  │      │  lib.es2015.d.ts
+    │  │      │  lib.es2015.generator.d.ts
+    │  │      │  lib.es2015.iterable.d.ts
+    │  │      │  lib.es2015.promise.d.ts
+    │  │      │  lib.es2015.proxy.d.ts
+    │  │      │  lib.es2015.reflect.d.ts
+    │  │      │  lib.es2015.symbol.d.ts
+    │  │      │  lib.es2015.symbol.wellknown.d.ts
+    │  │      │  lib.es2016.array.include.d.ts
+    │  │      │  lib.es2016.d.ts
+    │  │      │  lib.es2016.full.d.ts
+    │  │      │  lib.es2016.intl.d.ts
+    │  │      │  lib.es2017.arraybuffer.d.ts
+    │  │      │  lib.es2017.d.ts
+    │  │      │  lib.es2017.date.d.ts
+    │  │      │  lib.es2017.full.d.ts
+    │  │      │  lib.es2017.intl.d.ts
+    │  │      │  lib.es2017.object.d.ts
+    │  │      │  lib.es2017.sharedmemory.d.ts
+    │  │      │  lib.es2017.string.d.ts
+    │  │      │  lib.es2017.typedarrays.d.ts
+    │  │      │  lib.es2018.asyncgenerator.d.ts
+    │  │      │  lib.es2018.asynciterable.d.ts
+    │  │      │  lib.es2018.d.ts
+    │  │      │  lib.es2018.full.d.ts
+    │  │      │  lib.es2018.intl.d.ts
+    │  │      │  lib.es2018.promise.d.ts
+    │  │      │  lib.es2018.regexp.d.ts
+    │  │      │  lib.es2019.array.d.ts
+    │  │      │  lib.es2019.d.ts
+    │  │      │  lib.es2019.full.d.ts
+    │  │      │  lib.es2019.intl.d.ts
+    │  │      │  lib.es2019.object.d.ts
+    │  │      │  lib.es2019.string.d.ts
+    │  │      │  lib.es2019.symbol.d.ts
+    │  │      │  lib.es2020.bigint.d.ts
+    │  │      │  lib.es2020.d.ts
+    │  │      │  lib.es2020.date.d.ts
+    │  │      │  lib.es2020.full.d.ts
+    │  │      │  lib.es2020.intl.d.ts
+    │  │      │  lib.es2020.number.d.ts
+    │  │      │  lib.es2020.promise.d.ts
+    │  │      │  lib.es2020.sharedmemory.d.ts
+    │  │      │  lib.es2020.string.d.ts
+    │  │      │  lib.es2020.symbol.wellknown.d.ts
+    │  │      │  lib.es2021.d.ts
+    │  │      │  lib.es2021.full.d.ts
+    │  │      │  lib.es2021.intl.d.ts
+    │  │      │  lib.es2021.promise.d.ts
+    │  │      │  lib.es2021.string.d.ts
+    │  │      │  lib.es2021.weakref.d.ts
+    │  │      │  lib.es2022.array.d.ts
+    │  │      │  lib.es2022.d.ts
+    │  │      │  lib.es2022.error.d.ts
+    │  │      │  lib.es2022.full.d.ts
+    │  │      │  lib.es2022.intl.d.ts
+    │  │      │  lib.es2022.object.d.ts
+    │  │      │  lib.es2022.regexp.d.ts
+    │  │      │  lib.es2022.string.d.ts
+    │  │      │  lib.es2023.array.d.ts
+    │  │      │  lib.es2023.collection.d.ts
+    │  │      │  lib.es2023.d.ts
+    │  │      │  lib.es2023.full.d.ts
+    │  │      │  lib.es2023.intl.d.ts
+    │  │      │  lib.es2024.arraybuffer.d.ts
+    │  │      │  lib.es2024.collection.d.ts
+    │  │      │  lib.es2024.d.ts
+    │  │      │  lib.es2024.full.d.ts
+    │  │      │  lib.es2024.object.d.ts
+    │  │      │  lib.es2024.promise.d.ts
+    │  │      │  lib.es2024.regexp.d.ts
+    │  │      │  lib.es2024.sharedmemory.d.ts
+    │  │      │  lib.es2024.string.d.ts
+    │  │      │  lib.es5.d.ts
+    │  │      │  lib.es6.d.ts
+    │  │      │  lib.esnext.array.d.ts
+    │  │      │  lib.esnext.collection.d.ts
+    │  │      │  lib.esnext.d.ts
+    │  │      │  lib.esnext.decorators.d.ts
+    │  │      │  lib.esnext.disposable.d.ts
+    │  │      │  lib.esnext.error.d.ts
+    │  │      │  lib.esnext.float16.d.ts
+    │  │      │  lib.esnext.full.d.ts
+    │  │      │  lib.esnext.intl.d.ts
+    │  │      │  lib.esnext.iterator.d.ts
+    │  │      │  lib.esnext.promise.d.ts
+    │  │      │  lib.esnext.sharedmemory.d.ts
+    │  │      │  lib.scripthost.d.ts
+    │  │      │  lib.webworker.asynciterable.d.ts
+    │  │      │  lib.webworker.d.ts
+    │  │      │  lib.webworker.importscripts.d.ts
+    │  │      │  lib.webworker.iterable.d.ts
+    │  │      │  tsc.js
+    │  │      │  tsserver.js
+    │  │      │  tsserverlibrary.d.ts
+    │  │      │  tsserverlibrary.js
+    │  │      │  typescript.d.ts
+    │  │      │  typescript.js
+    │  │      │  typesMap.json
+    │  │      │  typingsInstaller.js
+    │  │      │  watchGuard.js
+    │  │      │  _tsc.js
+    │  │      │  _tsserver.js
+    │  │      │  _typingsInstaller.js
+    │  │      │  
+    │  │      ├─cs
+    │  │      │      diagnosticMessages.generated.json
+    │  │      │      
+    │  │      ├─de
+    │  │      │      diagnosticMessages.generated.json
+    │  │      │      
+    │  │      ├─es
+    │  │      │      diagnosticMessages.generated.json
+    │  │      │      
+    │  │      ├─fr
+    │  │      │      diagnosticMessages.generated.json
+    │  │      │      
+    │  │      ├─it
+    │  │      │      diagnosticMessages.generated.json
+    │  │      │      
+    │  │      ├─ja
+    │  │      │      diagnosticMessages.generated.json
+    │  │      │      
+    │  │      ├─ko
+    │  │      │      diagnosticMessages.generated.json
+    │  │      │      
+    │  │      ├─pl
+    │  │      │      diagnosticMessages.generated.json
+    │  │      │      
+    │  │      ├─pt-br
+    │  │      │      diagnosticMessages.generated.json
+    │  │      │      
+    │  │      ├─ru
+    │  │      │      diagnosticMessages.generated.json
+    │  │      │      
+    │  │      ├─tr
+    │  │      │      diagnosticMessages.generated.json
+    │  │      │      
+    │  │      ├─zh-cn
+    │  │      │      diagnosticMessages.generated.json
+    │  │      │      
+    │  │      └─zh-tw
+    │  │              diagnosticMessages.generated.json
+    │  │              
+    │  ├─vite
+    │  │  │  client.d.ts
+    │  │  │  index.cjs
+    │  │  │  index.d.cts
+    │  │  │  LICENSE.md
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  
+    │  │  ├─bin
+    │  │  │      openChrome.applescript
+    │  │  │      vite.js
+    │  │  │      
+    │  │  ├─dist
+    │  │  │  ├─client
+    │  │  │  │      client.mjs
+    │  │  │  │      env.mjs
+    │  │  │  │      
+    │  │  │  ├─node
+    │  │  │  │  │  cli.js
+    │  │  │  │  │  constants.js
+    │  │  │  │  │  index.d.ts
+    │  │  │  │  │  index.js
+    │  │  │  │  │  runtime.d.ts
+    │  │  │  │  │  runtime.js
+    │  │  │  │  │  types.d-aGj9QkWt.d.ts
+    │  │  │  │  │  
+    │  │  │  │  └─chunks
+    │  │  │  │          dep-BB45zftN.js
+    │  │  │  │          dep-BK3b2jBa.js
+    │  │  │  │          dep-D-7KCb9p.js
+    │  │  │  │          dep-Dnp7gl8U.js
+    │  │  │  │          dep-IQS-Za7F.js
+    │  │  │  │          
+    │  │  │  └─node-cjs
+    │  │  │          publicUtils.cjs
+    │  │  │          
+    │  │  └─types
+    │  │          customEvent.d.ts
+    │  │          hmrPayload.d.ts
+    │  │          hot.d.ts
+    │  │          import-meta.d.ts
+    │  │          importGlob.d.ts
+    │  │          importMeta.d.ts
+    │  │          metadata.d.ts
+    │  │          package.json
+    │  │          
+    │  ├─vue
+    │  │  │  index.js
+    │  │  │  index.mjs
+    │  │  │  jsx.d.ts
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  
+    │  │  ├─compiler-sfc
+    │  │  │      index.browser.js
+    │  │  │      index.browser.mjs
+    │  │  │      index.d.mts
+    │  │  │      index.d.ts
+    │  │  │      index.js
+    │  │  │      index.mjs
+    │  │  │      package.json
+    │  │  │      register-ts.js
+    │  │  │      
+    │  │  ├─dist
+    │  │  │      vue.cjs.js
+    │  │  │      vue.cjs.prod.js
+    │  │  │      vue.d.mts
+    │  │  │      vue.d.ts
+    │  │  │      vue.esm-browser.js
+    │  │  │      vue.esm-browser.prod.js
+    │  │  │      vue.esm-bundler.js
+    │  │  │      vue.global.js
+    │  │  │      vue.global.prod.js
+    │  │  │      vue.runtime.esm-browser.js
+    │  │  │      vue.runtime.esm-browser.prod.js
+    │  │  │      vue.runtime.esm-bundler.js
+    │  │  │      vue.runtime.global.js
+    │  │  │      vue.runtime.global.prod.js
+    │  │  │      
+    │  │  ├─jsx-runtime
+    │  │  │      index.d.ts
+    │  │  │      index.js
+    │  │  │      index.mjs
+    │  │  │      package.json
+    │  │  │      
+    │  │  └─server-renderer
+    │  │          index.d.mts
+    │  │          index.d.ts
+    │  │          index.js
+    │  │          index.mjs
+    │  │          package.json
+    │  │          
+    │  ├─vue-demi
+    │  │  │  LICENSE
+    │  │  │  package.json
+    │  │  │  README.md
+    │  │  │  
+    │  │  ├─bin
+    │  │  │      vue-demi-fix.js
+    │  │  │      vue-demi-switch.js
+    │  │  │      
+    │  │  ├─lib
+    │  │  │  │  index.cjs
+    │  │  │  │  index.d.ts
+    │  │  │  │  index.iife.js
+    │  │  │  │  index.mjs
+    │  │  │  │  
+    │  │  │  ├─v2
+    │  │  │  │      index.cjs
+    │  │  │  │      index.d.ts
+    │  │  │  │      index.mjs
+    │  │  │  │      
+    │  │  │  ├─v2.7
+    │  │  │  │      index.cjs
+    │  │  │  │      index.d.ts
+    │  │  │  │      index.mjs
+    │  │  │  │      
+    │  │  │  └─v3
+    │  │  │          index.cjs
+    │  │  │          index.d.ts
+    │  │  │          index.mjs
+    │  │  │          
+    │  │  └─scripts
+    │  │          postinstall.js
+    │  │          switch-cli.js
+    │  │          utils.js
+    │  │          
+    │  └─vue-router
+    │      │  index.js
+    │      │  LICENSE
+    │      │  package.json
+    │      │  vue-router-auto-resolver.d.mts
+    │      │  vue-router-auto-routes.d.ts
+    │      │  vue-router-auto.d.ts
+    │      │  vue-router.node.mjs
+    │      │  
+    │      ├─dist
+    │      │  │  devtools-EWN81iOl.mjs
+    │      │  │  router-CWoNjPRp.d.mts
+    │      │  │  vue-router.cjs
+    │      │  │  vue-router.d.mts
+    │      │  │  vue-router.esm-browser.js
+    │      │  │  vue-router.esm-browser.prod.js
+    │      │  │  vue-router.esm-bundler.js
+    │      │  │  vue-router.global.js
+    │      │  │  vue-router.global.prod.js
+    │      │  │  vue-router.mjs
+    │      │  │  vue-router.prod.cjs
+    │      │  │  
+    │      │  └─experimental
+    │      │          index.d.mts
+    │      │          index.mjs
+    │      │          
+    │      └─vetur
+    │              attributes.json
+    │              tags.json
+    │              
+    └─packages
+        ├─app
+        │  │  .gitignore
+        │  │  .npmrc
+        │  │  git-project-structure.txt
+        │  │  index.html
+        │  │  jsconfig.json
+        │  │  manifest.json
+        │  │  package-lock.json
+        │  │  package.json
+        │  │  pages.json
+        │  │  pnpm-lock.yaml
+        │  │  README.md
+        │  │  tsconfig.json
+        │  │  tsconfig.node.json
+        │  │  unh.config.js
+        │  │  uni.scss
+        │  │  vite.config.js
+        │  │  
+        │  ├─.vscode
+        │  │      extensions.json
+        │  │      settings.json
+        │  │      
+        │  ├─dist
+        │  │  └─dev
+        │  │      └─mp-weixin
+        │  │          │  app.js
+        │  │          │  app.json
+        │  │          │  App.wxml
+        │  │          │  app.wxss
+        │  │          │  project.config.json
+        │  │          │  theme.json
+        │  │          │  
+        │  │          ├─common
+        │  │          │  │  vendor.js
+        │  │          │  │  
+        │  │          │  └─store
+        │  │          │          user.js
+        │  │          │          
+        │  │          ├─modules
+        │  │          │  ├─ecard
+        │  │          │  │      index.js
+        │  │          │  │      
+        │  │          │  ├─parttime
+        │  │          │  │      index.js
+        │  │          │  │      
+        │  │          │  ├─schedule
+        │  │          │  │      index.js
+        │  │          │  │      
+        │  │          │  └─secondhand
+        │  │          │          index.js
+        │  │          │          
+        │  │          ├─pages
+        │  │          │  ├─403
+        │  │          │  │      index.js
+        │  │          │  │      index.json
+        │  │          │  │      index.wxml
+        │  │          │  │      index.wxss
+        │  │          │  │      
+        │  │          │  ├─auth
+        │  │          │  │      index.js
+        │  │          │  │      index.json
+        │  │          │  │      index.wxml
+        │  │          │  │      index.wxss
+        │  │          │  │      
+        │  │          │  ├─ecard
+        │  │          │  │      index.js
+        │  │          │  │      index.json
+        │  │          │  │      index.wxml
+        │  │          │  │      index.wxss
+        │  │          │  │      
+        │  │          │  ├─forget-password
+        │  │          │  │      index.js
+        │  │          │  │      index.json
+        │  │          │  │      index.wxml
+        │  │          │  │      index.wxss
+        │  │          │  │      
+        │  │          │  ├─index
+        │  │          │  │      index.js
+        │  │          │  │      index.json
+        │  │          │  │      index.wxml
+        │  │          │  │      index.wxss
+        │  │          │  │      
+        │  │          │  ├─login
+        │  │          │  │      index.js
+        │  │          │  │      index.json
+        │  │          │  │      index.wxml
+        │  │          │  │      index.wxss
+        │  │          │  │      
+        │  │          │  ├─more
+        │  │          │  │      index.js
+        │  │          │  │      index.json
+        │  │          │  │      index.wxml
+        │  │          │  │      index.wxss
+        │  │          │  │      
+        │  │          │  ├─parttime
+        │  │          │  │  │  index.js
+        │  │          │  │  │  index.json
+        │  │          │  │  │  index.wxml
+        │  │          │  │  │  index.wxss
+        │  │          │  │  │  
+        │  │          │  │  ├─detail
+        │  │          │  │  │      index.js
+        │  │          │  │  │      index.json
+        │  │          │  │  │      index.wxml
+        │  │          │  │  │      index.wxss
+        │  │          │  │  │      
+        │  │          │  │  └─publish
+        │  │          │  │          index.js
+        │  │          │  │          index.json
+        │  │          │  │          index.wxml
+        │  │          │  │          index.wxss
+        │  │          │  │          
+        │  │          │  ├─profile
+        │  │          │  │      index.js
+        │  │          │  │      index.json
+        │  │          │  │      index.wxml
+        │  │          │  │      index.wxss
+        │  │          │  │      
+        │  │          │  ├─register
+        │  │          │  │      index.js
+        │  │          │  │      index.json
+        │  │          │  │      index.wxml
+        │  │          │  │      index.wxss
+        │  │          │  │      
+        │  │          │  ├─schedule
+        │  │          │  │  │  index.js
+        │  │          │  │  │  index.json
+        │  │          │  │  │  index.wxml
+        │  │          │  │  │  index.wxss
+        │  │          │  │  │  
+        │  │          │  │  └─add
+        │  │          │  │          index.js
+        │  │          │  │          index.json
+        │  │          │  │          index.wxml
+        │  │          │  │          index.wxss
+        │  │          │  │          
+        │  │          │  └─secondhand
+        │  │          │      │  index.js
+        │  │          │      │  index.json
+        │  │          │      │  index.wxml
+        │  │          │      │  index.wxss
+        │  │          │      │  
+        │  │          │      ├─detail
+        │  │          │      │      index.js
+        │  │          │      │      index.json
+        │  │          │      │      index.wxml
+        │  │          │      │      index.wxss
+        │  │          │      │      
+        │  │          │      └─publish
+        │  │          │              index.js
+        │  │          │              index.json
+        │  │          │              index.wxml
+        │  │          │              index.wxss
+        │  │          │              
+        │  │          ├─router
+        │  │          │      index.js
+        │  │          │      
+        │  │          ├─static
+        │  │          │      github.svg
+        │  │          │      logo.svg
+        │  │          │      tab-ecard-active.png
+        │  │          │      tab-ecard.png
+        │  │          │      tab-home-active.png
+        │  │          │      tab-home.png
+        │  │          │      tab-profile-active.png
+        │  │          │      tab-profile.png
+        │  │          │      tab-schedule-active.png
+        │  │          │      tab-schedule.png
+        │  │          │      tab-secondhand-active.png
+        │  │          │      tab-secondhand.png
+        │  │          │      vite.png
+        │  │          │      
+        │  │          └─stores
+        │  │                  user.js
+        │  │                  
+        │  ├─node_modules
+        │  │  │  .package-lock.json
+        │  │  │  
+        │  │  ├─.bin
+        │  │  │      nanoid
+        │  │  │      nanoid.cmd
+        │  │  │      nanoid.ps1
+        │  │  │      parser
+        │  │  │      parser.cmd
+        │  │  │      parser.ps1
+        │  │  │      tsc
+        │  │  │      tsc.cmd
+        │  │  │      tsc.ps1
+        │  │  │      tsserver
+        │  │  │      tsserver.cmd
+        │  │  │      tsserver.ps1
+        │  │  │      vue-demi-fix
+        │  │  │      vue-demi-fix.cmd
+        │  │  │      vue-demi-fix.ps1
+        │  │  │      vue-demi-switch
+        │  │  │      vue-demi-switch.cmd
+        │  │  │      vue-demi-switch.ps1
+        │  │  │      
+        │  │  ├─@babel
+        │  │  │  ├─helper-string-parser
+        │  │  │  │  │  LICENSE
+        │  │  │  │  │  package.json
+        │  │  │  │  │  README.md
+        │  │  │  │  │  
+        │  │  │  │  └─lib
+        │  │  │  │          index.js
+        │  │  │  │          index.js.map
+        │  │  │  │          
+        │  │  │  ├─helper-validator-identifier
+        │  │  │  │  │  LICENSE
+        │  │  │  │  │  package.json
+        │  │  │  │  │  README.md
+        │  │  │  │  │  
+        │  │  │  │  └─lib
+        │  │  │  │          identifier.js
+        │  │  │  │          identifier.js.map
+        │  │  │  │          index.js
+        │  │  │  │          index.js.map
+        │  │  │  │          keyword.js
+        │  │  │  │          keyword.js.map
+        │  │  │  │          
+        │  │  │  ├─parser
+        │  │  │  │  │  CHANGELOG.md
+        │  │  │  │  │  LICENSE
+        │  │  │  │  │  package.json
+        │  │  │  │  │  README.md
+        │  │  │  │  │  
+        │  │  │  │  ├─bin
+        │  │  │  │  │      babel-parser.js
+        │  │  │  │  │      
+        │  │  │  │  ├─lib
+        │  │  │  │  │      index.js
+        │  │  │  │  │      index.js.map
+        │  │  │  │  │      
+        │  │  │  │  └─typings
+        │  │  │  │          babel-parser.d.ts
+        │  │  │  │          
+        │  │  │  └─types
+        │  │  │      │  LICENSE
+        │  │  │      │  package.json
+        │  │  │      │  README.md
+        │  │  │      │  
+        │  │  │      └─lib
+        │  │  │          │  index-legacy.d.ts
+        │  │  │          │  index.d.ts
+        │  │  │          │  index.js
+        │  │  │          │  index.js.flow
+        │  │  │          │  index.js.map
+        │  │  │          │  
+        │  │  │          ├─asserts
+        │  │  │          │  │  assertNode.js
+        │  │  │          │  │  assertNode.js.map
+        │  │  │          │  │  
+        │  │  │          │  └─generated
+        │  │  │          │          index.js
+        │  │  │          │          index.js.map
+        │  │  │          │          
+        │  │  │          ├─ast-types
+        │  │  │          │  └─generated
+        │  │  │          │          index.js
+        │  │  │          │          index.js.map
+        │  │  │          │          
+        │  │  │          ├─builders
+        │  │  │          │  │  productions.js
+        │  │  │          │  │  productions.js.map
+        │  │  │          │  │  validateNode.js
+        │  │  │          │  │  validateNode.js.map
+        │  │  │          │  │  
+        │  │  │          │  ├─flow
+        │  │  │          │  │      createFlowUnionType.js
+        │  │  │          │  │      createFlowUnionType.js.map
+        │  │  │          │  │      createTypeAnnotationBasedOnTypeof.js
+        │  │  │          │  │      createTypeAnnotationBasedOnTypeof.js.map
+        │  │  │          │  │      
+        │  │  │          │  ├─generated
+        │  │  │          │  │      index.js
+        │  │  │          │  │      index.js.map
+        │  │  │          │  │      lowercase.js
+        │  │  │          │  │      lowercase.js.map
+        │  │  │          │  │      uppercase.js
+        │  │  │          │  │      uppercase.js.map
+        │  │  │          │  │      
+        │  │  │          │  ├─react
+        │  │  │          │  │      buildChildren.js
+        │  │  │          │  │      buildChildren.js.map
+        │  │  │          │  │      
+        │  │  │          │  └─typescript
+        │  │  │          │          createTSUnionType.js
+        │  │  │          │          createTSUnionType.js.map
+        │  │  │          │          
+        │  │  │          ├─clone
+        │  │  │          │      clone.js
+        │  │  │          │      clone.js.map
+        │  │  │          │      cloneDeep.js
+        │  │  │          │      cloneDeep.js.map
+        │  │  │          │      cloneDeepWithoutLoc.js
+        │  │  │          │      cloneDeepWithoutLoc.js.map
+        │  │  │          │      cloneNode.js
+        │  │  │          │      cloneNode.js.map
+        │  │  │          │      cloneWithoutLoc.js
+        │  │  │          │      cloneWithoutLoc.js.map
+        │  │  │          │      
+        │  │  │          ├─comments
+        │  │  │          │      addComment.js
+        │  │  │          │      addComment.js.map
+        │  │  │          │      addComments.js
+        │  │  │          │      addComments.js.map
+        │  │  │          │      inheritInnerComments.js
+        │  │  │          │      inheritInnerComments.js.map
+        │  │  │          │      inheritLeadingComments.js
+        │  │  │          │      inheritLeadingComments.js.map
+        │  │  │          │      inheritsComments.js
+        │  │  │          │      inheritsComments.js.map
+        │  │  │          │      inheritTrailingComments.js
+        │  │  │          │      inheritTrailingComments.js.map
+        │  │  │          │      removeComments.js
+        │  │  │          │      removeComments.js.map
+        │  │  │          │      
+        │  │  │          ├─constants
+        │  │  │          │  │  index.js
+        │  │  │          │  │  index.js.map
+        │  │  │          │  │  
+        │  │  │          │  └─generated
+        │  │  │          │          index.js
+        │  │  │          │          index.js.map
+        │  │  │          │          
+        │  │  │          ├─converters
+        │  │  │          │      ensureBlock.js
+        │  │  │          │      ensureBlock.js.map
+        │  │  │          │      gatherSequenceExpressions.js
+        │  │  │          │      gatherSequenceExpressions.js.map
+        │  │  │          │      toBindingIdentifierName.js
+        │  │  │          │      toBindingIdentifierName.js.map
+        │  │  │          │      toBlock.js
+        │  │  │          │      toBlock.js.map
+        │  │  │          │      toComputedKey.js
+        │  │  │          │      toComputedKey.js.map
+        │  │  │          │      toExpression.js
+        │  │  │          │      toExpression.js.map
+        │  │  │          │      toIdentifier.js
+        │  │  │          │      toIdentifier.js.map
+        │  │  │          │      toKeyAlias.js
+        │  │  │          │      toKeyAlias.js.map
+        │  │  │          │      toSequenceExpression.js
+        │  │  │          │      toSequenceExpression.js.map
+        │  │  │          │      toStatement.js
+        │  │  │          │      toStatement.js.map
+        │  │  │          │      valueToNode.js
+        │  │  │          │      valueToNode.js.map
+        │  │  │          │      
+        │  │  │          ├─definitions
+        │  │  │          │      core.js
+        │  │  │          │      core.js.map
+        │  │  │          │      deprecated-aliases.js
+        │  │  │          │      deprecated-aliases.js.map
+        │  │  │          │      experimental.js
+        │  │  │          │      experimental.js.map
+        │  │  │          │      flow.js
+        │  │  │          │      flow.js.map
+        │  │  │          │      index.js
+        │  │  │          │      index.js.map
+        │  │  │          │      jsx.js
+        │  │  │          │      jsx.js.map
+        │  │  │          │      misc.js
+        │  │  │          │      misc.js.map
+        │  │  │          │      placeholders.js
+        │  │  │          │      placeholders.js.map
+        │  │  │          │      typescript.js
+        │  │  │          │      typescript.js.map
+        │  │  │          │      utils.js
+        │  │  │          │      utils.js.map
+        │  │  │          │      
+        │  │  │          ├─modifications
+        │  │  │          │  │  appendToMemberExpression.js
+        │  │  │          │  │  appendToMemberExpression.js.map
+        │  │  │          │  │  inherits.js
+        │  │  │          │  │  inherits.js.map
+        │  │  │          │  │  prependToMemberExpression.js
+        │  │  │          │  │  prependToMemberExpression.js.map
+        │  │  │          │  │  removeProperties.js
+        │  │  │          │  │  removeProperties.js.map
+        │  │  │          │  │  removePropertiesDeep.js
+        │  │  │          │  │  removePropertiesDeep.js.map
+        │  │  │          │  │  
+        │  │  │          │  ├─flow
+        │  │  │          │  │      removeTypeDuplicates.js
+        │  │  │          │  │      removeTypeDuplicates.js.map
+        │  │  │          │  │      
+        │  │  │          │  └─typescript
+        │  │  │          │          removeTypeDuplicates.js
+        │  │  │          │          removeTypeDuplicates.js.map
+        │  │  │          │          
+        │  │  │          ├─retrievers
+        │  │  │          │      getAssignmentIdentifiers.js
+        │  │  │          │      getAssignmentIdentifiers.js.map
+        │  │  │          │      getBindingIdentifiers.js
+        │  │  │          │      getBindingIdentifiers.js.map
+        │  │  │          │      getFunctionName.js
+        │  │  │          │      getFunctionName.js.map
+        │  │  │          │      getOuterBindingIdentifiers.js
+        │  │  │          │      getOuterBindingIdentifiers.js.map
+        │  │  │          │      
+        │  │  │          ├─traverse
+        │  │  │          │      traverse.js
+        │  │  │          │      traverse.js.map
+        │  │  │          │      traverseFast.js
+        │  │  │          │      traverseFast.js.map
+        │  │  │          │      
+        │  │  │          ├─utils
+        │  │  │          │  │  deprecationWarning.js
+        │  │  │          │  │  deprecationWarning.js.map
+        │  │  │          │  │  inherit.js
+        │  │  │          │  │  inherit.js.map
+        │  │  │          │  │  shallowEqual.js
+        │  │  │          │  │  shallowEqual.js.map
+        │  │  │          │  │  
+        │  │  │          │  └─react
+        │  │  │          │          cleanJSXElementLiteralChild.js
+        │  │  │          │          cleanJSXElementLiteralChild.js.map
+        │  │  │          │          
+        │  │  │          └─validators
+        │  │  │              │  buildMatchMemberExpression.js
+        │  │  │              │  buildMatchMemberExpression.js.map
+        │  │  │              │  is.js
+        │  │  │              │  is.js.map
+        │  │  │              │  isBinding.js
+        │  │  │              │  isBinding.js.map
+        │  │  │              │  isBlockScoped.js
+        │  │  │              │  isBlockScoped.js.map
+        │  │  │              │  isImmutable.js
+        │  │  │              │  isImmutable.js.map
+        │  │  │              │  isLet.js
+        │  │  │              │  isLet.js.map
+        │  │  │              │  isNode.js
+        │  │  │              │  isNode.js.map
+        │  │  │              │  isNodesEquivalent.js
+        │  │  │              │  isNodesEquivalent.js.map
+        │  │  │              │  isPlaceholderType.js
+        │  │  │              │  isPlaceholderType.js.map
+        │  │  │              │  isReferenced.js
+        │  │  │              │  isReferenced.js.map
+        │  │  │              │  isScope.js
+        │  │  │              │  isScope.js.map
+        │  │  │              │  isSpecifierDefault.js
+        │  │  │              │  isSpecifierDefault.js.map
+        │  │  │              │  isType.js
+        │  │  │              │  isType.js.map
+        │  │  │              │  isValidES3Identifier.js
+        │  │  │              │  isValidES3Identifier.js.map
+        │  │  │              │  isValidIdentifier.js
+        │  │  │              │  isValidIdentifier.js.map
+        │  │  │              │  isVar.js
+        │  │  │              │  isVar.js.map
+        │  │  │              │  matchesPattern.js
+        │  │  │              │  matchesPattern.js.map
+        │  │  │              │  validate.js
+        │  │  │              │  validate.js.map
+        │  │  │              │  
+        │  │  │              ├─generated
+        │  │  │              │      index.js
+        │  │  │              │      index.js.map
+        │  │  │              │      
+        │  │  │              └─react
+        │  │  │                      isCompatTag.js
+        │  │  │                      isCompatTag.js.map
+        │  │  │                      isReactComponent.js
+        │  │  │                      isReactComponent.js.map
+        │  │  │                      
+        │  │  ├─@jridgewell
+        │  │  │  └─sourcemap-codec
+        │  │  │      │  LICENSE
+        │  │  │      │  package.json
+        │  │  │      │  README.md
+        │  │  │      │  
+        │  │  │      ├─dist
+        │  │  │      │      sourcemap-codec.mjs
+        │  │  │      │      sourcemap-codec.mjs.map
+        │  │  │      │      sourcemap-codec.umd.js
+        │  │  │      │      sourcemap-codec.umd.js.map
+        │  │  │      │      
+        │  │  │      ├─src
+        │  │  │      │      scopes.ts
+        │  │  │      │      sourcemap-codec.ts
+        │  │  │      │      strings.ts
+        │  │  │      │      vlq.ts
+        │  │  │      │      
+        │  │  │      └─types
+        │  │  │              scopes.d.cts
+        │  │  │              scopes.d.cts.map
+        │  │  │              scopes.d.mts
+        │  │  │              scopes.d.mts.map
+        │  │  │              sourcemap-codec.d.cts
+        │  │  │              sourcemap-codec.d.cts.map
+        │  │  │              sourcemap-codec.d.mts
+        │  │  │              sourcemap-codec.d.mts.map
+        │  │  │              strings.d.cts
+        │  │  │              strings.d.cts.map
+        │  │  │              strings.d.mts
+        │  │  │              strings.d.mts.map
+        │  │  │              vlq.d.cts
+        │  │  │              vlq.d.cts.map
+        │  │  │              vlq.d.mts
+        │  │  │              vlq.d.mts.map
+        │  │  │              
+        │  │  ├─@vue
+        │  │  │  ├─compiler-core
+        │  │  │  │  │  index.js
+        │  │  │  │  │  LICENSE
+        │  │  │  │  │  package.json
+        │  │  │  │  │  README.md
+        │  │  │  │  │  
+        │  │  │  │  └─dist
+        │  │  │  │          compiler-core.cjs.js
+        │  │  │  │          compiler-core.cjs.prod.js
+        │  │  │  │          compiler-core.d.ts
+        │  │  │  │          compiler-core.esm-bundler.js
+        │  │  │  │          
+        │  │  │  ├─compiler-dom
+        │  │  │  │  │  index.js
+        │  │  │  │  │  LICENSE
+        │  │  │  │  │  package.json
+        │  │  │  │  │  README.md
+        │  │  │  │  │  
+        │  │  │  │  └─dist
+        │  │  │  │          compiler-dom.cjs.js
+        │  │  │  │          compiler-dom.cjs.prod.js
+        │  │  │  │          compiler-dom.d.ts
+        │  │  │  │          compiler-dom.esm-browser.js
+        │  │  │  │          compiler-dom.esm-browser.prod.js
+        │  │  │  │          compiler-dom.esm-bundler.js
+        │  │  │  │          compiler-dom.global.js
+        │  │  │  │          compiler-dom.global.prod.js
+        │  │  │  │          
+        │  │  │  ├─compiler-sfc
+        │  │  │  │  │  LICENSE
+        │  │  │  │  │  package.json
+        │  │  │  │  │  README.md
+        │  │  │  │  │  
+        │  │  │  │  └─dist
+        │  │  │  │          compiler-sfc.cjs.js
+        │  │  │  │          compiler-sfc.d.ts
+        │  │  │  │          compiler-sfc.esm-browser.js
+        │  │  │  │          
+        │  │  │  ├─compiler-ssr
+        │  │  │  │  │  LICENSE
+        │  │  │  │  │  package.json
+        │  │  │  │  │  README.md
+        │  │  │  │  │  
+        │  │  │  │  └─dist
+        │  │  │  │          compiler-ssr.cjs.js
+        │  │  │  │          compiler-ssr.d.ts
+        │  │  │  │          
+        │  │  │  ├─devtools-api
+        │  │  │  │  │  package.json
+        │  │  │  │  │  
+        │  │  │  │  └─lib
+        │  │  │  │      ├─cjs
+        │  │  │  │      │  │  const.js
+        │  │  │  │      │  │  env.js
+        │  │  │  │      │  │  index.js
+        │  │  │  │      │  │  plugin.js
+        │  │  │  │      │  │  proxy.js
+        │  │  │  │      │  │  time.js
+        │  │  │  │      │  │  
+        │  │  │  │      │  └─api
+        │  │  │  │      │          api.js
+        │  │  │  │      │          app.js
+        │  │  │  │      │          component.js
+        │  │  │  │      │          context.js
+        │  │  │  │      │          hooks.js
+        │  │  │  │      │          index.js
+        │  │  │  │      │          util.js
+        │  │  │  │      │          
+        │  │  │  │      └─esm
+        │  │  │  │          │  const.d.ts
+        │  │  │  │          │  const.js
+        │  │  │  │          │  env.d.ts
+        │  │  │  │          │  env.js
+        │  │  │  │          │  index.d.ts
+        │  │  │  │          │  index.js
+        │  │  │  │          │  plugin.d.ts
+        │  │  │  │          │  plugin.js
+        │  │  │  │          │  proxy.d.ts
+        │  │  │  │          │  proxy.js
+        │  │  │  │          │  time.d.ts
+        │  │  │  │          │  time.js
+        │  │  │  │          │  
+        │  │  │  │          └─api
+        │  │  │  │                  api.d.ts
+        │  │  │  │                  api.js
+        │  │  │  │                  app.d.ts
+        │  │  │  │                  app.js
+        │  │  │  │                  component.d.ts
+        │  │  │  │                  component.js
+        │  │  │  │                  context.d.ts
+        │  │  │  │                  context.js
+        │  │  │  │                  hooks.d.ts
+        │  │  │  │                  hooks.js
+        │  │  │  │                  index.d.ts
+        │  │  │  │                  index.js
+        │  │  │  │                  util.d.ts
+        │  │  │  │                  util.js
+        │  │  │  │                  
+        │  │  │  ├─reactivity
+        │  │  │  │  │  index.js
+        │  │  │  │  │  LICENSE
+        │  │  │  │  │  package.json
+        │  │  │  │  │  README.md
+        │  │  │  │  │  
+        │  │  │  │  └─dist
+        │  │  │  │          reactivity.cjs.js
+        │  │  │  │          reactivity.cjs.prod.js
+        │  │  │  │          reactivity.d.ts
+        │  │  │  │          reactivity.esm-browser.js
+        │  │  │  │          reactivity.esm-browser.prod.js
+        │  │  │  │          reactivity.esm-bundler.js
+        │  │  │  │          reactivity.global.js
+        │  │  │  │          reactivity.global.prod.js
+        │  │  │  │          
+        │  │  │  ├─runtime-core
+        │  │  │  │  │  index.js
+        │  │  │  │  │  LICENSE
+        │  │  │  │  │  package.json
+        │  │  │  │  │  README.md
+        │  │  │  │  │  
+        │  │  │  │  └─dist
+        │  │  │  │          runtime-core.cjs.js
+        │  │  │  │          runtime-core.cjs.prod.js
+        │  │  │  │          runtime-core.d.ts
+        │  │  │  │          runtime-core.esm-bundler.js
+        │  │  │  │          
+        │  │  │  ├─runtime-dom
+        │  │  │  │  │  index.js
+        │  │  │  │  │  LICENSE
+        │  │  │  │  │  package.json
+        │  │  │  │  │  README.md
+        │  │  │  │  │  
+        │  │  │  │  └─dist
+        │  │  │  │          runtime-dom.cjs.js
+        │  │  │  │          runtime-dom.cjs.prod.js
+        │  │  │  │          runtime-dom.d.ts
+        │  │  │  │          runtime-dom.esm-browser.js
+        │  │  │  │          runtime-dom.esm-browser.prod.js
+        │  │  │  │          runtime-dom.esm-bundler.js
+        │  │  │  │          runtime-dom.global.js
+        │  │  │  │          runtime-dom.global.prod.js
+        │  │  │  │          
+        │  │  │  ├─server-renderer
+        │  │  │  │  │  index.js
+        │  │  │  │  │  LICENSE
+        │  │  │  │  │  package.json
+        │  │  │  │  │  README.md
+        │  │  │  │  │  
+        │  │  │  │  └─dist
+        │  │  │  │          server-renderer.cjs.js
+        │  │  │  │          server-renderer.cjs.prod.js
+        │  │  │  │          server-renderer.d.ts
+        │  │  │  │          server-renderer.esm-browser.js
+        │  │  │  │          server-renderer.esm-browser.prod.js
+        │  │  │  │          server-renderer.esm-bundler.js
+        │  │  │  │          
+        │  │  │  └─shared
+        │  │  │      │  index.js
+        │  │  │      │  LICENSE
+        │  │  │      │  package.json
+        │  │  │      │  README.md
+        │  │  │      │  
+        │  │  │      └─dist
+        │  │  │              shared.cjs.js
+        │  │  │              shared.cjs.prod.js
+        │  │  │              shared.d.ts
+        │  │  │              shared.esm-bundler.js
+        │  │  │              
+        │  │  ├─csstype
+        │  │  │      index.d.ts
+        │  │  │      index.js.flow
+        │  │  │      LICENSE
+        │  │  │      package.json
+        │  │  │      README.md
+        │  │  │      
+        │  │  ├─entities
+        │  │  │  │  LICENSE
+        │  │  │  │  package.json
+        │  │  │  │  readme.md
+        │  │  │  │  
+        │  │  │  └─lib
+        │  │  │      │  decode.d.ts
+        │  │  │      │  decode.d.ts.map
+        │  │  │      │  decode.js
+        │  │  │      │  decode.js.map
+        │  │  │      │  decode_codepoint.d.ts
+        │  │  │      │  decode_codepoint.d.ts.map
+        │  │  │      │  decode_codepoint.js
+        │  │  │      │  decode_codepoint.js.map
+        │  │  │      │  encode.d.ts
+        │  │  │      │  encode.d.ts.map
+        │  │  │      │  encode.js
+        │  │  │      │  encode.js.map
+        │  │  │      │  escape.d.ts
+        │  │  │      │  escape.d.ts.map
+        │  │  │      │  escape.js
+        │  │  │      │  escape.js.map
+        │  │  │      │  index.d.ts
+        │  │  │      │  index.d.ts.map
+        │  │  │      │  index.js
+        │  │  │      │  index.js.map
+        │  │  │      │  
+        │  │  │      ├─esm
+        │  │  │      │  │  decode.d.ts
+        │  │  │      │  │  decode.d.ts.map
+        │  │  │      │  │  decode.js
+        │  │  │      │  │  decode.js.map
+        │  │  │      │  │  decode_codepoint.d.ts
+        │  │  │      │  │  decode_codepoint.d.ts.map
+        │  │  │      │  │  decode_codepoint.js
+        │  │  │      │  │  decode_codepoint.js.map
+        │  │  │      │  │  encode.d.ts
+        │  │  │      │  │  encode.d.ts.map
+        │  │  │      │  │  encode.js
+        │  │  │      │  │  encode.js.map
+        │  │  │      │  │  escape.d.ts
+        │  │  │      │  │  escape.d.ts.map
+        │  │  │      │  │  escape.js
+        │  │  │      │  │  escape.js.map
+        │  │  │      │  │  index.d.ts
+        │  │  │      │  │  index.d.ts.map
+        │  │  │      │  │  index.js
+        │  │  │      │  │  index.js.map
+        │  │  │      │  │  package.json
+        │  │  │      │  │  
+        │  │  │      │  └─generated
+        │  │  │      │          decode-data-html.d.ts
+        │  │  │      │          decode-data-html.d.ts.map
+        │  │  │      │          decode-data-html.js
+        │  │  │      │          decode-data-html.js.map
+        │  │  │      │          decode-data-xml.d.ts
+        │  │  │      │          decode-data-xml.d.ts.map
+        │  │  │      │          decode-data-xml.js
+        │  │  │      │          decode-data-xml.js.map
+        │  │  │      │          encode-html.d.ts
+        │  │  │      │          encode-html.d.ts.map
+        │  │  │      │          encode-html.js
+        │  │  │      │          encode-html.js.map
+        │  │  │      │          
+        │  │  │      └─generated
+        │  │  │              decode-data-html.d.ts
+        │  │  │              decode-data-html.d.ts.map
+        │  │  │              decode-data-html.js
+        │  │  │              decode-data-html.js.map
+        │  │  │              decode-data-xml.d.ts
+        │  │  │              decode-data-xml.d.ts.map
+        │  │  │              decode-data-xml.js
+        │  │  │              decode-data-xml.js.map
+        │  │  │              encode-html.d.ts
+        │  │  │              encode-html.d.ts.map
+        │  │  │              encode-html.js
+        │  │  │              encode-html.js.map
+        │  │  │              
+        │  │  ├─estree-walker
+        │  │  │  │  CHANGELOG.md
+        │  │  │  │  LICENSE
+        │  │  │  │  package.json
+        │  │  │  │  README.md
+        │  │  │  │  
+        │  │  │  ├─dist
+        │  │  │  │  ├─esm
+        │  │  │  │  │      estree-walker.js
+        │  │  │  │  │      package.json
+        │  │  │  │  │      
+        │  │  │  │  └─umd
+        │  │  │  │          estree-walker.js
+        │  │  │  │          
+        │  │  │  ├─src
+        │  │  │  │      async.js
+        │  │  │  │      index.js
+        │  │  │  │      package.json
+        │  │  │  │      sync.js
+        │  │  │  │      walker.js
+        │  │  │  │      
+        │  │  │  └─types
+        │  │  │          async.d.ts
+        │  │  │          index.d.ts
+        │  │  │          sync.d.ts
+        │  │  │          tsconfig.tsbuildinfo
+        │  │  │          walker.d.ts
+        │  │  │          
+        │  │  ├─magic-string
+        │  │  │  │  LICENSE
+        │  │  │  │  package.json
+        │  │  │  │  README.md
+        │  │  │  │  
+        │  │  │  └─dist
+        │  │  │          magic-string.cjs.d.ts
+        │  │  │          magic-string.cjs.js
+        │  │  │          magic-string.cjs.js.map
+        │  │  │          magic-string.es.d.mts
+        │  │  │          magic-string.es.mjs
+        │  │  │          magic-string.es.mjs.map
+        │  │  │          magic-string.umd.js
+        │  │  │          magic-string.umd.js.map
+        │  │  │          
+        │  │  ├─nanoid
+        │  │  │  │  index.browser.cjs
+        │  │  │  │  index.browser.js
+        │  │  │  │  index.cjs
+        │  │  │  │  index.d.cts
+        │  │  │  │  index.d.ts
+        │  │  │  │  index.js
+        │  │  │  │  LICENSE
+        │  │  │  │  nanoid.js
+        │  │  │  │  package.json
+        │  │  │  │  README.md
+        │  │  │  │  
+        │  │  │  ├─async
+        │  │  │  │      index.browser.cjs
+        │  │  │  │      index.browser.js
+        │  │  │  │      index.cjs
+        │  │  │  │      index.d.ts
+        │  │  │  │      index.js
+        │  │  │  │      index.native.js
+        │  │  │  │      package.json
+        │  │  │  │      
+        │  │  │  ├─bin
+        │  │  │  │      nanoid.cjs
+        │  │  │  │      
+        │  │  │  ├─non-secure
+        │  │  │  │      index.cjs
+        │  │  │  │      index.d.ts
+        │  │  │  │      index.js
+        │  │  │  │      package.json
+        │  │  │  │      
+        │  │  │  └─url-alphabet
+        │  │  │          index.cjs
+        │  │  │          index.js
+        │  │  │          package.json
+        │  │  │          
+        │  │  ├─picocolors
+        │  │  │      LICENSE
+        │  │  │      package.json
+        │  │  │      picocolors.browser.js
+        │  │  │      picocolors.d.ts
+        │  │  │      picocolors.js
+        │  │  │      README.md
+        │  │  │      types.d.ts
+        │  │  │      
+        │  │  ├─pinia
+        │  │  │  │  index.cjs
+        │  │  │  │  index.js
+        │  │  │  │  LICENSE
+        │  │  │  │  package.json
+        │  │  │  │  README.md
+        │  │  │  │  
+        │  │  │  └─dist
+        │  │  │          pinia.cjs
+        │  │  │          pinia.d.ts
+        │  │  │          pinia.esm-browser.js
+        │  │  │          pinia.iife.js
+        │  │  │          pinia.iife.prod.js
+        │  │  │          pinia.mjs
+        │  │  │          pinia.prod.cjs
+        │  │  │          
+        │  │  ├─postcss
+        │  │  │  │  LICENSE
+        │  │  │  │  package.json
+        │  │  │  │  README.md
+        │  │  │  │  
+        │  │  │  └─lib
+        │  │  │          at-rule.d.ts
+        │  │  │          at-rule.js
+        │  │  │          comment.d.ts
+        │  │  │          comment.js
+        │  │  │          container.d.ts
+        │  │  │          container.js
+        │  │  │          css-syntax-error.d.ts
+        │  │  │          css-syntax-error.js
+        │  │  │          declaration.d.ts
+        │  │  │          declaration.js
+        │  │  │          document.d.ts
+        │  │  │          document.js
+        │  │  │          fromJSON.d.ts
+        │  │  │          fromJSON.js
+        │  │  │          input.d.ts
+        │  │  │          input.js
+        │  │  │          lazy-result.d.ts
+        │  │  │          lazy-result.js
+        │  │  │          list.d.ts
+        │  │  │          list.js
+        │  │  │          map-generator.js
+        │  │  │          no-work-result.d.ts
+        │  │  │          no-work-result.js
+        │  │  │          node.d.ts
+        │  │  │          node.js
+        │  │  │          parse.d.ts
+        │  │  │          parse.js
+        │  │  │          parser.js
+        │  │  │          postcss.d.mts
+        │  │  │          postcss.d.ts
+        │  │  │          postcss.js
+        │  │  │          postcss.mjs
+        │  │  │          previous-map.d.ts
+        │  │  │          previous-map.js
+        │  │  │          processor.d.ts
+        │  │  │          processor.js
+        │  │  │          result.d.ts
+        │  │  │          result.js
+        │  │  │          root.d.ts
+        │  │  │          root.js
+        │  │  │          rule.d.ts
+        │  │  │          rule.js
+        │  │  │          stringifier.d.ts
+        │  │  │          stringifier.js
+        │  │  │          stringify.d.ts
+        │  │  │          stringify.js
+        │  │  │          symbols.js
+        │  │  │          terminal-highlight.js
+        │  │  │          tokenize.js
+        │  │  │          warn-once.js
+        │  │  │          warning.d.ts
+        │  │  │          warning.js
+        │  │  │          
+        │  │  ├─source-map-js
+        │  │  │  │  LICENSE
+        │  │  │  │  package.json
+        │  │  │  │  README.md
+        │  │  │  │  source-map.d.ts
+        │  │  │  │  source-map.js
+        │  │  │  │  
+        │  │  │  └─lib
+        │  │  │          array-set.js
+        │  │  │          base64-vlq.js
+        │  │  │          base64.js
+        │  │  │          binary-search.js
+        │  │  │          mapping-list.js
+        │  │  │          quick-sort.js
+        │  │  │          source-map-consumer.d.ts
+        │  │  │          source-map-consumer.js
+        │  │  │          source-map-generator.d.ts
+        │  │  │          source-map-generator.js
+        │  │  │          source-node.d.ts
+        │  │  │          source-node.js
+        │  │  │          util.js
+        │  │  │          
+        │  │  ├─typescript
+        │  │  │  │  LICENSE.txt
+        │  │  │  │  package.json
+        │  │  │  │  README.md
+        │  │  │  │  SECURITY.md
+        │  │  │  │  ThirdPartyNoticeText.txt
+        │  │  │  │  
+        │  │  │  ├─bin
+        │  │  │  │      tsc
+        │  │  │  │      tsserver
+        │  │  │  │      
+        │  │  │  └─lib
+        │  │  │      │  lib.d.ts
+        │  │  │      │  lib.decorators.d.ts
+        │  │  │      │  lib.decorators.legacy.d.ts
+        │  │  │      │  lib.dom.asynciterable.d.ts
+        │  │  │      │  lib.dom.d.ts
+        │  │  │      │  lib.dom.iterable.d.ts
+        │  │  │      │  lib.es2015.collection.d.ts
+        │  │  │      │  lib.es2015.core.d.ts
+        │  │  │      │  lib.es2015.d.ts
+        │  │  │      │  lib.es2015.generator.d.ts
+        │  │  │      │  lib.es2015.iterable.d.ts
+        │  │  │      │  lib.es2015.promise.d.ts
+        │  │  │      │  lib.es2015.proxy.d.ts
+        │  │  │      │  lib.es2015.reflect.d.ts
+        │  │  │      │  lib.es2015.symbol.d.ts
+        │  │  │      │  lib.es2015.symbol.wellknown.d.ts
+        │  │  │      │  lib.es2016.array.include.d.ts
+        │  │  │      │  lib.es2016.d.ts
+        │  │  │      │  lib.es2016.full.d.ts
+        │  │  │      │  lib.es2016.intl.d.ts
+        │  │  │      │  lib.es2017.arraybuffer.d.ts
+        │  │  │      │  lib.es2017.d.ts
+        │  │  │      │  lib.es2017.date.d.ts
+        │  │  │      │  lib.es2017.full.d.ts
+        │  │  │      │  lib.es2017.intl.d.ts
+        │  │  │      │  lib.es2017.object.d.ts
+        │  │  │      │  lib.es2017.sharedmemory.d.ts
+        │  │  │      │  lib.es2017.string.d.ts
+        │  │  │      │  lib.es2017.typedarrays.d.ts
+        │  │  │      │  lib.es2018.asyncgenerator.d.ts
+        │  │  │      │  lib.es2018.asynciterable.d.ts
+        │  │  │      │  lib.es2018.d.ts
+        │  │  │      │  lib.es2018.full.d.ts
+        │  │  │      │  lib.es2018.intl.d.ts
+        │  │  │      │  lib.es2018.promise.d.ts
+        │  │  │      │  lib.es2018.regexp.d.ts
+        │  │  │      │  lib.es2019.array.d.ts
+        │  │  │      │  lib.es2019.d.ts
+        │  │  │      │  lib.es2019.full.d.ts
+        │  │  │      │  lib.es2019.intl.d.ts
+        │  │  │      │  lib.es2019.object.d.ts
+        │  │  │      │  lib.es2019.string.d.ts
+        │  │  │      │  lib.es2019.symbol.d.ts
+        │  │  │      │  lib.es2020.bigint.d.ts
+        │  │  │      │  lib.es2020.d.ts
+        │  │  │      │  lib.es2020.date.d.ts
+        │  │  │      │  lib.es2020.full.d.ts
+        │  │  │      │  lib.es2020.intl.d.ts
+        │  │  │      │  lib.es2020.number.d.ts
+        │  │  │      │  lib.es2020.promise.d.ts
+        │  │  │      │  lib.es2020.sharedmemory.d.ts
+        │  │  │      │  lib.es2020.string.d.ts
+        │  │  │      │  lib.es2020.symbol.wellknown.d.ts
+        │  │  │      │  lib.es2021.d.ts
+        │  │  │      │  lib.es2021.full.d.ts
+        │  │  │      │  lib.es2021.intl.d.ts
+        │  │  │      │  lib.es2021.promise.d.ts
+        │  │  │      │  lib.es2021.string.d.ts
+        │  │  │      │  lib.es2021.weakref.d.ts
+        │  │  │      │  lib.es2022.array.d.ts
+        │  │  │      │  lib.es2022.d.ts
+        │  │  │      │  lib.es2022.error.d.ts
+        │  │  │      │  lib.es2022.full.d.ts
+        │  │  │      │  lib.es2022.intl.d.ts
+        │  │  │      │  lib.es2022.object.d.ts
+        │  │  │      │  lib.es2022.regexp.d.ts
+        │  │  │      │  lib.es2022.string.d.ts
+        │  │  │      │  lib.es2023.array.d.ts
+        │  │  │      │  lib.es2023.collection.d.ts
+        │  │  │      │  lib.es2023.d.ts
+        │  │  │      │  lib.es2023.full.d.ts
+        │  │  │      │  lib.es2023.intl.d.ts
+        │  │  │      │  lib.es2024.arraybuffer.d.ts
+        │  │  │      │  lib.es2024.collection.d.ts
+        │  │  │      │  lib.es2024.d.ts
+        │  │  │      │  lib.es2024.full.d.ts
+        │  │  │      │  lib.es2024.object.d.ts
+        │  │  │      │  lib.es2024.promise.d.ts
+        │  │  │      │  lib.es2024.regexp.d.ts
+        │  │  │      │  lib.es2024.sharedmemory.d.ts
+        │  │  │      │  lib.es2024.string.d.ts
+        │  │  │      │  lib.es5.d.ts
+        │  │  │      │  lib.es6.d.ts
+        │  │  │      │  lib.esnext.array.d.ts
+        │  │  │      │  lib.esnext.collection.d.ts
+        │  │  │      │  lib.esnext.d.ts
+        │  │  │      │  lib.esnext.decorators.d.ts
+        │  │  │      │  lib.esnext.disposable.d.ts
+        │  │  │      │  lib.esnext.error.d.ts
+        │  │  │      │  lib.esnext.float16.d.ts
+        │  │  │      │  lib.esnext.full.d.ts
+        │  │  │      │  lib.esnext.intl.d.ts
+        │  │  │      │  lib.esnext.iterator.d.ts
+        │  │  │      │  lib.esnext.promise.d.ts
+        │  │  │      │  lib.esnext.sharedmemory.d.ts
+        │  │  │      │  lib.scripthost.d.ts
+        │  │  │      │  lib.webworker.asynciterable.d.ts
+        │  │  │      │  lib.webworker.d.ts
+        │  │  │      │  lib.webworker.importscripts.d.ts
+        │  │  │      │  lib.webworker.iterable.d.ts
+        │  │  │      │  tsc.js
+        │  │  │      │  tsserver.js
+        │  │  │      │  tsserverlibrary.d.ts
+        │  │  │      │  tsserverlibrary.js
+        │  │  │      │  typescript.d.ts
+        │  │  │      │  typescript.js
+        │  │  │      │  typesMap.json
+        │  │  │      │  typingsInstaller.js
+        │  │  │      │  watchGuard.js
+        │  │  │      │  _tsc.js
+        │  │  │      │  _tsserver.js
+        │  │  │      │  _typingsInstaller.js
+        │  │  │      │  
+        │  │  │      ├─cs
+        │  │  │      │      diagnosticMessages.generated.json
+        │  │  │      │      
+        │  │  │      ├─de
+        │  │  │      │      diagnosticMessages.generated.json
+        │  │  │      │      
+        │  │  │      ├─es
+        │  │  │      │      diagnosticMessages.generated.json
+        │  │  │      │      
+        │  │  │      ├─fr
+        │  │  │      │      diagnosticMessages.generated.json
+        │  │  │      │      
+        │  │  │      ├─it
+        │  │  │      │      diagnosticMessages.generated.json
+        │  │  │      │      
+        │  │  │      ├─ja
+        │  │  │      │      diagnosticMessages.generated.json
+        │  │  │      │      
+        │  │  │      ├─ko
+        │  │  │      │      diagnosticMessages.generated.json
+        │  │  │      │      
+        │  │  │      ├─pl
+        │  │  │      │      diagnosticMessages.generated.json
+        │  │  │      │      
+        │  │  │      ├─pt-br
+        │  │  │      │      diagnosticMessages.generated.json
+        │  │  │      │      
+        │  │  │      ├─ru
+        │  │  │      │      diagnosticMessages.generated.json
+        │  │  │      │      
+        │  │  │      ├─tr
+        │  │  │      │      diagnosticMessages.generated.json
+        │  │  │      │      
+        │  │  │      ├─zh-cn
+        │  │  │      │      diagnosticMessages.generated.json
+        │  │  │      │      
+        │  │  │      └─zh-tw
+        │  │  │              diagnosticMessages.generated.json
+        │  │  │              
+        │  │  ├─vue
+        │  │  │  │  index.js
+        │  │  │  │  index.mjs
+        │  │  │  │  jsx.d.ts
+        │  │  │  │  LICENSE
+        │  │  │  │  package.json
+        │  │  │  │  README.md
+        │  │  │  │  
+        │  │  │  ├─compiler-sfc
+        │  │  │  │      index.browser.js
+        │  │  │  │      index.browser.mjs
+        │  │  │  │      index.d.mts
+        │  │  │  │      index.d.ts
+        │  │  │  │      index.js
+        │  │  │  │      index.mjs
+        │  │  │  │      package.json
+        │  │  │  │      register-ts.js
+        │  │  │  │      
+        │  │  │  ├─dist
+        │  │  │  │      vue.cjs.js
+        │  │  │  │      vue.cjs.prod.js
+        │  │  │  │      vue.d.mts
+        │  │  │  │      vue.d.ts
+        │  │  │  │      vue.esm-browser.js
+        │  │  │  │      vue.esm-browser.prod.js
+        │  │  │  │      vue.esm-bundler.js
+        │  │  │  │      vue.global.js
+        │  │  │  │      vue.global.prod.js
+        │  │  │  │      vue.runtime.esm-browser.js
+        │  │  │  │      vue.runtime.esm-browser.prod.js
+        │  │  │  │      vue.runtime.esm-bundler.js
+        │  │  │  │      vue.runtime.global.js
+        │  │  │  │      vue.runtime.global.prod.js
+        │  │  │  │      
+        │  │  │  ├─jsx-runtime
+        │  │  │  │      index.d.ts
+        │  │  │  │      index.js
+        │  │  │  │      index.mjs
+        │  │  │  │      package.json
+        │  │  │  │      
+        │  │  │  └─server-renderer
+        │  │  │          index.d.mts
+        │  │  │          index.d.ts
+        │  │  │          index.js
+        │  │  │          index.mjs
+        │  │  │          package.json
+        │  │  │          
+        │  │  └─vue-demi
+        │  │      │  LICENSE
+        │  │      │  package.json
+        │  │      │  README.md
+        │  │      │  
+        │  │      ├─bin
+        │  │      │      vue-demi-fix.js
+        │  │      │      vue-demi-switch.js
+        │  │      │      
+        │  │      ├─lib
+        │  │      │  │  index.cjs
+        │  │      │  │  index.d.ts
+        │  │      │  │  index.iife.js
+        │  │      │  │  index.mjs
+        │  │      │  │  
+        │  │      │  ├─v2
+        │  │      │  │      index.cjs
+        │  │      │  │      index.d.ts
+        │  │      │  │      index.mjs
+        │  │      │  │      
+        │  │      │  ├─v2.7
+        │  │      │  │      index.cjs
+        │  │      │  │      index.d.ts
+        │  │      │  │      index.mjs
+        │  │      │  │      
+        │  │      │  └─v3
+        │  │      │          index.cjs
+        │  │      │          index.d.ts
+        │  │      │          index.mjs
+        │  │      │          
+        │  │      └─scripts
+        │  │              postinstall.js
+        │  │              switch-cli.js
+        │  │              utils.js
+        │  │              
+        │  └─src
+        │      │  App.vue
+        │      │  declarations.d.ts
+        │      │  jsconfig.json
+        │      │  main.js
+        │      │  manifest.json
+        │      │  pages.json
+        │      │  shims-common.d.ts
+        │      │  shims-pinia.d.ts
+        │      │  theme.json
+        │      │  tsconfig.json
+        │      │  uni.scss
+        │      │  
+        │      ├─common
+        │      │  ├─api
+        │      │  ├─components
+        │      │  ├─store
+        │      │  │  │  user.ts
+        │      │  │  │  
+        │      │  │  └─backup_store
+        │      │  │          user.ts
+        │      │  │          
+        │      │  └─utils
+        │      ├─components
+        │      │  │  AppFooter.vue
+        │      │  │  AppLogos.vue
+        │      │  │  InputEntry.vue
+        │      │  │  
+        │      │  ├─campus-card
+        │      │  │      FacePay.vue
+        │      │  │      
+        │      │  └─travel
+        │      │          TeamInviteModal.vue
+        │      │          
+        │      ├─modules
+        │      │  ├─ecard
+        │      │  │  │  index.ts
+        │      │  │  │  
+        │      │  │  ├─api
+        │      │  │  ├─components
+        │      │  │  └─store
+        │      │  ├─parttime
+        │      │  │      index.ts
+        │      │  │      
+        │      │  ├─schedule
+        │      │  │      index.ts
+        │      │  │      
+        │      │  └─secondhand
+        │      │          index.ts
+        │      │          
+        │      ├─pages
+        │      │  │  index.vue
+        │      │  │  
+        │      │  ├─403
+        │      │  │      index.vue
+        │      │  │      
+        │      │  ├─admin
+        │      │  │      index.vue
+        │      │  │      
+        │      │  ├─auth
+        │      │  │      index.vue
+        │      │  │      
+        │      │  ├─ecard
+        │      │  │  │  index.vue
+        │      │  │  │  
+        │      │  │  ├─consume-record
+        │      │  │  │      index.vue
+        │      │  │  │      
+        │      │  │  └─visitor-card
+        │      │  │          index.vue
+        │      │  │          
+        │      │  ├─forget-password
+        │      │  │      index.vue
+        │      │  │      
+        │      │  ├─index
+        │      │  │      index.vue
+        │      │  │      
+        │      │  ├─login
+        │      │  │      index.vue
+        │      │  │      
+        │      │  ├─more
+        │      │  │      index.vue
+        │      │  │      
+        │      │  ├─parttime
+        │      │  │  │  index.vue
+        │      │  │  │  
+        │      │  │  ├─detail
+        │      │  │  │      index.vue
+        │      │  │  │      
+        │      │  │  └─publish
+        │      │  │          index.vue
+        │      │  │          
+        │      │  ├─profile
+        │      │  │      index.vue
+        │      │  │      
+        │      │  ├─register
+        │      │  │      index.vue
+        │      │  │      
+        │      │  ├─schedule
+        │      │  │  │  index.vue
+        │      │  │  │  
+        │      │  │  ├─add
+        │      │  │  │      index.vue
+        │      │  │  │      
+        │      │  │  ├─edit
+        │      │  │  │      index.vue
+        │      │  │  │      
+        │      │  │  ├─export
+        │      │  │  │      index.vue
+        │      │  │  │      
+        │      │  │  ├─import
+        │      │  │  │      index.vue
+        │      │  │  │      
+        │      │  │  ├─reminder
+        │      │  │  │      edit.vue
+        │      │  │  │      
+        │      │  │  ├─share
+        │      │  │  │      index.vue
+        │      │  │  │      
+        │      │  │  ├─team
+        │      │  │  │      index.vue
+        │      │  │  │      
+        │      │  │  └─team-create
+        │      │  │          index.vue
+        │      │  │          
+        │      │  └─secondhand
+        │      │      │  index.vue
+        │      │      │  
+        │      │      ├─detail
+        │      │      │      index.vue
+        │      │      │      
+        │      │      └─publish
+        │      │              index.vue
+        │      │              
+        │      ├─router
+        │      │      index.ts
+        │      │      
+        │      ├─static
+        │      │      github.svg
+        │      │      logo.svg
+        │      │      tab-ecard-active.png
+        │      │      tab-ecard.png
+        │      │      tab-home-active.png
+        │      │      tab-home.png
+        │      │      tab-profile-active.png
+        │      │      tab-profile.png
+        │      │      tab-schedule-active.png
+        │      │      tab-schedule.png
+        │      │      tab-secondhand-active.png
+        │      │      tab-secondhand.png
+        │      │      vite.png
+        │      │      
+        │      ├─stores
+        │      │      user.ts
+        │      │      
+        │      └─utils
+        │              auth.ts
+        │              face-detect.ts
+        │              location.ts
+        │              
+        ├─backend
+        │  │  .gitattributes
+        │  │  .gitignore
+        │  │  backend.iml
+        │  │  filetree.txt
+        │  │  HELP.md
+        │  │  mvnw
+        │  │  mvnw.cmd
+        │  │  pom.xml
+        │  │  README.md
+        │  │  
+        │  ├─.cursor
+        │  │      debug.log
+        │  │      
+        │  ├─.idea
+        │  │  │  .gitignore
+        │  │  │  compiler.xml
+        │  │  │  encodings.xml
+        │  │  │  jarRepositories.xml
+        │  │  │  misc.xml
+        │  │  │  modules.xml
+        │  │  │  uiDesigner.xml
+        │  │  │  vcs.xml
+        │  │  │  workspace.xml
+        │  │  │  
+        │  │  └─libraries
+        │  │          Maven__ch_qos_logback_logback_classic_1_4_11.xml
+        │  │          Maven__ch_qos_logback_logback_core_1_4_11.xml
+        │  │          Maven__com_baomidou_mybatis_plus_3_5_9.xml
+        │  │          Maven__com_baomidou_mybatis_plus_annotation_3_5_9.xml
+        │  │          Maven__com_baomidou_mybatis_plus_core_3_5_9.xml
+        │  │          Maven__com_baomidou_mybatis_plus_extension_3_5_9.xml
+        │  │          Maven__com_baomidou_mybatis_plus_jsqlparser_3_5_9.xml
+        │  │          Maven__com_baomidou_mybatis_plus_jsqlparser_common_3_5_9.xml
+        │  │          Maven__com_baomidou_mybatis_plus_spring_3_5_9.xml
+        │  │          Maven__com_baomidou_mybatis_plus_spring_boot3_starter_3_5_9.xml
+        │  │          Maven__com_baomidou_mybatis_plus_spring_boot_autoconfigure_3_5_9.xml
+        │  │          Maven__com_fasterxml_classmate_1_6_0.xml
+        │  │          Maven__com_fasterxml_jackson_core_jackson_annotations_2_15_3.xml
+        │  │          Maven__com_fasterxml_jackson_core_jackson_core_2_15_3.xml
+        │  │          Maven__com_fasterxml_jackson_core_jackson_databind_2_15_3.xml
+        │  │          Maven__com_fasterxml_jackson_dataformat_jackson_dataformat_yaml_2_15_3.xml
+        │  │          Maven__com_fasterxml_jackson_datatype_jackson_datatype_jdk8_2_15_3.xml
+        │  │          Maven__com_fasterxml_jackson_datatype_jackson_datatype_jsr310_2_15_3.xml
+        │  │          Maven__com_fasterxml_jackson_module_jackson_module_parameter_names_2_15_3.xml
+        │  │          Maven__com_github_jsqlparser_jsqlparser_5_0.xml
+        │  │          Maven__com_github_xiaoymin_knife4j_core_4_5_0.xml
+        │  │          Maven__com_github_xiaoymin_knife4j_openapi3_jakarta_spring_boot_starter_4_5_0.xml
+        │  │          Maven__com_github_xiaoymin_knife4j_openapi3_ui_4_5_0.xml
+        │  │          Maven__com_jayway_jsonpath_json_path_2_8_0.xml
+        │  │          Maven__com_mysql_mysql_connector_j_8_1_0.xml
+        │  │          Maven__com_vaadin_external_google_android_json_0_0_20131108_vaadin1.xml
+        │  │          Maven__com_zaxxer_HikariCP_5_0_1.xml
+        │  │          Maven__io_jsonwebtoken_jjwt_api_0_12_3.xml
+        │  │          Maven__io_jsonwebtoken_jjwt_impl_0_12_3.xml
+        │  │          Maven__io_jsonwebtoken_jjwt_jackson_0_12_3.xml
+        │  │          Maven__io_micrometer_micrometer_commons_1_12_0.xml
+        │  │          Maven__io_micrometer_micrometer_observation_1_12_0.xml
+        │  │          Maven__io_swagger_core_v3_swagger_annotations_jakarta_2_2_19.xml
+        │  │          Maven__io_swagger_core_v3_swagger_core_jakarta_2_2_19.xml
+        │  │          Maven__io_swagger_core_v3_swagger_models_jakarta_2_2_19.xml
+        │  │          Maven__jakarta_activation_jakarta_activation_api_2_1_2.xml
+        │  │          Maven__jakarta_annotation_jakarta_annotation_api_2_1_1.xml
+        │  │          Maven__jakarta_validation_jakarta_validation_api_3_0_2.xml
+        │  │          Maven__jakarta_xml_bind_jakarta_xml_bind_api_4_0_1.xml
+        │  │          Maven__net_bytebuddy_byte_buddy_1_14_10.xml
+        │  │          Maven__net_bytebuddy_byte_buddy_agent_1_14_10.xml
+        │  │          Maven__net_minidev_accessors_smart_2_5_0.xml
+        │  │          Maven__net_minidev_json_smart_2_5_0.xml
+        │  │          Maven__org_apache_commons_commons_lang3_3_13_0.xml
+        │  │          Maven__org_apache_logging_log4j_log4j_api_2_21_1.xml
+        │  │          Maven__org_apache_logging_log4j_log4j_to_slf4j_2_21_1.xml
+        │  │          Maven__org_apache_tomcat_embed_tomcat_embed_core_10_1_16.xml
+        │  │          Maven__org_apache_tomcat_embed_tomcat_embed_el_10_1_16.xml
+        │  │          Maven__org_apache_tomcat_embed_tomcat_embed_websocket_10_1_16.xml
+        │  │          Maven__org_apiguardian_apiguardian_api_1_1_2.xml
+        │  │          Maven__org_aspectj_aspectjweaver_1_9_20_1.xml
+        │  │          Maven__org_assertj_assertj_core_3_24_2.xml
+        │  │          Maven__org_awaitility_awaitility_4_2_0.xml
+        │  │          Maven__org_hamcrest_hamcrest_2_2.xml
+        │  │          Maven__org_hibernate_validator_hibernate_validator_8_0_1_Final.xml
+        │  │          Maven__org_jboss_logging_jboss_logging_3_5_3_Final.xml
+        │  │          Maven__org_junit_jupiter_junit_jupiter_5_10_1.xml
+        │  │          Maven__org_junit_jupiter_junit_jupiter_api_5_10_1.xml
+        │  │          Maven__org_junit_jupiter_junit_jupiter_engine_5_10_1.xml
+        │  │          Maven__org_junit_jupiter_junit_jupiter_params_5_10_1.xml
+        │  │          Maven__org_junit_platform_junit_platform_commons_1_10_1.xml
+        │  │          Maven__org_junit_platform_junit_platform_engine_1_10_1.xml
+        │  │          Maven__org_mockito_mockito_core_5_7_0.xml
+        │  │          Maven__org_mockito_mockito_junit_jupiter_5_7_0.xml
+        │  │          Maven__org_mybatis_mybatis_3_5_16.xml
+        │  │          Maven__org_mybatis_mybatis_spring_3_0_4.xml
+        │  │          Maven__org_objenesis_objenesis_3_3.xml
+        │  │          Maven__org_opentest4j_opentest4j_1_3_0.xml
+        │  │          Maven__org_ow2_asm_asm_9_3.xml
+        │  │          Maven__org_projectlombok_lombok_1_18_30.xml
+        │  │          Maven__org_skyscreamer_jsonassert_1_5_1.xml
+        │  │          Maven__org_slf4j_jul_to_slf4j_2_0_9.xml
+        │  │          Maven__org_slf4j_slf4j_api_2_0_9.xml
+        │  │          Maven__org_springdoc_springdoc_openapi_starter_common_2_3_0.xml
+        │  │          Maven__org_springdoc_springdoc_openapi_starter_webmvc_api_2_3_0.xml
+        │  │          Maven__org_springdoc_springdoc_openapi_starter_webmvc_ui_2_3_0.xml
+        │  │          Maven__org_springframework_boot_spring_boot_3_2_0.xml
+        │  │          Maven__org_springframework_boot_spring_boot_autoconfigure_3_2_0.xml
+        │  │          Maven__org_springframework_boot_spring_boot_devtools_3_2_0.xml
+        │  │          Maven__org_springframework_boot_spring_boot_starter_3_2_0.xml
+        │  │          Maven__org_springframework_boot_spring_boot_starter_aop_3_2_0.xml
+        │  │          Maven__org_springframework_boot_spring_boot_starter_jdbc_3_2_0.xml
+        │  │          Maven__org_springframework_boot_spring_boot_starter_json_3_2_0.xml
+        │  │          Maven__org_springframework_boot_spring_boot_starter_logging_3_2_0.xml
+        │  │          Maven__org_springframework_boot_spring_boot_starter_test_3_2_0.xml
+        │  │          Maven__org_springframework_boot_spring_boot_starter_tomcat_3_2_0.xml
+        │  │          Maven__org_springframework_boot_spring_boot_starter_validation_3_2_0.xml
+        │  │          Maven__org_springframework_boot_spring_boot_starter_web_3_2_0.xml
+        │  │          Maven__org_springframework_boot_spring_boot_test_3_2_0.xml
+        │  │          Maven__org_springframework_boot_spring_boot_test_autoconfigure_3_2_0.xml
+        │  │          Maven__org_springframework_security_spring_security_crypto_6_2_0.xml
+        │  │          Maven__org_springframework_spring_aop_6_1_1.xml
+        │  │          Maven__org_springframework_spring_beans_6_1_1.xml
+        │  │          Maven__org_springframework_spring_context_6_1_1.xml
+        │  │          Maven__org_springframework_spring_core_6_1_1.xml
+        │  │          Maven__org_springframework_spring_expression_6_1_1.xml
+        │  │          Maven__org_springframework_spring_jcl_6_1_1.xml
+        │  │          Maven__org_springframework_spring_jdbc_6_1_1.xml
+        │  │          Maven__org_springframework_spring_test_6_1_1.xml
+        │  │          Maven__org_springframework_spring_tx_6_1_1.xml
+        │  │          Maven__org_springframework_spring_webmvc_6_1_1.xml
+        │  │          Maven__org_springframework_spring_web_6_1_1.xml
+        │  │          Maven__org_webjars_swagger_ui_5_10_3.xml
+        │  │          Maven__org_xmlunit_xmlunit_core_2_9_1.xml
+        │  │          Maven__org_yaml_snakeyaml_2_2.xml
+        │  │          
+        │  ├─.mvn
+        │  │  └─wrapper
+        │  │          maven-wrapper.properties
+        │  │          
+        │  ├─.vscode
+        │  │      settings.json
+        │  │      
+        │  ├─src
+        │  │  ├─main
+        │  │  │  ├─java
+        │  │  │  │  └─com
+        │  │  │  │      └─yourschool
+        │  │  │  │          └─campussystem
+        │  │  │  │              │  BackendApplication.java
+        │  │  │  │              │  
+        │  │  │  │              ├─common
+        │  │  │  │              │      ApiResponse.java
+        │  │  │  │              │      ErrorCode.java
+        │  │  │  │              │      PageResult.java
+        │  │  │  │              │      
+        │  │  │  │              ├─config
+        │  │  │  │              │      Knife4jConfig.java
+        │  │  │  │              │      MyBatisPlusConfig.java
+        │  │  │  │              │      SecurityConfig.java
+        │  │  │  │              │      WebMvcConfig.java
+        │  │  │  │              │      
+        │  │  │  │              ├─controller
+        │  │  │  │              │      EcardController.java
+        │  │  │  │              │      ParttimeController.java
+        │  │  │  │              │      ScheduleController.java
+        │  │  │  │              │      SecondhandController.java
+        │  │  │  │              │      UserController.java
+        │  │  │  │              │      
+        │  │  │  │              ├─dto
+        │  │  │  │              │      EcardConsumeDTO.java
+        │  │  │  │              │      LoginDTO.java
+        │  │  │  │              │      ParttimeApplyDTO.java
+        │  │  │  │              │      ParttimePublishDTO.java
+        │  │  │  │              │      ParttimeQueryDTO.java
+        │  │  │  │              │      PersonalScheduleDTO.java
+        │  │  │  │              │      ScheduleQueryDTO.java
+        │  │  │  │              │      SecondhandPublishDTO.java
+        │  │  │  │              │      SecondhandQueryDTO.java
+        │  │  │  │              │      TeamCreateDTO.java
+        │  │  │  │              │      TeamScheduleDTO.java
+        │  │  │  │              │      UserRegisterDTO.java
+        │  │  │  │              │      VisitorCardApplyDTO.java
+        │  │  │  │              │      
+        │  │  │  │              ├─entity
+        │  │  │  │              │      Ecard.java
+        │  │  │  │              │      SecondhandGoods.java
+        │  │  │  │              │      User.java
+        │  │  │  │              │      UserAuthApply.java
+        │  │  │  │              │      
+        │  │  │  │              ├─enums
+        │  │  │  │              │      ApplyStatusEnum.java
+        │  │  │  │              │      CardStatusEnum.java
+        │  │  │  │              │      CategoryEnum.java
+        │  │  │  │              │      ConsumeTypeEnum.java
+        │  │  │  │              │      GoodsStatusEnum.java
+        │  │  │  │              │      ParttimeStatusEnum.java
+        │  │  │  │              │      PermissionEnum.java
+        │  │  │  │              │      ReminderTypeEnum.java
+        │  │  │  │              │      RemindTypeEnum.java
+        │  │  │  │              │      ScheduleStatusEnum.java
+        │  │  │  │              │      ScheduleTypeEnum.java
+        │  │  │  │              │      TeamRoleEnum.java
+        │  │  │  │              │      UserRoleEnum.java
+        │  │  │  │              │      
+        │  │  │  │              ├─exception
+        │  │  │  │              │      BusinessException.java
+        │  │  │  │              │      ErrorCode.java
+        │  │  │  │              │      GlobalExceptionHandler.java
+        │  │  │  │              │      
+        │  │  │  │              ├─mapper
+        │  │  │  │              │      EcardMapper.java
+        │  │  │  │              │      SecondhandGoodsMapper.java
+        │  │  │  │              │      UserMapper.java
+        │  │  │  │              │      
+        │  │  │  │              ├─service
+        │  │  │  │              │  │  UserService.java
+        │  │  │  │              │  │  
+        │  │  │  │              │  └─impl
+        │  │  │  │              │          UserServiceImpl.java
+        │  │  │  │              │          
+        │  │  │  │              ├─util
+        │  │  │  │              │      JWTUtils.java
+        │  │  │  │              │      
+        │  │  │  │              └─vo
+        │  │  │  │                      ApplyRecordVO.java
+        │  │  │  │                      ConsumeRecordVO.java
+        │  │  │  │                      EcardVO.java
+        │  │  │  │                      LoginVO.java
+        │  │  │  │                      ParttimeDetailVO.java
+        │  │  │  │                      ParttimeVO.java
+        │  │  │  │                      PersonalScheduleVO.java
+        │  │  │  │                      SecondhandDetailVO.java
+        │  │  │  │                      SecondhandGoodsVO.java
+        │  │  │  │                      TeamMemberVO.java
+        │  │  │  │                      TeamScheduleAttendeeVO.java
+        │  │  │  │                      TeamScheduleVO.java
+        │  │  │  │                      TeamVO.java
+        │  │  │  │                      UserInfoVO.java
+        │  │  │  │                      
+        │  │  │  └─resources
+        │  │  │      │  application.properties
+        │  │  │      │  init.sql
+        │  │  │      │  
+        │  │  │      ├─static
+        │  │  │      └─templates
+        │  │  └─test
+        │  │      └─java
+        │  │          └─com
+        │  │              └─yourschool
+        │  │                  └─campussystem
+        │  │                          BackendApplicationTests.java
+        │  │                          
+        │  └─target
+        │      │  campus-system-0.0.1-SNAPSHOT.jar
+        │      │  campus-system-0.0.1-SNAPSHOT.jar.original
+        │      │  
+        │      ├─classes
+        │      │  │  application.properties
+        │      │  │  init.sql
+        │      │  │  
+        │      │  └─com
+        │      │      └─yourschool
+        │      │          └─campussystem
+        │      │              │  BackendApplication.class
+        │      │              │  
+        │      │              ├─common
+        │      │              │      ApiResponse.class
+        │      │              │      ErrorCode.class
+        │      │              │      PageResult.class
+        │      │              │      
+        │      │              ├─config
+        │      │              │      Knife4jConfig.class
+        │      │              │      MyBatisPlusConfig.class
+        │      │              │      SecurityConfig.class
+        │      │              │      WebMvcConfig.class
+        │      │              │      
+        │      │              ├─controller
+        │      │              │      EcardController$1.class
+        │      │              │      EcardController$2.class
+        │      │              │      EcardController$3.class
+        │      │              │      EcardController$PageResponse.class
+        │      │              │      EcardController.class
+        │      │              │      ParttimeController.class
+        │      │              │      ScheduleController.class
+        │      │              │      SecondhandController$1.class
+        │      │              │      SecondhandController$10.class
+        │      │              │      SecondhandController$2.class
+        │      │              │      SecondhandController$3.class
+        │      │              │      SecondhandController$4.class
+        │      │              │      SecondhandController$5.class
+        │      │              │      SecondhandController$6.class
+        │      │              │      SecondhandController$7.class
+        │      │              │      SecondhandController$8.class
+        │      │              │      SecondhandController$9.class
+        │      │              │      SecondhandController.class
+        │      │              │      UserController.class
+        │      │              │      
+        │      │              ├─dto
+        │      │              │      EcardConsumeDTO.class
+        │      │              │      LoginDTO.class
+        │      │              │      ParttimeApplyDTO.class
+        │      │              │      ParttimePublishDTO.class
+        │      │              │      ParttimeQueryDTO.class
+        │      │              │      PersonalScheduleDTO.class
+        │      │              │      ScheduleQueryDTO.class
+        │      │              │      SecondhandPublishDTO.class
+        │      │              │      SecondhandQueryDTO.class
+        │      │              │      TeamCreateDTO.class
+        │      │              │      TeamScheduleDTO.class
+        │      │              │      UserRegisterDTO.class
+        │      │              │      VisitorCardApplyDTO.class
+        │      │              │      
+        │      │              ├─entity
+        │      │              │      Ecard.class
+        │      │              │      SecondhandGoods.class
+        │      │              │      User.class
+        │      │              │      UserAuthApply.class
+        │      │              │      
+        │      │              ├─enums
+        │      │              │      ApplyStatusEnum.class
+        │      │              │      CardStatusEnum.class
+        │      │              │      CategoryEnum.class
+        │      │              │      ConsumeTypeEnum.class
+        │      │              │      GoodsStatusEnum.class
+        │      │              │      ParttimeStatusEnum.class
+        │      │              │      PermissionEnum.class
+        │      │              │      ReminderTypeEnum.class
+        │      │              │      RemindTypeEnum.class
+        │      │              │      ScheduleStatusEnum.class
+        │      │              │      ScheduleTypeEnum.class
+        │      │              │      TeamRoleEnum.class
+        │      │              │      UserRoleEnum.class
+        │      │              │      
+        │      │              ├─exception
+        │      │              │      BusinessException.class
+        │      │              │      ErrorCode.class
+        │      │              │      GlobalExceptionHandler.class
+        │      │              │      
+        │      │              ├─mapper
+        │      │              │      EcardMapper.class
+        │      │              │      SecondhandGoodsMapper.class
+        │      │              │      UserMapper.class
+        │      │              │      
+        │      │              ├─service
+        │      │              │  │  UserService.class
+        │      │              │  │  
+        │      │              │  └─impl
+        │      │              │          UserServiceImpl.class
+        │      │              │          
+        │      │              ├─util
+        │      │              │      JWTUtils.class
+        │      │              │      
+        │      │              └─vo
+        │      │                      ApplyRecordVO.class
+        │      │                      ConsumeRecordVO.class
+        │      │                      EcardVO.class
+        │      │                      LoginVO.class
+        │      │                      ParttimeDetailVO.class
+        │      │                      ParttimeVO.class
+        │      │                      PersonalScheduleVO.class
+        │      │                      SecondhandDetailVO.class
+        │      │                      SecondhandGoodsVO.class
+        │      │                      TeamMemberVO.class
+        │      │                      TeamScheduleAttendeeVO.class
+        │      │                      TeamScheduleVO.class
+        │      │                      TeamVO.class
+        │      │                      UserInfoVO.class
+        │      │                      
+        │      ├─generated-sources
+        │      │  └─annotations
+        │      ├─generated-test-sources
+        │      │  └─test-annotations
+        │      ├─maven-archiver
+        │      │      pom.properties
+        │      │      
+        │      ├─maven-status
+        │      │  └─maven-compiler-plugin
+        │      │      ├─compile
+        │      │      │  └─default-compile
+        │      │      │          createdFiles.lst
+        │      │      │          inputFiles.lst
+        │      │      │          
+        │      │      └─testCompile
+        │      │          └─default-testCompile
+        │      │                  createdFiles.lst
+        │      │                  inputFiles.lst
+        │      │                  
+        │      └─test-classes
+        │          └─com
+        │              └─yourschool
+        │                  └─campussystem
+        │                          BackendApplicationTests.class
+        │                          
+        ├─common
+        │  │  filetree.txt
+        │  │  package.json
+        │  │  README.md
+        │  │  tsconfig.json
+        │  │  tsconfig.node.json
+        │  │  
+        │  └─src
+        │      ├─api
+        │      │  │  index.ts
+        │      │  │  
+        │      │  ├─auth
+        │      │  │      index.ts
+        │      │  │      
+        │      │  ├─ecard
+        │      │  │      index.ts
+        │      │  │      
+        │      │  ├─parttime
+        │      │  │      index.ts
+        │      │  │      
+        │      │  ├─schedule
+        │      │  │      index.ts
+        │      │  │      
+        │      │  └─secondhand
+        │      │          index.ts
+        │      │          
+        │      ├─components
+        │      │  ├─business
+        │      │  │      ParttimeCard.vue
+        │      │  │      ScheduleItem.vue
+        │      │  │      SecondhandCard.vue
+        │      │  │      
+        │      │  ├─common
+        │      │  │      AppFooter.vue
+        │      │  │      AppLogos.vue
+        │      │  │      InputEntry.vue
+        │      │  │      
+        │      │  └─permission
+        │      │          NoPermission.vue
+        │      │          RoleTip.vue
+        │      │          
+        │      ├─config
+        │      │      campus.ts
+        │      │      index.ts
+        │      │      role.ts
+        │      │      
+        │      ├─hooks
+        │      │      useAuth.ts
+        │      │      useEcard.ts
+        │      │      useLocation.ts
+        │      │      useRequest.ts
+        │      │      useScheduleTeam.ts
+        │      │      useWeather.ts
+        │      │      
+        │      ├─pinia
+        │      │      ecard.ts
+        │      │      index.ts
+        │      │      parttime.ts
+        │      │      scheduleTeam.ts
+        │      │      secondhand.ts
+        │      │      user.ts
+        │      │      
+        │      ├─styles
+        │      │      index.scss
+        │      │      reset.scss
+        │      │      variables.scss
+        │      │      
+        │      ├─types
+        │      │      auth.ts
+        │      │      ecard.ts
+        │      │      index.ts
+        │      │      parttime.ts
+        │      │      schedule.ts
+        │      │      secondhand.ts
+        │      │      
+        │      └─utils
+        │              auth.ts
+        │              format.ts
+        │              location.ts
+        │              storage.ts
+        │              
+        └─web
+            │  .env.development
+            │  index.html
+            │  package.json
+            │  README.md
+            │  tsconfig.json
+            │  tsconfig.node.json
+            │  vite.config.js
+            │  vite.config.ts
+            │  
+            ├─public
+            │  │  favicon.ico
+            │  │  
+            │  └─static
+            │          github.svg
+            │          logo.svg
+            │          tab-ecard-active.png
+            │          tab-ecard.png
+            │          tab-home-active.png
+            │          tab-home.png
+            │          tab-profile-active.png
+            │          tab-profile.png
+            │          tab-schedule-active.png
+            │          tab-schedule.png
+            │          tab-secondhand-active.png
+            │          tab-secondhand.png
+            │          vite.png
+            │          
+            └─src
+                │  App.vue
+                │  env.d.ts
+                │  main.ts
+                │  style.css
+                │  
+                ├─components
+                │  ├─business
+                │  │      DataTable.vue
+                │  │      ExcelImport.vue
+                │  │      PublishForm.vue
+                │  │      
+                │  ├─common
+                │  │      NavBar.vue
+                │  │      PageHeader.vue
+                │  │      SideBar.vue
+                │  │      
+                │  └─permission
+                │          NoPermissionPage.vue
+                │          
+                ├─pages
+                │  ├─admin
+                │  │      index.vue
+                │  │      
+                │  ├─auth
+                │  │      index.vue
+                │  │      login.vue
+                │  │      register.vue
+                │  │      
+                │  ├─ecard
+                │  │      index.vue
+                │  │      
+                │  ├─index
+                │  │      index.vue
+                │  │      
+                │  ├─parttime
+                │  │  │  index.vue
+                │  │  │  
+                │  │  ├─detail
+                │  │  │      index.vue
+                │  │  │      
+                │  │  └─publish
+                │  │          index.vue
+                │  │          
+                │  ├─profile
+                │  │      index.vue
+                │  │      
+                │  ├─schedule
+                │  │  │  index.vue
+                │  │  │  
+                │  │  ├─import
+                │  │  │      index.vue
+                │  │  │      
+                │  │  └─team
+                │  │          index.vue
+                │  │          
+                │  └─secondhand
+                │      │  index.vue
+                │      │  
+                │      ├─detail
+                │      │      index.vue
+                │      │      
+                │      └─publish
+                │              index.vue
+                │              
+                ├─router
+                │      index.ts
+                │      
+                ├─utils
+                │      excel.ts
+                │      location.ts
+                │      responsive.ts
+                │      
+                └─views
+                        Home.vue
+                        TestCommon.vue
+                        
+
+5. 已完成：前端双端基础框架搭建，就是上面文件结构的创建，其中app文件夹的大部分界面设计
+📊 项目进展总结
+
+✅ 已完成的工作
+
+1. 完整的接口契约设计
+
+你已经完成了5个子系统、50+个接口的完整设计：
+• 用户管理（4个接口）：注册、登录、用户信息等
+• 二手交易平台（10+个接口）：商品发布、查询、收藏、管理等
+• 校园卡管理（9个接口）：余额查询、消费、游客卡申请、挂失等
+• 兼职管理（12个接口）：兼职发布、报名、审核、管理等
+• 行程管理（15+个接口）：个人/团队行程、同步、日历等
+2. 完整的技术栈搭建
+• ✅ Spring Boot 3.2.0 + Java 17
+• ✅ MyBatis-Plus 3.5.9（Spring Boot 3专用版）
+• ✅ Knife4j 4.5.0（Spring Boot 3专用版）
+• ✅ 完整的包结构设计
+• ✅ 统一响应格式（ApiResponse）
+• ✅ 全局异常处理
+• ✅ 错误码体系
+
+• 你已经创建的50+个接口、5个Controller、完整的DTO/VO都保持完整
+
+• 一旦应用启动，所有接口都会自动出现在Knife4j中
+

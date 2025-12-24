@@ -105,89 +105,90 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+// 引入 Vue 的组合式 API，用于管理响应式数据、计算属性和生命周期
+import { ref, computed, onMounted } from 'vue' // 从 vue 导入 ref、computed 和 onMounted
 import { useRouter } from 'vue-router'
 import NavBar from '@/components/common/NavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 import FloatingMenu from '@/components/common/FloatingMenu.vue'
+// 引入公共兼职 Store，统一管理“我的兼职申请”记录
+import { useParttimeStore } from '@campus/common'
 
-const router = useRouter()
+const router = useRouter() // 获取路由实例，用于页面跳转
 
-const filterStatus = ref<'all' | 'pending' | 'approved' | 'rejected'>('all')
+// 当前选中的申请状态筛选（all：全部；pending：待审核；approved：已通过；rejected：已拒绝）
+const filterStatus = ref<'all' | 'pending' | 'approved' | 'rejected'>('all') // 默认展示全部申请记录
 
-// 申请记录
-const applications = ref([
-  {
-    id: 1,
-    jobId: 1,
-    jobTitle: '校园推广专员',
-    companyName: '某教育公司',
-    status: 'pending',
-    applyTime: '2024-01-15 10:30',
-    reviewTime: '',
-    reviewComment: ''
-  },
-  {
-    id: 2,
-    jobId: 2,
-    jobTitle: '数据录入员',
-    companyName: '某科技公司',
-    status: 'approved',
-    applyTime: '2024-01-10 14:20',
-    reviewTime: '2024-01-11 09:15',
-    reviewComment: '审核通过，请尽快联系HR'
-  },
-  {
-    id: 3,
-    jobId: 3,
-    jobTitle: '客服助理',
-    companyName: '某服务公司',
-    status: 'rejected',
-    applyTime: '2024-01-08 16:45',
-    reviewTime: '2024-01-09 11:30',
-    reviewComment: '不符合岗位要求'
-  }
-])
+// 通过公共 Store 统一管理“我的兼职申请”记录
+const parttimeStore = useParttimeStore() // 调用 useParttimeStore 获取 Store 实例
+
+// 将 Store 中的原始申请记录映射为页面需要展示的结构
+const applications = computed(() =>
+  parttimeStore.myApplicationList.map((item: any) => ({
+    id: item.id as number, // 申请记录ID
+    jobId: item.jobId as number, // 对应的兼职岗位ID
+    jobTitle: item.jobTitle as string, // 岗位标题
+    companyName: item.companyName as string, // 公司名称
+    status: (item.status as 'pending' | 'approved' | 'rejected') || 'pending', // 申请状态
+    applyTime: (item.applyTime as string) || '', // 申请时间
+    reviewTime: (item.reviewTime as string) || '', // 审核时间（可能为空）
+    reviewComment: (item.reviewComment as string) || '' // 审核意见（可能为空）
+  }))
+)
 
 // 筛选后的申请记录
 const filteredApplications = computed(() => {
   if (filterStatus.value === 'all') {
-    return applications.value
+    return applications.value // 当选择“全部”时，直接返回完整申请列表
   }
-  return applications.value.filter(app => app.status === filterStatus.value)
+  // 根据当前选中的状态进行过滤，只展示对应状态的申请记录
+  return applications.value.filter((app) => app.status === filterStatus.value)
 })
 
-// 获取状态标签
+// 获取状态标签（将后端返回的英文状态映射为中文文案）
 const getStatusLabel = (status: string) => {
   const statusMap: Record<string, string> = {
-    pending: '待审核',
-    approved: '已通过',
-    rejected: '已拒绝'
+    pending: '待审核', // 等待企业或管理员处理
+    approved: '已通过', // 申请已审核通过
+    rejected: '已拒绝' // 申请已被拒绝
   }
-  return statusMap[status] || status
+  return statusMap[status] || status // 未知状态则直接返回原值
 }
 
 // 跳转到岗位详情
 const goToDetail = (jobId: number) => {
-  router.push(`/parttime/detail/${jobId}`)
+  router.push(`/parttime/detail/${jobId}`) // 跳转到对应的兼职详情页
 }
 
-// 取消申请
-const cancelApplication = (id: number) => {
-  if (confirm('确定要取消这个申请吗？')) {
-    const index = applications.value.findIndex(app => app.id === id)
-    if (index > -1) {
-      applications.value.splice(index, 1)
-      // TODO: 调用取消申请API
-      // await cancelApplicationAPI(id)
-    }
+// 取消申请（调用公共 Store 的统一方法，同时更新“我的申请”列表）
+const cancelApplication = async (id: number) => {
+  // 弹出确认对话框，避免用户误操作取消已提交的申请
+  if (!confirm('确定要取消这个申请吗？')) {
+    return // 用户取消操作则直接返回
+  }
+  try {
+    // 通过兼职 Store 调用统一的“取消报名”方法（内部会请求后端并从 myApplicationList 中移除该记录）
+    await parttimeStore.cancelApplication(id) // 传入申请记录 ID
+  } catch (error) {
+    console.error('取消兼职申请失败:', error) // 控制台打印错误日志，便于排查问题
+    alert('取消申请失败，请稍后重试') // 给用户一个通用失败提示
   }
 }
 
 // 去浏览兼职
 const goToParttime = () => {
-  router.push('/parttime')
+  router.push('/parttime') // 跳转到兼职列表页面，方便用户继续浏览岗位并发起申请
 }
+
+// 组件挂载时，从后端加载“我的兼职申请”记录
+onMounted(() => {
+  // 通过公共 Store 的加载方法获取我的申请列表（默认不按状态过滤，加载第 1 页、最多 50 条）
+  parttimeStore
+    .loadMyApplications(undefined, 1, 50)
+    .catch((error) => {
+      console.error('加载申请记录失败:', error) // 打印错误信息，便于调试
+    })
+})
 </script>
 
 <style scoped>

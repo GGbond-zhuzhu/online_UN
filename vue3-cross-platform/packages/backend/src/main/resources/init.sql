@@ -84,7 +84,57 @@ INSERT INTO `ecard` (`card_no`, `user_id`, `balance`, `status`, `is_visitor_card
 INSERT INTO `secondhand_goods` (`title`, `description`, `price`, `original_price`, `category`, `status`, `publisher_id`, `school_id`, `contact_phone`, `location`, `favorite_count`, `view_count`) VALUES
 ('华为MateBook 14 2022款', '2022年购入，95新，配置：i5-1240P/16G/512G，有原装充电器和电脑包', 4500.00, 5999.00, 'ELECTRONICS', 'ON_SALE', 1, 1, '13800138000', '图书馆一楼', 15, 120),
 ('Java核心技术 卷I', '第11版，9成新，有少量笔记', 50.00, 89.00, 'BOOKS', 'ON_SALE', 3, 1, '13800138002', '教学楼B201', 8, 45),
-('耐克运动鞋 42码', '黑色经典款，穿过3次，几乎全新', 280.00, 599.00, 'CLOTHING', 'ON_SALE', 3, 1, '13800138002', '宿舍楼3号楼', 23, 89);
+('耐克运动鞋 42码', '黑色经典款，穿过3次，几乎全新', 280.00, 599.00, 'CLOTHING', 'ON_SALE', 3, 1, '13800138002', '宿舍楼3号楼', 23, 89),
+('MacBook Pro 13寸 M1', '2021年购入，9成新，配置：M1芯片/8G/256G，原装充电器', 6800.00, 9999.00, 'ELECTRONICS', 'ON_SALE', 1, 1, '13800138000', '图书馆一楼', 28, 156),
+('高等数学 同济版', '第7版上下册，8成新，有笔记', 30.00, 68.00, 'BOOKS', 'ON_SALE', 1, 1, '13800138000', '教学楼A101', 12, 67),
+('数据结构与算法分析', 'C语言描述，第3版，9成新', 45.00, 79.00, 'BOOKS', 'ON_SALE', 3, 1, '13800138002', '图书馆二楼', 18, 89),
+('iPhone 13 128GB', '2022年购入，95新，无拆修，原装充电器', 4200.00, 5999.00, 'ELECTRONICS', 'ON_SALE', 1, 1, '13800138000', '宿舍楼1号楼', 35, 234),
+('Adidas运动鞋 43码', '白色经典款，穿过5次，8成新', 220.00, 499.00, 'CLOTHING', 'ON_SALE', 3, 1, '13800138002', '体育馆', 15, 78),
+('线性代数教材', '第5版，7成新，有笔记和标注', 25.00, 45.00, 'BOOKS', 'ON_SALE', 1, 1, '13800138000', '教学楼C201', 9, 45),
+('小米手环7', '2023年购入，99新，全套包装', 180.00, 249.00, 'ELECTRONICS', 'ON_SALE', 1, 1, '13800138000', '图书馆一楼', 22, 123);
+
+-- 插入兼职测试数据
+INSERT IGNORE INTO `parttime` (`title`, `description`, `salary_per_hour`, `recruit_count`, `applied_count`, `work_start_time`, `work_end_time`, `location`, `requirements`, `status`, `publisher_id`, `school_id`, `contact_name`, `contact_phone`) VALUES
+('图书馆管理员助理', '协助图书馆日常管理工作，整理图书、维护秩序等', 25.00, 3, 1, '2024-02-01 08:00:00', '2024-06-30 18:00:00', '图书馆', '责任心强，有耐心，熟悉图书分类', 'RECRUITING', 2, 1, '李老师', '13800138001'),
+('校园外卖配送员', '负责校园内外卖配送工作，时间灵活', 20.00, 10, 3, '2024-01-20 10:00:00', '2024-12-31 22:00:00', '校园内', '身体健康，有电动车，熟悉校园路线', 'RECRUITING', 2, 1, '王经理', '13800138002'),
+('家教辅导（数学）', '为高中生提供数学辅导，周末上课', 80.00, 2, 0, '2024-02-01 09:00:00', '2024-07-31 18:00:00', '线上/线下', '数学专业优先，有教学经验', 'RECRUITING', 2, 1, '张老师', '13800138003'),
+('咖啡店服务员', '校园咖啡店服务员，负责点单、制作、清洁', 22.00, 5, 2, '2024-01-25 08:00:00', '2024-12-31 22:00:00', '校园咖啡店', '形象良好，服务意识强，能接受轮班', 'RECRUITING', 2, 1, '刘店长', '13800138004'),
+('数据录入员', '协助录入学生信息、成绩等数据', 18.00, 4, 1, '2024-02-01 09:00:00', '2024-05-31 17:00:00', '行政楼', '熟悉Excel，打字速度快，细心', 'RECRUITING', 2, 1, '赵老师', '13800138005'),
+('活动策划助理', '协助组织校园活动，负责宣传、协调等工作', 30.00, 3, 0, '2024-02-01 09:00:00', '2024-12-31 18:00:00', '学生活动中心', '有活动组织经验，沟通能力强', 'RECRUITING', 2, 1, '孙老师', '13800138006');
+
+-- 插入团队测试数据
+INSERT IGNORE INTO `team` (`name`, `description`, `creator_id`, `school_id`, `invite_code`, `need_approve`, `max_members`, `member_count`) VALUES
+('学习小组A', '高等数学学习小组，共同讨论学习问题', 1, 1, 'TEAM001', 1, 20, 3),
+('项目开发组', '软件开发项目组，协作完成项目', 1, 1, 'TEAM002', 1, 15, 5),
+('英语角', '英语口语练习小组，每周定期活动', 3, 1, 'TEAM003', 0, 30, 8);
+
+-- 插入团队成员数据
+INSERT IGNORE INTO `team_member` (`team_id`, `user_id`, `role`) VALUES
+(1, 1, 'CREATOR'),
+(1, 2, 'MEMBER'),
+(1, 3, 'MEMBER'),
+(2, 1, 'CREATOR'),
+(2, 2, 'ADMIN'),
+(2, 3, 'MEMBER'),
+(2, 4, 'MEMBER'),
+(2, 1, 'MEMBER'),
+(3, 3, 'CREATOR'),
+(3, 1, 'MEMBER'),
+(3, 2, 'MEMBER');
+
+-- 插入个人行程测试数据
+INSERT IGNORE INTO `personal_schedule` (`title`, `description`, `start_time`, `end_time`, `type`, `status`, `location`, `creator_id`) VALUES
+('高等数学', '第二章：多元函数微分学', '2024-01-20 08:00:00', '2024-01-20 10:00:00', 'CLASS', 'PENDING', '3号教学楼201室', 1),
+('大学英语', 'Unit 3: Cultural Differences', '2024-01-20 10:00:00', '2024-01-20 12:00:00', 'CLASS', 'PENDING', '外语学院101室', 1),
+('数据结构与算法', '树与二叉树的应用', '2024-01-20 14:00:00', '2024-01-20 16:00:00', 'CLASS', 'PENDING', '计算机学院305室', 1),
+('编程俱乐部技术分享', '每周技术分享会', '2024-01-20 16:30:00', '2024-01-20 18:00:00', 'CLUB', 'PENDING', '学生活动中心B201', 1),
+('图书馆自习', '准备期末考试', '2024-01-20 19:00:00', '2024-01-20 21:00:00', 'PERSONAL', 'PENDING', '图书馆3楼自习区', 1);
+
+-- 插入团队行程测试数据
+INSERT IGNORE INTO `team_schedule` (`team_id`, `title`, `description`, `start_time`, `end_time`, `location`, `status`, `creator_id`) VALUES
+(1, '学习讨论会', '讨论高等数学第三章内容', '2024-01-25 14:00:00', '2024-01-25 16:00:00', '图书馆讨论室', 'PENDING', 1),
+(2, '项目进度会议', '讨论项目进度和下一步计划', '2024-01-22 19:00:00', '2024-01-22 21:00:00', '线上', 'PENDING', 1),
+(3, '英语角活动', '每周英语口语练习', '2024-01-21 18:00:00', '2024-01-21 20:00:00', '学生活动中心', 'PENDING', 3);
 
 -- 消费记录表
 CREATE TABLE IF NOT EXISTS `consume_record` (
@@ -649,3 +699,29 @@ CREATE TABLE IF NOT EXISTS `chat_message` (
     CONSTRAINT `fk_message_sender` FOREIGN KEY (`sender_id`) REFERENCES `user` (`id`),
     CONSTRAINT `fk_message_receiver` FOREIGN KEY (`receiver_id`) REFERENCES `user` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='聊天消息表';
+
+-- 用户身份认证申请表
+CREATE TABLE IF NOT EXISTS `user_auth_apply` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `user_id` bigint NOT NULL COMMENT '用户ID',
+    `real_name` varchar(50) NOT NULL COMMENT '真实姓名',
+    `id_card` varchar(18) NOT NULL COMMENT '身份证号',
+    `student_card_front` varchar(500) DEFAULT NULL COMMENT '学生证正面照片URL',
+    `student_card_back` varchar(500) DEFAULT NULL COMMENT '学生证背面照片URL',
+    `school_name` varchar(100) DEFAULT NULL COMMENT '学校名称',
+    `major` varchar(100) DEFAULT NULL COMMENT '专业',
+    `grade` varchar(20) DEFAULT NULL COMMENT '年级',
+    `apply_role` varchar(20) NOT NULL COMMENT '申请角色（STUDENT/TEACHER）',
+    `status` int NOT NULL DEFAULT '0' COMMENT '审核状态（0-待审核，1-已通过，2-已拒绝）',
+    `audit_remark` varchar(500) DEFAULT NULL COMMENT '审核备注',
+    `audit_time` datetime DEFAULT NULL COMMENT '审核时间',
+    `auditor_id` bigint DEFAULT NULL COMMENT '审核人ID',
+    `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_status` (`status`),
+    KEY `idx_apply_role` (`apply_role`),
+    CONSTRAINT `fk_auth_apply_user` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`),
+    CONSTRAINT `fk_auth_apply_auditor` FOREIGN KEY (`auditor_id`) REFERENCES `user` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户身份认证申请表';

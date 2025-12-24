@@ -59,77 +59,110 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+// 引入 Vue 的组合式 API，用于创建计算属性和生命周期钩子
+import { computed, onMounted } from 'vue' // 从 vue 导入 computed 和 onMounted
+// 引入路由，用于在点击记录时跳转到二手详情页
 import { useRouter } from 'vue-router'
+// 引入页面用到的通用导航栏、页脚和悬浮菜单组件
 import NavBar from '@/components/common/NavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 import FloatingMenu from '@/components/common/FloatingMenu.vue'
+// 引入 common 包中封装好的二手 Store，用来统一管理浏览记录数据
+import { useSecondhandStore } from '@campus/common'
 
-const router = useRouter()
-
-// 浏览记录数据
-const historyList = ref([
-  {
-    id: 1,
-    title: '高等数学教材',
-    desc: '第七版上下册',
-    price: 25,
-    tag: '9成新',
-    icon: 'fas fa-book',
-    viewTime: '2小时前'
-  },
-  {
-    id: 2,
-    title: '联想笔记本电脑',
-    desc: 'i5处理器轻薄本',
-    price: 2200,
-    tag: '8成新',
-    icon: 'fas fa-laptop',
-    viewTime: '1天前'
-  },
-  {
-    id: 3,
-    title: '山地自行车',
-    desc: '24速变速送锁',
-    price: 380,
-    tag: '7成新',
-    icon: 'fas fa-bicycle',
-    viewTime: '2天前'
-  },
-  {
-    id: 4,
-    title: '校庆纪念卫衣',
-    desc: 'L码全新未拆',
-    price: 89,
-    tag: '全新',
-    icon: 'fas fa-tshirt',
-    viewTime: '3天前'
-  }
-])
-
-// 跳转到商品详情
-const goToDetail = (id: number) => {
-  router.push(`/secondhand/detail/${id}`)
+// 定义浏览记录在当前页面中的展示结构
+interface HistoryItem {
+  id: number // 浏览记录 ID（用于删除单条记录）
+  goodsId: number // 对应的商品 ID（用于跳转到详情页）
+  title: string // 商品标题
+  desc: string // 商品描述（此处示例中暂留空字符串）
+  price: number // 商品价格
+  tag: string // 记录标签文案（例如“浏览记录”）
+  icon: string // 左侧图标的类名（使用 Font Awesome）
+  viewTime: string // 浏览时间的格式化字符串
 }
 
-// 移除单条记录
-const removeItem = (id: number) => {
-  const index = historyList.value.findIndex(item => item.id === id)
-  if (index > -1) {
-    historyList.value.splice(index, 1)
-  }
+// 创建路由实例，用于在点击记录时跳转到二手详情页
+const router = useRouter() // 调用 useRouter 获取路由对象
+
+// 获取二手 Store 实例，后续所有浏览记录相关的数据都从这里读取
+const secondhandStore = useSecondhandStore() // 调用 useSecondhandStore 获取全局的二手 Store
+
+// 使用计算属性，将 Store 中的浏览记录转换为页面展示所需的结构
+const historyList = computed<HistoryItem[]>(() => {
+  // 从 Store 中取出原始浏览记录数组（包含 goodsTitle 等字段）
+  const records = secondhandStore.browseHistory // 直接访问 Store 中的浏览记录响应式数据
+  // 将原始记录映射为页面使用的 HistoryItem 结构
+  return records.map((item) => ({
+    id: item.id, // 使用记录自身的 ID
+    goodsId: item.goodsId, // 商品 ID，用于后续跳转
+    title: item.goodsTitle, // 展示商品标题
+    desc: '', // 此处暂不展示描述信息，保留字段方便后续扩展
+    price: item.price || 0, // 价格字段，后端可能为空，这里做兜底
+    tag: '浏览记录', // 固定文案，标识该条目来自浏览记录
+    icon: 'fas fa-box', // 使用统一的盒子图标作为占位
+    viewTime: formatDateTime(item.viewTime) // 将原始时间格式化成易读字符串
+  })) // 返回新的数组供模板使用
+})
+
+// 将 Store 中的 loading 状态透传给页面，方便后续根据需要展示加载中效果
+const loading = computed(() => secondhandStore.loading) // 直接使用 Store 自己的 loading 状态
+
+// 跳转到对应商品的详情页
+const goToDetail = (goodsId: number) => {
+  router.push(`/secondhand/detail/${goodsId}`) // 使用路由跳转到二手详情页面
 }
 
-// 清空所有记录
-const clearHistory = () => {
-  if (confirm('确定要清空所有浏览记录吗？')) {
-    historyList.value = []
+// 移除单条浏览记录
+const removeItem = async (id: number) => {
+  try {
+    // 调用 Store 中封装好的删除单条记录方法，自动同步更新全局状态
+    await secondhandStore.removeBrowseHistoryItem(id) // 根据记录 ID 调用删除接口并更新本地列表
+  } catch (error) {
+    console.error('删除浏览记录失败:', error) // 控制台输出详细错误信息
+    alert('删除失败，请稍后重试') // 给用户一个简单的错误提示
   }
 }
 
+// 清空所有浏览记录
+const clearHistory = async () => {
+  // 如果当前本地列表已经为空，则不进行任何操作
+  if (!historyList.value.length) {
+    return // 直接返回，避免无意义请求
+  }
+  // 弹窗确认，避免用户误操作清空全部记录
+  if (!confirm('确定要清空所有浏览记录吗？')) {
+    return // 用户点击取消，则不继续执行
+  }
+  try {
+    // 调用 Store 中封装好的清空浏览记录方法
+    await secondhandStore.clearBrowseHistoryAll() // 调用后端接口并清空本地状态
+  } catch (error) {
+    console.error('清空浏览记录失败:', error) // 控制台输出错误日志
+    alert('清空浏览记录失败，请稍后重试') // 给用户反馈提示
+  }
+}
+
+// 将时间字符串格式化为 yyyy-MM-dd HH:mm 形式，便于用户阅读
+const formatDateTime = (dateStr: string): string => {
+  if (!dateStr) return '' // 后端未返回时间时，直接返回空字符串
+  const date = new Date(dateStr) // 将原始字符串转换为 Date 对象
+  if (Number.isNaN(date.getTime())) {
+    return dateStr // 如果解析失败，则原样返回，避免显示为无意义的时间
+  }
+  const y = date.getFullYear() // 年份
+  const m = String(date.getMonth() + 1).padStart(2, '0') // 月份补零
+  const d = String(date.getDate()).padStart(2, '0') // 日期补零
+  const h = String(date.getHours()).padStart(2, '0') // 小时补零
+  const mm = String(date.getMinutes()).padStart(2, '0') // 分钟补零
+  return `${y}-${m}-${d} ${h}:${mm}` // 拼接为最终展示格式
+}
+
+// 组件挂载时，从后端加载浏览记录列表到 Store 中
 onMounted(() => {
-  // 从本地存储或API加载浏览记录
-  // loadHistory()
+  // 调用 Store 中的加载方法，约定第一页最多拉取 50 条记录
+  // 这里不做错误捕获，具体错误在 Store 内部已经有统一处理并打印日志
+  void secondhandStore.loadBrowseHistory(1, 50) // 使用 void 忽略 Promise 返回值，仅触发请求
 })
 </script>
 

@@ -9,14 +9,15 @@ import com.yourschool.campussystem.mapper.MessageMapper;
 import com.yourschool.campussystem.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate; // 引入SimpMessagingTemplate，用于通过WebSocket向前端推送消息中心事件
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.time.LocalDateTime; // 引入LocalDateTime，用于记录时间戳
+import java.util.HashMap; // 引入HashMap，用于构建返回和推送的数据结构
+import java.util.List; // 引入List接口，用于保存消息列表
+import java.util.Map; // 引入Map接口，用于封装键值对数据
+import java.util.stream.Collectors; // 引入Collectors，用于将流转换为列表
 
 /**
  * 消息服务实现类
@@ -26,7 +27,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class MessageServiceImpl implements MessageService {
 
-    private final MessageMapper messageMapper;
+    private final MessageMapper messageMapper; // 注入消息Mapper，用于对message表进行增删改查
+    private final SimpMessagingTemplate messagingTemplate; // 注入SimpMessagingTemplate，用于通过WebSocket推送“未读消息变化”事件到前端
 
     @Override
     public Map<String, Object> getMessageList(Long userId, String type, Integer page, Integer size) {
@@ -90,6 +92,8 @@ public class MessageServiceImpl implements MessageService {
             message.setReadTime(LocalDateTime.now());
             messageMapper.updateById(message);
             log.info("消息标记为已读: userId={}, messageId={}", userId, messageId);
+            // 已读状态发生变化后，通过WebSocket通知前端刷新未读消息数量
+            pushUnreadEvent(userId); // 调用封装方法，向当前用户推送一次“未读消息状态变更”事件
         }
     }
 
@@ -119,6 +123,8 @@ public class MessageServiceImpl implements MessageService {
         }
 
         log.info("批量标记消息为已读: userId={}, count={}", userId, messages.size());
+        // 批量操作完成后，通过WebSocket通知前端刷新未读消息数量
+        pushUnreadEvent(userId); // 调用封装方法，向当前用户推送一次事件，提示前端刷新未读数
     }
 
     @Override
@@ -128,5 +134,23 @@ public class MessageServiceImpl implements MessageService {
                 .and(wrapper -> wrapper.eq(Message::getIsRead, 0).or().isNull(Message::getIsRead));
 
         return messageMapper.selectCount(queryWrapper);
+    }
+
+    @Override
+    public void pushUnreadEvent(Long userId) {
+        // 使用try-catch保证即使WebSocket推送失败，也不会影响主业务流程
+        try {
+            Long unreadCount = getUnreadCount(userId); // 调用内部方法获取当前用户的未读消息数量
+
+            Map<String, Object> payload = new HashMap<>(); // 创建一个Map用于封装推送给前端的数据
+            payload.put("event", "UNREAD_CHANGED"); // 标记事件类型为“未读数量发生变化”
+            payload.put("unreadCount", unreadCount); // 放入当前未读消息数量
+            payload.put("timestamp", LocalDateTime.now()); // 放入当前时间戳，方便前端调试或展示
+
+            String destination = "/topic/message/" + userId; // 构造该用户专属的消息中心订阅通道路径
+            messagingTemplate.convertAndSend(destination, payload); // 通过WebSocket将数据推送给订阅该通道的前端
+        } catch (Exception e) {
+            log.warn("通过WebSocket推送消息中心未读状态失败: userId={}", userId, e); // 打印警告日志，但不中断正常业务
+        }
     }
 }

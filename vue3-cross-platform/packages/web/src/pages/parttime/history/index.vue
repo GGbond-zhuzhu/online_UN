@@ -62,44 +62,33 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+// 引入 Vue 的组合式 API，用于创建响应式数据和处理生命周期
+import { computed, onMounted } from 'vue' // 从 vue 中导入 computed 和 onMounted
 import { useRouter } from 'vue-router'
 import NavBar from '@/components/common/NavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 import FloatingMenu from '@/components/common/FloatingMenu.vue'
+// 引入公共兼职 Store，统一管理兼职浏览记录状态和接口调用
+import { useParttimeStore } from '@campus/common' // 从 @campus/common 导入 useParttimeStore
 
 const router = useRouter()
 
-// 浏览记录
-const historyList = ref([
-  {
-    id: 1,
-    jobId: 1,
-    jobTitle: '校园推广专员',
-    companyName: '某教育公司',
-    salary: '150-200元/天',
-    location: '校内',
-    viewTime: '2小时前'
-  },
-  {
-    id: 2,
-    jobId: 2,
-    jobTitle: '数据录入员',
-    companyName: '某科技公司',
-    salary: '20-30元/小时',
-    location: '线上',
-    viewTime: '1天前'
-  },
-  {
-    id: 3,
-    jobId: 3,
-    jobTitle: '客服助理',
-    companyName: '某服务公司',
-    salary: '3000-4000元/月',
-    location: '校外',
-    viewTime: '3天前'
-  }
-])
+// 通过公共 Store 统一获取和管理兼职浏览记录
+const parttimeStore = useParttimeStore() // 调用 useParttimeStore 获取全局兼职 Store 实例
+
+// 将 Store 中的浏览记录映射为当前页面需要展示的结构
+const historyList = computed(() => {
+  // 直接使用 Store 中的浏览记录数组（字段与页面展示基本一致）
+  return parttimeStore.browseHistory.map((item) => ({
+    id: item.id, // 浏览记录ID
+    jobId: item.jobId, // 对应的兼职岗位ID
+    jobTitle: item.jobTitle, // 岗位标题
+    companyName: item.companyName, // 公司名称
+    salary: item.salary, // 薪资信息（已为字符串，例如“20-30元/小时”）
+    location: item.location, // 工作地点（校内/校外/线上等）
+    viewTime: item.viewTime // 浏览时间（后端已格式化为可读字符串）
+  }))
+})
 
 // 跳转到岗位详情
 const goToDetail = (jobId: number) => {
@@ -107,32 +96,44 @@ const goToDetail = (jobId: number) => {
 }
 
 // 移除单条记录
-const removeItem = (id: number) => {
-  const index = historyList.value.findIndex(item => item.id === id)
-  if (index > -1) {
-    historyList.value.splice(index, 1)
-    // TODO: 调用API删除记录
-    // await removeHistoryAPI(id)
+const removeItem = async (id: number) => {
+  try {
+    // 调用公共 Store 提供的删除浏览记录方法，自动同步更新全局状态
+    await parttimeStore.removeBrowseHistoryItem(id) // 根据记录ID删除对应的浏览记录
+  } catch (error) {
+    console.error('删除浏览记录失败:', error) // 打印错误信息，便于调试
+    alert('删除浏览记录失败，请稍后重试') // 提示用户操作失败
   }
 }
 
 // 清空记录
-const clearHistory = () => {
-  if (confirm('确定要清空所有浏览记录吗？')) {
-    historyList.value = []
-    // TODO: 调用API清空记录
-    // await clearHistoryAPI()
+const clearHistory = async () => {
+  // 如果当前没有任何记录，则不需要执行清空逻辑
+  if (!historyList.value.length) {
+    return // 直接返回
+  }
+  // 弹出确认对话框，防止误操作
+  if (!confirm('确定要清空所有浏览记录吗？')) {
+    return // 用户取消，则不执行后续逻辑
+  }
+  try {
+    // 调用公共 Store 提供的“清空浏览记录”方法
+    await parttimeStore.clearBrowseHistoryAll() // 调用后端接口并清空本地状态
+  } catch (error) {
+    console.error('清空浏览记录失败:', error) // 打印错误信息
+    alert('清空浏览记录失败，请稍后重试') // 提示用户操作失败
   }
 }
 
 // 去浏览兼职
 const goToParttime = () => {
-  router.push('/parttime')
+  router.push('/parttime') // 跳转到兼职列表页面，方便用户继续浏览岗位
 }
 
+// 组件挂载时，从后端加载真实的兼职浏览记录数据
 onMounted(() => {
-  // 加载浏览记录
-  // loadHistory()
+  // 通过公共 Store 提供的加载方法，从后端获取第 1 页、最多 50 条浏览记录
+  parttimeStore.loadBrowseHistory(1, 50) // 初始化时拉取浏览记录填充到页面
 })
 </script>
 

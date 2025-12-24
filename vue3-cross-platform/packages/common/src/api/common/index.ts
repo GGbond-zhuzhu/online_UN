@@ -259,3 +259,32 @@ export const submitContactForm = (data: ContactFormSubmit): Promise<{
     params: data
   })
 }
+
+// ==================== 文件上传API ====================
+
+/**
+ * 上传图片
+ * @param file 图片文件
+ * @param uploadType 上传类型（AVATAR/GOODS/PARTTIME/OTHER）
+ */
+export const uploadImage = (
+  file: File,
+  uploadType: string = 'OTHER'
+): Promise<{
+  url: string
+  fileName: string
+  fileSize: number
+  uploadTime: string
+}> => {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('uploadType', uploadType)
+
+  // 使用axios发送FormData，携带multipart/form-data头
+  return request.post('/api/common/upload/image', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+

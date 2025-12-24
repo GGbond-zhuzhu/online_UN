@@ -19,7 +19,7 @@ import com.yourschool.campussystem.mapper.UniversityMapper;
 import com.yourschool.campussystem.mapper.UserAuthApplyMapper;
 import com.yourschool.campussystem.mapper.UserMapper;
 import com.yourschool.campussystem.service.AuthService;
-//import com.yourschool.campussystem.service.BaiduFaceService;  // 暂时禁用
+import com.yourschool.campussystem.service.BaiduFaceService;  // 引入百度AI云人脸识别服务接口，用于调用真实的人脸检测与活体检测
 import com.yourschool.campussystem.service.CommonService;
 import com.yourschool.campussystem.service.EmailService;
 import com.yourschool.campussystem.service.IpLocationService;
@@ -54,7 +54,7 @@ public class AuthServiceImpl implements AuthService {
     private final TeacherInfoMapper teacherInfoMapper;
     private final EcardMapper ecardMapper;
     private final CommonService commonService;
-    //private final BaiduFaceService baiduFaceService;  // 暂时禁用
+    private final BaiduFaceService baiduFaceService;  // 注入百度AI云人脸识别服务，用于执行真实的人脸检测和活体检测
     private final EmailService emailService;
     private final UserLoginLogMapper userLoginLogMapper;
     private final IpLocationService ipLocationService;
@@ -216,35 +216,45 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public Map<String, Object> visitorFaceDetect(String faceImage, String name, String phone,
                                                   String idCard, String reason) {
-        // 步骤1: 人脸检测 - 检测图片中是否有人脸（暂时禁用，待修复百度AI SDK问题）
-        // Map<String, Object> detectResult = baiduFaceService.detectFace(faceImage);
-        // log.info("人脸检测结果: {}", detectResult);
-        Map<String, Object> detectResult = new HashMap<>();
-        detectResult.put("success", true);
-        detectResult.put("faceNum", 1);
-        
-        // 步骤2: 活体检测 - 检测是否为真实活体（暂时禁用，待修复百度AI SDK问题）
-        // Map<String, Object> livenessResult = baiduFaceService.faceLiveness(faceImage);
-        // log.info("活体检测结果: {}", livenessResult);
-        Map<String, Object> livenessResult = new HashMap<>();
-        livenessResult.put("success", true);
-        livenessResult.put("face_liveness", 0.95);
-        
-        // 步骤3: 如果有身份证照片，进行人脸比对（可选）
-        // 注意：这里假设faceImage是用户上传的人脸照片
-        // 如果需要与身份证照片比对，需要额外传入身份证照片的Base64编码
-        // Map<String, Object> matchResult = baiduFaceService.faceMatch(faceImage, idCardImage);
-        
-        // 构建返回结果
-        Map<String, Object> response = new HashMap<>();
-        response.put("detectResult", "SUCCESS");
-        response.put("livenessScore", livenessResult.get("face_liveness"));
-        response.put("isAlive", true);
-        response.put("faceNum", detectResult.get("faceNum"));
-        response.put("message", "活体检测通过，可以申请游客临时卡");
-        response.put("timestamp", LocalDateTime.now());
-        
-        return response;
+        // 处理前端可能传入的 data:image/jpeg;base64, 前缀，只保留纯Base64数据
+        String pureBase64 = faceImage; // 默认使用原始字符串
+        if (pureBase64 != null && pureBase64.contains(",")) { // 如果包含逗号，说明可能带有前缀
+            pureBase64 = pureBase64.substring(pureBase64.indexOf(",") + 1); // 截取逗号之后的部分作为纯Base64
+        }
+
+        // 步骤1：调用百度AI云人脸检测接口，确认图片中是否存在人脸
+        Map<String, Object> detectResult = baiduFaceService.detectFace(pureBase64); // 调用人脸检测服务
+        log.info("百度AI云人脸检测结果: {}", detectResult); // 打印检测结果日志，便于后续排查问题
+
+        // 步骤2：调用百度AI云在线活体检测接口，确保为真实活体而非照片/视频
+        Map<String, Object> livenessResult = baiduFaceService.faceLiveness(pureBase64); // 调用活体检测服务
+        log.info("百度AI云活体检测结果: {}", livenessResult); // 打印活体检测结果日志
+
+        // 从检测结果中提取人脸数量和活体分数等关键信息
+        int faceNum = 0; // 默认人脸数量为0
+        Object faceNumObj = detectResult.get("faceNum"); // 从返回Map中读取faceNum字段
+        if (faceNumObj instanceof Number) { // 如果该字段为数字类型
+            faceNum = ((Number) faceNumObj).intValue(); // 转换为int类型
+        }
+
+        double livenessScore = 0.0; // 默认活体分数为0
+        Object scoreObj = livenessResult.get("livenessScore"); // 从返回Map中读取livenessScore字段
+        if (scoreObj instanceof Number) { // 如果为数字类型
+            livenessScore = ((Number) scoreObj).doubleValue(); // 转换为double类型
+        }
+
+        boolean isAlive = Boolean.TRUE.equals(livenessResult.get("isAlive")); // 根据返回的isAlive字段判断是否为活体
+
+        // 构建统一的响应结果，返回给前端页面
+        Map<String, Object> response = new HashMap<>(); // 创建返回结果Map
+        response.put("detectResult", "SUCCESS"); // 标记检测流程执行成功
+        response.put("livenessScore", livenessScore); // 返回活体检测分数
+        response.put("isAlive", isAlive); // 返回是否为真实活体
+        response.put("faceNum", faceNum); // 返回检测到的人脸数量
+        response.put("message", isAlive ? "活体检测通过，可以申请游客临时卡" : "活体检测未通过，请重新拍摄"); // 根据结果给出提示文案
+        response.put("timestamp", LocalDateTime.now()); // 返回当前时间戳，便于前端展示
+
+        return response; // 将检测结果返回给调用方（Controller）
     }
 
     @Override
@@ -487,6 +497,58 @@ public class AuthServiceImpl implements AuthService {
         response.put("expiresIn", JWTUtils.EXPIRATION);
 
         return response;
+    }
+
+    @Override
+    public Map<String, Object> sendResetPasswordEmailCode(String email) {
+        log.info("发送重置密码邮箱验证码请求: email={}", email); // 记录发送重置密码验证码的请求日志
+        // 这里直接复用EmailService，指定验证码类型为RESET_PASSWORD，便于后续区分用途
+        Map<String, Object> result = emailService.sendVerificationCode(email, "RESET_PASSWORD"); // 发送重置密码用验证码
+        log.info("重置密码验证码发送成功: email={}, codeId={}", email, result.get("codeId")); // 打印成功日志，包含验证码ID
+        return result; // 将包含codeId和expireTime等信息的Map返回给Controller
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Object> resetPasswordByEmail(String email, String code, String codeId, String newPassword) {
+        log.info("邮箱重置密码请求: email={}", email); // 记录重置密码请求日志
+
+        // 1. 校验邮箱验证码是否正确且未过期（校验成功后会自动标记为已使用）
+        boolean isValid = emailService.verifyCode(email, code, codeId); // 调用EmailService进行验证码校验
+        if (!isValid) { // 如果校验失败
+            log.warn("重置密码验证码验证失败: email={}", email); // 打印警告日志
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "验证码错误或已过期"); // 抛出业务异常提示前端
+        }
+
+        // 2. 根据邮箱查询用户
+        LambdaQueryWrapper<User> queryWrapper = new LambdaQueryWrapper<>(); // 创建查询条件包装器
+        queryWrapper.eq(User::getEmail, email); // 条件：email字段等于传入邮箱
+        User user = userMapper.selectOne(queryWrapper); // 从数据库中查询用户
+
+        if (user == null) { // 如果未查询到用户
+            log.warn("重置密码失败，邮箱未注册: email={}", email); // 打印警告日志
+            throw new BusinessException(ErrorCode.USER_NOT_EXIST, "该邮箱尚未注册账号"); // 抛出“用户不存在”业务异常
+        }
+
+        // 3. 加密新密码并更新到数据库
+        try {
+            String encodedPassword = passwordEncoder.encode(newPassword); // 使用BCrypt对新密码进行加密
+            user.setPassword(encodedPassword); // 设置新的加密密码
+            user.setUpdateTime(LocalDateTime.now()); // 更新用户信息的更新时间
+            userMapper.updateById(user); // 将修改后的用户信息写回数据库
+            log.info("用户密码重置成功: userId={}, email={}", user.getId(), email); // 打印成功日志
+        } catch (Exception e) { // 捕获加密或数据库更新过程中可能出现的异常
+            log.error("重置密码时发生异常: email={}", email, e); // 打印错误日志和堆栈
+            throw new BusinessException(ErrorCode.INTERNAL_SERVER_ERROR, "重置密码失败，请稍后重试"); // 抛出统一的服务器错误提示
+        }
+
+        // 4. 构造返回结果，前端无需拿到过多信息，仅做确认提示即可
+        Map<String, Object> response = new HashMap<>(); // 创建返回结果Map
+        response.put("userId", user.getId()); // 返回用户ID，便于前端调试或后续扩展
+        response.put("email", user.getEmail()); // 返回邮箱地址
+        response.put("message", "密码重置成功"); // 提示信息
+
+        return response; // 返回结果Map
     }
 
     /**

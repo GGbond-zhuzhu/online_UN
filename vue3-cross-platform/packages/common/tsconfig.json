@@ -15,15 +15,20 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"] // 将 @ 映射到 common 包的 src 目录，便于在内部相互导入
     },
-    "forceConsistentCasingInFileNames": true,
-    "types": ["vite/client"]
+    "forceConsistentCasingInFileNames": true, // 强制区分大小写，避免在不同操作系统上出现路径大小写问题
+    "types": ["vite/client"] // 引入 Vite 的类型声明，支持 import.meta.env 等语法提示
   },
   "include": [
-    "src/**/*.ts", 
-    "src/**/*.d.ts", 
-    "src/**/*.tsx"
+    "src/**/*.ts", // 编译所有 TypeScript 源码文件
+    "src/**/*.d.ts", // 编译所有类型声明文件（包含我们新增的 uni 全局声明）
+    "src/**/*.tsx" // 预留对 TSX/JSX 文件的支持
   ],
-  "exclude": ["node_modules", "old_backup", "dist"]
+  "exclude": [
+    "node_modules", // 排除依赖目录
+    "old_backup", // 排除历史备份目录
+    "dist", // 排除构建产物
+    "src/pinia/backup_store" // 排除旧版本的备份 Store，不参与当前严格类型检查
+  ]
 }

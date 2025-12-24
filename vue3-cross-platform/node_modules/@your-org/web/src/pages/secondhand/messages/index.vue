@@ -54,69 +54,86 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import NavBar from '@/components/common/NavBar.vue'
-import AppFooter from '@/components/common/AppFooter.vue'
-import FloatingMenu from '@/components/common/FloatingMenu.vue'
+import { ref, onMounted } from 'vue' // 引入 ref/onMounted，用于管理列表数据和生命周期
+import { useRouter } from 'vue-router' // 引入路由，方便在点击会话时跳转到聊天页
+import NavBar from '@/components/common/NavBar.vue' // 顶部导航栏组件
+import AppFooter from '@/components/common/AppFooter.vue' // 底部页脚组件
+import FloatingMenu from '@/components/common/FloatingMenu.vue' // 右下角浮动菜单组件
+import { request } from '@campus/common' // 引入公共请求工具，方便调用后端聊天接口
 
-const router = useRouter()
+const router = useRouter() // 创建路由实例，后面通过它跳转到 /chat 页面
 
-// 消息数据
-const messages = ref([
-  {
-    id: 1,
-    sender: '张同学',
-    title: '关于高等数学教材的咨询',
-    preview: '您好，我想了解一下这本教材的详细情况...',
-    time: '2小时前',
-    read: false,
-    relatedProduct: '高等数学教材'
-  },
-  {
-    id: 2,
-    sender: '李同学',
-    title: '商品已售出',
-    preview: '您发布的联想笔记本电脑已被购买，请及时确认...',
-    time: '1天前',
-    read: false,
-    relatedProduct: '联想笔记本电脑'
-  },
-  {
-    id: 3,
-    sender: '系统消息',
-    title: '交易提醒',
-    preview: '您的商品"山地自行车"有新的询价...',
-    time: '2天前',
-    read: true,
-    relatedProduct: '山地自行车'
-  },
-  {
-    id: 4,
-    sender: '王同学',
-    title: '商品咨询',
-    preview: '请问这个商品还在吗？可以面交吗？',
-    time: '3天前',
-    read: true,
-    relatedProduct: '校庆纪念卫衣'
+// 定义前端展示用的“二手会话消息”类型
+interface SecondhandConversationItem {
+  id: number // 会话ID（后端 chat_conversation 的主键）
+  sender: string // 对方昵称（例如“张同学”）
+  title: string // 列表标题，这里统一为“与xxx的聊天”
+  preview: string // 最近一条消息的内容预览
+  time: string // 最近一条消息时间的格式化结果
+  read: boolean // 是否全部已读（未读数为0则视为已读）
+  relatedProduct?: string // 相关商品标题（当前后端未提供，这里预留字段）
+  targetUserId: number // 聊天对象用户ID，跳转聊天页面时需要传给前端
+}
+
+// 消息数据列表，实际展示的是“聊天会话列表”，而不是简单静态内容
+const messages = ref<SecondhandConversationItem[]>([]) // 初始为空数组，进入页面时从后端加载
+
+// 工具函数：将后端返回的时间字符串格式化为“月-日 时:分”形式，便于在列表中展示
+const formatTime = (raw: string | Date | null): string => {
+  if (!raw) {
+    return '' // 如果时间为空则返回空字符串
   }
-])
+  const date = raw instanceof Date ? raw : new Date(raw) // 将字符串转换为 Date 对象
+  // 使用本地化时间显示“月-日 时:分”，例如“04-12 10:30”
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  const time = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+  return `${month}-${day} ${time}`
+}
 
-// 查看消息详情
-const viewMessage = (message: any) => {
-  // 标记为已读
-  message.read = true
-  // 跳转到消息详情或商品详情
-  if (message.relatedProduct) {
-    // router.push(`/secondhand/detail/${message.productId}`)
-    // 暂时跳转到商品列表页
-    router.push('/secondhand')
+// 从后端加载当前用户的聊天会话列表（只展示与二手交易相关的会话）
+const loadConversations = async () => {
+  try {
+    // 调用后端 GET /api/chat/conversations 接口，获取当前用户参与的所有会话列表
+    const list: any[] = await request.get('/api/chat/conversations')
+
+    // 将后端数据转换为前端用于展示的结构
+    messages.value = (list || []).map((item: any) => {
+      // 后端返回字段：conversationId、targetUserId、targetUserName、lastMessage、lastMessageTime、unreadCount
+      return {
+        id: item.conversationId, // 以会话ID作为当前列表项的主键
+        sender: item.targetUserName || '用户', // 使用对方昵称作为发送者名称
+        title: `与 ${item.targetUserName || '用户'} 的聊天`, // 列表标题统一为“与xx的聊天”
+        preview: item.lastMessage || '暂时没有聊天内容', // 如果没有最后一条消息则给一个占位提示
+        time: formatTime(item.lastMessageTime || null), // 将最后消息时间格式化为列表展示文本
+        read: !item.unreadCount || item.unreadCount === 0, // 未读数为0则视为已读
+        relatedProduct: undefined, // 当前后端未返回具体商品信息，这里先留空以便后续扩展
+        targetUserId: item.targetUserId // 保存对方用户ID，后续跳转聊天时需要传入
+      } as SecondhandConversationItem
+    })
+  } catch (error) {
+    console.error('加载聊天会话列表失败:', error) // 控制台输出错误信息，方便调试
   }
 }
 
+// 查看消息详情：这里实际逻辑是“进入与该用户的聊天窗口”
+const viewMessage = (message: SecondhandConversationItem) => {
+  // 点击后先将本地状态标记为已读，界面上去掉“未读高亮”效果
+  message.read = true
+
+  // 使用已知的会话ID和对方用户ID跳转到聊天页面
+  router.push({
+    name: 'chat', // 使用路由名称，指向 /chat 对应的页面
+    query: {
+      conversationId: message.id, // 将当前会话ID传递给聊天页面
+      targetUserId: message.targetUserId // 同时传入聊天对象用户ID，便于前端/后端校验
+    }
+  })
+}
+
+// 组件挂载完成后自动加载一次会话列表
 onMounted(() => {
-  // 加载消息列表
-  // loadMessages()
+  loadConversations() // 进入“我的消息”页面时，从后端拉取当前用户的所有聊天会话
 })
 </script>
 

@@ -3,13 +3,33 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "workspaces": ["packages/web", "packages/common"],
+  "workspaces": [
+    "packages/app",
+    "packages/web",
+    "packages/common"
+  ],
   "scripts": {
-    "dev:app": "cd packages/app && npm run dev",
-    "dev:web": "cd packages/web && npm run dev",
-    "install:all": "npm install --legacy-peer-deps && cd packages/web && npm install --legacy-peer-deps && cd ../common && npm install --legacy-peer-deps"
+    "clean": "rm -rf node_modules packages/*/node_modules packages/app/unpackage",
+    "install:all": "pnpm install --shamefully-hoist --ignore-scripts",
+    "dev:mp-weixin": "cd packages/app && cross-env UNI_PLATFORM=mp-weixin npm run dev:mp-weixin",
+    "build:mp-weixin": "cd packages/app && cross-env UNI_PLATFORM=mp-weixin npm run build:mp-weixin"
   },
   "devDependencies": {
-    "typescript": "^5.5.4"
+    "cross-env": "^7.0.3",
+    "typescript": "^5.5.4",
+    "vite": "^4.5.2"
+  },
+  "pnpm": {
+    "shamefully-hoist": true,
+    "overrides": {
+      "vue": "^3.4.21",
+      "@vue/shared": "^3.4.21",
+      "@vue/runtime-core": "^3.4.21",
+      "@vue/runtime-dom": "^3.4.21",
+      "@vue/compiler-sfc": "^3.4.21"
+    }
+  },
+  "dependencies": {
+    "vue": "^3.4.21"
   }
 }

@@ -265,18 +265,18 @@ const newsList = ref([
   { title: '【用户调研】关于提升平台体验的问卷调查，期待您的参与。', link: '/feedback' }
 ])
 
-// 检查是否可以访问某个功能
-const canAccess = (feature: string): boolean => {
-  const role = userStore.currentRole
-  const featureRoles: Record<string, string[]> = {
-    ecard: ['student', 'teacher', 'university', 'visitor', 'tourist'],
-    secondhand: ['student', 'teacher', 'merchant', 'visitor', 'tourist'],
-    parttime: ['student', 'merchant', 'admin', 'visitor', 'tourist'],
-    schedule: ['student', 'teacher', 'visitor', 'tourist'],
-    admin: ['admin', 'university']
+// 检查是否可以访问某个功能（导航栏 / 首页统一使用同一套规则）
+const canAccess = (feature: string): boolean => { // canAccess：根据当前角色判断首页卡片是否可点击
+  const role = userStore.currentRole // 读取当前登录用户的角色编码
+  const featureRoles: Record<string, string[]> = { // 功能到“允许访问角色列表”的映射表
+    ecard: ['student', 'teacher', 'university', 'visitor', 'tourist'], // 校园卡：学生 / 教师 / 高校管理员 / 游客
+    secondhand: ['student', 'teacher', 'merchant', 'visitor', 'tourist'], // 二手交易：学生 / 教师 / 商家 / 游客
+    parttime: ['student', 'merchant', 'admin', 'visitor', 'tourist'], // 兼职：学生 / 商家 / 管理员 / 游客
+    schedule: ['student', 'teacher', 'visitor', 'tourist'], // 行程管理：学生 / 教师 / 游客
+    admin: ['admin', 'university'] // 管理中心：仅管理员与高校管理员可用
   }
-  const allowedRoles = featureRoles[feature] || []
-  return allowedRoles.includes(role) || allowedRoles.includes('all')
+  const allowedRoles = featureRoles[feature] || [] // 取出当前功能对应的允许角色数组（没有则为空数组）
+  return allowedRoles.includes(role) // 当前角色在允许列表中则返回 true，否则返回 false
 }
 
 // 跳转到模块

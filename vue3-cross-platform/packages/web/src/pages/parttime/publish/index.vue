@@ -462,13 +462,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
-import { useRouter } from 'vue-router'
+// 引入 Vue 的组合式 API，用于管理表单数据和计算属性
+import { ref, reactive, computed } from 'vue' // 从 vue 导入 ref、reactive、computed
+import { useRouter } from 'vue-router' // 从 vue-router 导入 useRouter，用于页面跳转
 import NavBar from '@/components/common/NavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 import FloatingMenu from '@/components/common/FloatingMenu.vue'
+// 从公共包引入兼职 Store 和类型，统一管理“发布兼职”的后端交互
+import { useParttimeStore, type PublishParttimeParams } from '@campus/common' // useParttimeStore：统一的兼职 Store；PublishParttimeParams：发布接口参数类型
 
-const router = useRouter()
+const router = useRouter() // 获取路由实例，用于表单提交后跳转到列表页
+const parttimeStore = useParttimeStore() // 获取兼职 Store 实例，用于调用发布接口和读取 loading / 错误信息
 
 // 最小日期（今天）
 const minDate = computed(() => {
@@ -591,31 +595,83 @@ const validateForm = () => {
 }
 
 // 提交表单
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (!validateForm()) {
     return
   }
 
-  // 构建提交数据
-  const submitData = {
-    ...form,
-    workContent: form.workContent.filter(item => item.trim()),
-    requirements: form.requirements.filter(item => item.trim()),
-    salary: form.salaryType === 'hourly' || form.salaryType === 'daily'
-      ? `¥${form.salaryMin}-${form.salaryMax}${form.salaryType === 'hourly' ? '元/小时' : '元/天'}`
-      : form.salaryDesc
-  }
-
   try {
-    // TODO: 调用API提交
-    // await publishJob(submitData)
-    
-    // 暂时使用模拟成功
-    alert('发布成功！')
-    router.push('/parttime')
+    // 对用户填写的工作内容和任职要求做一次“去空行”处理
+    const cleanWorkContent = form.workContent
+      .map((item) => item.trim()) // 去掉前后空格
+      .filter((item) => item) // 过滤掉空字符串
+    const cleanRequirements = form.requirements
+      .map((item) => item.trim())
+      .filter((item) => item)
+
+    // 将“岗位描述 + 工作内容 + 任职要求”等信息合并为一个长描述，提交给后端
+    const descriptionParts: string[] = [] // 用于拼接多段文本的数组
+    descriptionParts.push(`岗位描述：\n${form.description.trim()}`) // 第一段：岗位描述
+    if (cleanWorkContent.length) {
+      // 如果有工作内容，则追加一段列表
+      descriptionParts.push(
+        '工作内容：\n' + cleanWorkContent.map((item, idx) => `${idx + 1}. ${item}`).join('\n')
+      )
+    }
+    if (cleanRequirements.length) {
+      // 如果有任职要求，则追加一段列表
+      descriptionParts.push(
+        '任职要求：\n' + cleanRequirements.map((item, idx) => `${idx + 1}. ${item}`).join('\n')
+      )
+    }
+    const fullDescription = descriptionParts.join('\n\n') // 使用空行分隔各部分，便于阅读
+
+    // 将表单中的薪资设置转换为后端需要的数值字段
+    const salaryValue =
+      form.salaryType === 'hourly' || form.salaryType === 'daily'
+        ? Number(form.salaryMin || 0) // 按小时 / 按天时，使用“最低薪资”作为基础薪资数值
+        : 0 // 按项目 / 其他暂时使用 0，占位，具体说明在描述中体现
+
+    // 将任职要求数组合并为一段文本，便于后端展示或存储
+    const requirementsText =
+      cleanRequirements.length > 0 ? cleanRequirements.join('；') : undefined // 没有要求时可以不传该字段
+
+    // 将联系方式整理为一段完整的字符串
+    const contactParts: string[] = [] // 存储各条联系信息
+    if (form.contactName.trim()) {
+      contactParts.push(`联系人：${form.contactName.trim()}`) // 联系人姓名
+    }
+    if (form.contactPhone.trim()) {
+      contactParts.push(`电话：${form.contactPhone.trim()}`) // 联系电话
+    }
+    if (form.contactEmail.trim()) {
+      contactParts.push(`邮箱：${form.contactEmail.trim()}`) // 邮箱（可选）
+    }
+    if (form.contactAddress.trim()) {
+      contactParts.push(`地址：${form.contactAddress.trim()}`) // 地址（可选）
+    }
+    const contactText = contactParts.join('；') || form.contactPhone // 兜底至少有一个电话
+
+    // 按照公共包中定义的 PublishParttimeParams 结构组装提交参数
+    const payload: PublishParttimeParams = {
+      title: form.title.trim(), // 岗位标题
+      description: fullDescription, // 合并后的岗位完整描述
+      salary: salaryValue, // 薪资数值（按小时/按天使用最低薪资，其余情况暂用 0 占位）
+      salaryType: form.salaryType, // 薪资类型（hourly/daily/project/other）
+      location: form.location, // 工作地区
+      workTime: form.time, // 工作时间说明
+      requirements: requirementsText, // 任职要求汇总文本（可选）
+      contact: contactText // 联系方式文本
+    }
+
+    // 调用公共包的兼职 Store 方法，向后端真正提交“发布兼职”请求
+    await parttimeStore.publishJob(payload) // 如果发布成功，会在 Store 中同步更新“我发布的兼职列表”
+
+    alert('发布成功！') // 提示用户发布成功
+    router.push('/parttime') // 跳转回兼职列表页，方便查看刚发布的岗位
   } catch (error) {
-    console.error('发布失败:', error)
-    alert('发布失败，请稍后重试')
+    console.error('发布失败:', error) // 控制台打印错误日志
+    alert(parttimeStore.errorMessage || '发布失败，请稍后重试') // 优先展示 Store 中的错误提示
   }
 }
 

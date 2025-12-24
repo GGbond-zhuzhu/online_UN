@@ -1266,12 +1266,15 @@ onMounted(() => {
 .category-btn:hover {
   border-color: var(--primary);
   color: var(--primary);
+  box-shadow: 0 4px 12px rgba(216, 27, 96, 0.3);
+  transform: translateY(-2px);
 }
 
 .category-btn.active {
   background: var(--primary);
-  color: white;
-  border-color: var(--primary);
+  border-color: #c2185b;
+  box-shadow: 0 4px 12px rgba(216, 27, 96, 0.3);
+  transform: translateY(-2px);
 }
 
 .action-buttons {
@@ -1299,7 +1302,6 @@ onMounted(() => {
 
 .action-btn:hover {
   background: var(--primary);
-  color: white;
   border-color: var(--primary);
   box-shadow: 0 4px 12px rgba(216, 27, 96, 0.3);
   transform: translateY(-2px);
@@ -1337,8 +1339,9 @@ onMounted(() => {
 
 .search-btn:hover {
   background: var(--primary);
-  color: white;
-  border-color: var(--primary);
+  border-color: #b02777;
+  box-shadow: 0 4px 12px rgba(216, 27, 96, 0.3);
+  transform: translateY(-2px);
 }
 
 /* 搜索结果盒子 */
@@ -1547,8 +1550,9 @@ onMounted(() => {
 
 .export-btn:hover {
   background: var(--primary);
-  color: white;
-  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.1);
+  transform: translateY(-2px);
+  border-color: #b02777;
 }
 
 .month-view-link {
@@ -1582,7 +1586,6 @@ onMounted(() => {
 }
 
 .week-day.today {
-  background: var(--primary);
   color: white;
 }
 
@@ -1598,7 +1601,7 @@ onMounted(() => {
 }
 
 .week-day.today .day-name {
-  color: rgba(255, 255, 255, 0.9);
+  color: #ffa20d;
 }
 
 .day-number {
@@ -1609,7 +1612,7 @@ onMounted(() => {
 }
 
 .week-day.today .day-number {
-  color: white;
+  color: rgb(249, 182, 11);
 }
 
 .day-count {
@@ -1618,7 +1621,7 @@ onMounted(() => {
 }
 
 .week-day.today .day-count {
-  color: rgba(255, 255, 255, 0.9);
+  color: rgb(249, 182, 11);
 }
 
 /* 独立提醒 */
@@ -1651,8 +1654,9 @@ onMounted(() => {
 
 .add-btn:hover {
   background: var(--primary);
-  color: white;
   border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.1);
+  transform: translateY(-2px);
 }
 
 .reminder-list {

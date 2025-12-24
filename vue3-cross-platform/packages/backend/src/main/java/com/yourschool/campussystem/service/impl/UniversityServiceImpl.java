@@ -2,16 +2,17 @@ package com.yourschool.campussystem.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.yourschool.campussystem.common.ErrorCode;
-import com.yourschool.campussystem.entity.*;
-import com.yourschool.campussystem.enums.ApplyStatusEnum;
-import com.yourschool.campussystem.enums.GoodsStatusEnum;
-import com.yourschool.campussystem.enums.ParttimeStatusEnum;
-import com.yourschool.campussystem.enums.UserRoleEnum;
-import com.yourschool.campussystem.exception.BusinessException;
-import com.yourschool.campussystem.mapper.*;
-import com.yourschool.campussystem.service.CommonService;
-import com.yourschool.campussystem.service.UniversityService;
+import com.yourschool.campussystem.common.ErrorCode; // 引入错误码枚举，用于抛出统一业务异常
+import com.yourschool.campussystem.entity.*; // 引入本项目中定义的实体类（高校、通知、用户等）
+import com.yourschool.campussystem.enums.ApplyStatusEnum; // 引入认证申请状态枚举
+import com.yourschool.campussystem.enums.GoodsStatusEnum; // 引入二手商品状态枚举
+import com.yourschool.campussystem.enums.ParttimeStatusEnum; // 引入兼职状态枚举
+import com.yourschool.campussystem.enums.UserRoleEnum; // 引入用户角色枚举
+import com.yourschool.campussystem.exception.BusinessException; // 引入业务异常类，用于抛出带错误码的异常
+import com.yourschool.campussystem.mapper.*; // 引入Mapper接口（包括UniversityMapper、NotificationMapper、MessageMapper等）
+import com.yourschool.campussystem.service.CommonService; // 引入通用服务接口
+import com.yourschool.campussystem.service.MessageService; // 引入消息服务接口，用于触发未读消息的WebSocket推送
+import com.yourschool.campussystem.service.UniversityService; // 引入高校管理服务接口
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
@@ -23,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.messaging.simp.SimpMessagingTemplate; // 引入SimpMessagingTemplate，用于在发送通知时通过WebSocket提醒前端刷新未读消息
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +48,7 @@ public class UniversityServiceImpl implements UniversityService {
     private final UniversityMapper universityMapper;
     private final UniversityConfigMapper universityConfigMapper;
     private final NotificationMapper notificationMapper;
+    private final MessageMapper messageMapper; // 注入消息Mapper，用于在发送通知时同步写入消息中心的message表
     private final UserLoginLogMapper userLoginLogMapper;
     private final UserMapper userMapper;
     private final UserAuthApplyMapper userAuthApplyMapper;
@@ -54,6 +57,8 @@ public class UniversityServiceImpl implements UniversityService {
     private final SecondhandGoodsMapper secondhandGoodsMapper;
     private final ParttimeMapper parttimeMapper;
     private final CommonService commonService;
+    private final MessageService messageService; // 注入消息服务，用于在发送通知后触发未读消息WebSocket推送
+    private final SimpMessagingTemplate messagingTemplate; // 注入SimpMessagingTemplate，预留给后续更细粒度的WebSocket通知使用
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -785,21 +790,36 @@ public class UniversityServiceImpl implements UniversityService {
         List<User> targetUsers = userMapper.selectList(queryWrapper);
         long sentCount = targetUsers.size();
 
-        // 为每个目标用户创建通知记录
-        LocalDateTime now = LocalDateTime.now();
-        for (User user : targetUsers) {
-            Notification notification = new Notification();
-            notification.setUniversityId(universityId);
-            notification.setTitle(title);
-            notification.setContent(content);
-            notification.setTargetType(targetType);
-            notification.setTargetUserId(user.getId());
-            notification.setIsUrgent(isUrgent != null && isUrgent ? 1 : 0);
-            notification.setIsRead(0);
-            notification.setSendTime(now);
-            notification.setCreateTime(now);
-            notification.setUpdateTime(now);
-            notificationMapper.insert(notification);
+        // 为每个目标用户创建通知记录，并同步写入消息中心的message表，方便Web端“消息中心”统一展示
+        LocalDateTime now = LocalDateTime.now(); // 记录当前时间，作为发送时间和创建时间
+        for (User user : targetUsers) { // 遍历所有目标用户
+            // 1. 在notification表中记录一条通知，用于高校端查看通知发送历史
+            Notification notification = new Notification(); // 创建通知实体对象
+            notification.setUniversityId(universityId); // 设置高校ID
+            notification.setTitle(title); // 设置通知标题
+            notification.setContent(content); // 设置通知内容
+            notification.setTargetType(targetType); // 设置通知目标类型（ALL/STUDENT/TEACHER等）
+            notification.setTargetUserId(user.getId()); // 设置具体接收用户ID
+            notification.setIsUrgent(isUrgent != null && isUrgent ? 1 : 0); // 是否紧急标记（1表示紧急）
+            notification.setIsRead(0); // 默认未读
+            notification.setSendTime(now); // 发送时间
+            notification.setCreateTime(now); // 创建时间
+            notification.setUpdateTime(now); // 更新时间
+            notificationMapper.insert(notification); // 将通知记录插入数据库
+
+            // 2. 同时在message表中为该用户生成一条“系统消息”，供Web端消息中心展示
+            Message message = new Message(); // 创建消息中心实体对象
+            message.setUserId(user.getId()); // 设置接收用户ID
+            message.setType("SYSTEM"); // 将类型标记为SYSTEM，前端会归类到“系统通知”
+            message.setTitle(title); // 使用通知标题作为消息标题
+            message.setContent(content); // 使用通知内容作为消息内容
+            message.setRelatedId(notification.getId()); // 关联通知记录ID，方便后续需要时追踪来源
+            message.setIsRead(0); // 默认未读
+            message.setCreateTime(now); // 创建时间
+            messageMapper.insert(message); // 写入message表，供消息中心接口查询
+
+            // 3. 触发一次“未读消息变化”WebSocket事件，让前端右上角小红点立即刷新
+            messageService.pushUnreadEvent(user.getId()); // 调用消息服务的推送方法通知对应用户刷新未读消息数
         }
 
         Map<String, Object> response = new HashMap<>();

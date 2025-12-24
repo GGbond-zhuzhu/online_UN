@@ -61,4 +61,21 @@ public interface AuthService {
      * 邮箱登录
      */
     Map<String, Object> emailLogin(String email, String code, String codeId, HttpServletRequest request);
+
+    /**
+     * 发送重置密码的邮箱验证码
+     * @param email 用户注册时绑定的邮箱地址
+     * @return 包含验证码ID和过期时间等信息的Map
+     */
+    Map<String, Object> sendResetPasswordEmailCode(String email);
+
+    /**
+     * 使用邮箱验证码重置登录密码
+     * @param email 用户邮箱地址
+     * @param code 邮箱收到的验证码
+     * @param codeId 验证码ID（从发送验证码接口返回）
+     * @param newPassword 新密码明文（会在服务中进行加密）
+     * @return 包含用户ID和邮箱等基础信息的Map
+     */
+    Map<String, Object> resetPasswordByEmail(String email, String code, String codeId, String newPassword);
 }

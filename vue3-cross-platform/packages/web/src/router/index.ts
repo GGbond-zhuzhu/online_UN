@@ -64,12 +64,19 @@ const router = createRouter({
       component: () => import('../pages/profile/index.vue'),
       meta: { title: '个人中心', requiresAuth: true }
     },
-    // 身份认证
+    // 身份认证总览页面
     {
       path: '/auth',
       name: 'auth',
       component: () => import('../pages/auth/index.vue'),
       meta: { title: '身份认证', requiresAuth: true }
+    },
+    // 学生身份认证申请页面（单独表单，支持学号 + 身份证 + 验证码）
+    {
+      path: '/auth/student-apply',
+      name: 'auth-student-apply',
+      component: () => import('../pages/auth/student-apply.vue'),
+      meta: { title: '学生身份认证申请', requiresAuth: true }
     },
     // 校园卡模块
     {
@@ -101,7 +108,7 @@ const router = createRouter({
       path: '/secondhand/messages',
       name: 'secondhand-messages',
       component: () => import('../pages/secondhand/messages/index.vue'),
-      meta: { title: '我的消息', requiresAuth: false }
+      meta: { title: '我的消息', requiresAuth: true }
     },
     {
       path: '/secondhand/history',

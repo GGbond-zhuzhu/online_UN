@@ -1,0 +1,5 @@
+﻿{
+  "setup-worktree": [
+    "cd vue3-cross-platform && pnpm install"
+  ]
+}

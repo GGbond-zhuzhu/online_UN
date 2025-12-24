@@ -37,7 +37,7 @@ public class User implements Serializable {
     @TableField("nickname")
     private String nickname;
 
-    @TableField(value = "role")
+    @TableField(value = "role", typeHandler = com.yourschool.campussystem.config.UserRoleEnumTypeHandler.class)
     private UserRoleEnum role;
 
     @TableField("school_id")

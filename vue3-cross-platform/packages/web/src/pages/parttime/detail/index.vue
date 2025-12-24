@@ -195,18 +195,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { ref, computed, onMounted } from 'vue' // 从 vue 导入组合式 API，用于管理岗位详情页的响应式数据和生命周期
+import { useRoute, useRouter } from 'vue-router' // 从 vue-router 导入路由钩子，用于获取路由参数和页面跳转
 import NavBar from '@/components/common/NavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 import FloatingMenu from '@/components/common/FloatingMenu.vue'
+import {
+  useParttimeStore, // 从 @campus/common 导入兼职相关的 Pinia Store，用于统一管理兼职数据和操作
+  type ParttimeJob // 导入兼职岗位的类型定义，便于后续做字段映射时参考
+} from '@campus/common'
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute() // 获取当前路由对象，用于读取路径参数（例如岗位ID）
+const router = useRouter() // 获取路由实例，用于在页面中做导航跳转
+const parttimeStore = useParttimeStore() // 获取兼职 Store，用于统一管理当前岗位详情、收藏和浏览记录等操作
 
-const isFavorite = ref(false)
+const isFavorite = ref(false) // 是否已收藏当前岗位的本地标记，用于控制按钮状态与文案
+const currentJobId = ref<number | null>(null) // 当前正在查看的岗位ID，后续收藏/浏览记录都依赖该ID
 
-// 岗位数据
+// 岗位数据（先给出一份默认示例数据，便于在接口未返回时页面也能正常展示）
 const job = ref({
   id: 1,
   title: '初中数学家教',
@@ -244,7 +250,7 @@ const job = ref({
   contactPhone: '138****8888',
   contactEmail: 'hr@xueersi.com',
   contactAddress: '学校周边教育大厦3楼'
-})
+}) // 默认的岗位详情数据对象，用于在接口加载前提供占位内容
 
 // 推荐岗位
 const recommendedJobs = ref([
@@ -277,6 +283,47 @@ const recommendedJobs = ref([
   }
 ])
 
+// 将后端返回的 ParttimeJob 结构映射为当前页面使用的 job 结构
+const mapJobDetailToViewModel = (detail: ParttimeJob) => {
+  const location = detail.location || detail.campusName || '工作地点待定' // 优先使用接口中的工作地点字段，没有则显示占位文案
+  const salaryValue = detail.salary || 0 // 读取薪资数值（后端为 number 类型）
+  const salaryType = detail.salaryType || '小时' // 读取薪资类型（例如“小时/天/月”），默认按小时计算
+  const salaryText = salaryValue > 0 ? `${salaryValue}-${salaryValue}${salaryType === '元' ? '' : `元/${salaryType}`}` : '薪资面议' // 简单拼接出薪资展示文案
+
+  const tags: string[] = [] // 初始化标签数组，用于构建“类型 + 地点”等小标签
+  if (detail.location) tags.push(detail.location) // 有工作地点时加入一个标签
+  if (detail.workTime) tags.push(detail.workTime) // 有工作时间描述时加入一个标签
+
+  job.value = {
+    ...job.value, // 先保留原有示例数据中的结构，防止缺字段导致模板报错
+    id: detail.id, // 使用接口返回的岗位ID
+    title: detail.title || job.value.title, // 岗位标题
+    company: detail.publisherName || job.value.company, // 公司/发布方名称，缺省时沿用默认
+    type: detail.type || job.value.type, // 岗位类型（例如 实习/兼职/家教）
+    location, // 工作地点
+    time: detail.workTime || job.value.time, // 顶部显示的时间信息（例如 工作日/周末）
+    salary: salaryText, // 顶部薪资展示文案
+    publishTime: job.value.publishTime, // 发布时间目前沿用默认占位，后续可接 formatRelativeTime
+    tags: tags.length ? tags : job.value.tags, // 如果自动生成了标签，则覆盖默认标签
+    description: detail.description || job.value.description, // 岗位描述
+    workTime: detail.workTime || job.value.workTime, // 详情中的“工作时间”字段
+    workLocation: location, // 详情中的“工作地点”字段
+    // 其余公司信息、要求等字段目前保留默认示例内容，后端补充相应字段后可以在这里继续映射
+    recruitCount: job.value.recruitCount,
+    deadline: job.value.deadline,
+    contactName: job.value.contactName,
+    contactPhone: job.value.contactPhone,
+    contactEmail: job.value.contactEmail,
+    contactAddress: job.value.contactAddress,
+    companyType: job.value.companyType,
+    companySize: job.value.companySize,
+    industry: job.value.industry,
+    established: job.value.established,
+    companyDescription: job.value.companyDescription,
+    verified: job.value.verified
+  } // 将接口数据与默认结构合并，生成最终用于页面展示的岗位详情对象
+}
+
 // 方法
 const goToDetail = (id: number) => {
   router.push(`/parttime/detail/${id}`)
@@ -284,13 +331,27 @@ const goToDetail = (id: number) => {
 
 const toggleFavorite = async () => {
   try {
-    isFavorite.value = !isFavorite.value
-    // TODO: 调用收藏API
-    // await toggleFavoriteAPI(job.value.id)
+    const jobId = currentJobId.value || job.value.id // 优先使用路由解析出来的岗位ID，其次使用当前 job 对象中的 ID
+    if (!jobId) {
+      // 如果两处都拿不到有效的岗位ID，则无法调用收藏接口
+      alert('当前岗位信息异常，暂时无法收藏') // 提示用户当前无法执行收藏操作
+      return // 直接结束函数执行
+    }
+
+    if (!isFavorite.value) {
+      // 当前未收藏 -> 通过兼职 Store 调用统一的收藏方法
+      await parttimeStore.addFavorite(jobId) // 调用 Store 中封装的收藏兼职岗位方法（内部会调用公共接口）
+      isFavorite.value = true // 本地状态标记为“已收藏”，更新按钮样式和文案
+      alert('已收藏该兼职岗位') // 给用户成功提示
+    } else {
+      // 当前已收藏 -> 通过兼职 Store 调用统一的取消收藏方法
+      await parttimeStore.removeFavorite(jobId) // 调用 Store 中的取消收藏方法（内部会同步更新收藏列表）
+      isFavorite.value = false // 本地状态标记为“未收藏”
+      alert('已取消收藏') // 给用户取消成功提示
+    }
   } catch (error) {
-    console.error('收藏操作失败:', error)
-    // 回滚状态
-    isFavorite.value = !isFavorite.value
+    console.error('收藏操作失败:', error) // 控制台打印错误日志，便于排查问题
+    alert('收藏操作失败，请稍后重试') // 给用户一个通用失败提示
   }
 }
 
@@ -315,24 +376,57 @@ const shareJob = async () => {
   }
 }
 
-const handleApply = () => {
-  // 跳转到申请页面或显示申请表单
-  // router.push(`/parttime/apply/${job.value.id}`)
-  // 暂时显示提示信息
+const handleApply = async () => {
+  // 在提交申请前先做一次确认，避免用户误操作
   const confirmed = confirm(`确定要申请"${job.value.title}"这个岗位吗？`)
-  if (confirmed) {
-    // TODO: 调用申请API
-    // await applyJobAPI(job.value.id)
-    alert('申请已提交，请等待审核')
+  if (!confirmed) {
+    return // 用户取消操作则直接返回
+  }
+
+  // 从当前页面状态中获取岗位 ID（优先使用路由参数解析出的 ID，其次使用 job 对象中的 ID）
+  const jobId = currentJobId.value || job.value.id
+  if (!jobId) {
+    alert('当前岗位信息异常，暂时无法提交申请') // 如果拿不到有效 ID，则提示用户稍后再试
+    return
+  }
+
+  try {
+    // 通过兼职 Store 调用统一的“提交报名”方法（内部会调用公共包中的 applyParttime 接口）
+    await parttimeStore.applyForJob({ jobId }) // 目前只提交岗位 ID，后续可在此扩展简历、留言等字段
+    alert('申请已提交，请等待审核') // 给用户一个清晰的成功提示
+  } catch (error) {
+    console.error('提交兼职申请失败:', error) // 控制台打印错误日志，方便排查问题
+    alert('提交申请失败，请稍后重试') // 给用户一个友好的失败提示
   }
 }
 
 onMounted(() => {
-  // 从路由参数获取岗位ID
-  const jobId = route.params.id
-  if (jobId) {
-    // 根据ID加载岗位数据
-    // loadJob(jobId)
+  // 从路由参数中读取岗位ID（路径形如 /parttime/detail/:id）
+  const rawId = route.params.id // 读取原始的路由参数（可能是字符串）
+  const id = Number(rawId) // 将路由参数转换为数字，便于与接口对接
+  if (!Number.isNaN(id) && id > 0) {
+    // 仅当转换后的ID是一个有效正整数时才继续处理
+    currentJobId.value = id // 记录当前正在查看的岗位ID，后续收藏/浏览记录都会使用
+    // 使用兼职 Store 中的“加载岗位详情”方法，从公共包统一获取数据
+    parttimeStore
+      .loadJobDetail(id)
+      .then((detail) => {
+        mapJobDetailToViewModel(detail) // 将接口返回的详情数据映射到页面使用的 job 结构
+        // 如果后端将“是否已收藏”一并返回（例如 detail.isFavorited），可以在这里初始化收藏状态
+        const anyDetail = detail as any // 使用 any 做一次宽松的字段访问，兼容后端尚未在类型中声明的属性
+        if (typeof anyDetail.isFavorited === 'boolean') {
+          isFavorite.value = anyDetail.isFavorited // 使用后端返回的收藏状态初始化本地状态
+        }
+      })
+      .catch((error) => {
+        console.error('加载兼职详情失败:', error) // 如果接口调用失败，打印错误日志方便排查
+      })
+      .finally(() => {
+        // 无论详情加载成功与否，都尝试记录一次浏览行为（失败不会打断用户操作）
+        parttimeStore.addBrowseRecord(id).catch((error) => {
+          console.error('记录兼职浏览行为失败:', error) // 记录浏览失败一般无需提示给用户，只做日志打印即可
+        })
+      })
   }
 })
 </script>

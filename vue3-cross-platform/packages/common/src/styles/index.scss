@@ -1,0 +1,119 @@
+@use './variables.scss' as vars; // 导入颜色、间距等 SCSS 变量并起别名 vars
+@use './reset.scss'; // 导入基础重置和全局辅助类（只需引入即可生效）
+
+/* ======================== 全局布局工具类 ======================== 供 web / app 共同使用 */
+
+.campus-flex-row { // 通用水平 Flex 布局
+  display: flex; /* 启用 Flex 布局 */
+  flex-direction: row; /* 子元素沿水平方向排列 */
+  align-items: center; /* 垂直方向居中对齐 */
+}
+
+.campus-flex-column { // 通用垂直 Flex 布局
+  display: flex; /* 启用 Flex 布局 */
+  flex-direction: column; /* 子元素沿垂直方向排列 */
+}
+
+.campus-flex-between { // 两端对齐布局
+  display: flex; /* 启用 Flex 布局 */
+  justify-content: space-between; /* 子元素在主轴上两端对齐 */
+  align-items: center; /* 垂直方向居中 */
+}
+
+.campus-grid-3 { // 三列自适应网格布局（适合卡片列表）
+  display: grid; /* 启用 CSS Grid 布局 */
+  grid-template-columns: repeat(3, minmax(0, 1fr)); /* 等宽三列，自适应宽度 */
+  gap: vars.$space-lg; /* 卡片之间留出统一间距 */
+}
+
+.campus-grid-4 { // 四列自适应网格布局
+  display: grid; /* 启用 Grid 布局 */
+  grid-template-columns: repeat(4, minmax(0, 1fr)); /* 等宽四列 */
+  gap: vars.$space-lg; /* 统一网格间距 */
+}
+
+@media (max-width: vars.$breakpoint-lg) { // 在较窄屏幕（如小桌面/平板）下
+  .campus-grid-4 { // 四列网格自动降为三列
+    grid-template-columns: repeat(3, minmax(0, 1fr)); /* 调整为三列布局 */
+  }
+}
+
+@media (max-width: vars.$breakpoint-md) { // 平板及以下
+  .campus-grid-3,  // 三列网格
+  .campus-grid-4 { // 四列网格
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* 自动降为两列，保证卡片可见面积 */
+  }
+}
+
+@media (max-width: vars.$breakpoint-sm) { // 大屏手机及以下
+  .campus-grid-3,  // 三列网格
+  .campus-grid-4 { // 四列网格
+    grid-template-columns: 1fr; /* 在窄屏上改为单列，纵向滚动 */
+  }
+}
+
+/* ======================== 全局按钮样式 ======================== 统一按钮风格 */
+
+.campus-btn { // 通用按钮基础类
+  display: inline-flex; /* 使用 inline-flex 方便与文字/图标对齐 */
+  align-items: center; /* 垂直居中文本和图标 */
+  justify-content: center; /* 水平居中内容 */
+  padding: 0 vars.$space-lg; /* 水平方向舒适的内边距 */
+  height: 40px; /* 统一按钮高度 */
+  border-radius: vars.$radius-pill; /* 胶囊形状按钮 */
+  font-size: 14px; /* 按钮文字大小 */
+  cursor: pointer; /* 鼠标移上去显示手型 */
+  border: 1px solid transparent; /* 预留边框位置，避免 hover 抖动 */
+  transition: all 0.2s ease; /* 统一动效过渡 */
+}
+
+.campus-btn-primary { // 主色按钮
+  @extend .campus-btn; /* 继承基础按钮样式 */
+  background-color: vars.$color-primary; /* 使用主色作为背景 */
+  color: #ffffff; /* 使用白色文字提高对比度 */
+  box-shadow: vars.$shadow-card; /* 添加轻微阴影，增强层次感 */
+}
+
+.campus-btn-primary:hover { // 主色按钮悬停态
+  background-color: vars.$color-primary-dark; /* 使用略深的主色 */
+}
+
+.campus-btn-outline { // 描边按钮（适合次要操作）
+  @extend .campus-btn; /* 继承基础按钮 */
+  background-color: transparent; /* 透明背景 */
+  color: vars.$color-primary; /* 使用主色文字 */
+  border-color: vars.$color-primary; /* 使用主色描边 */
+}
+
+.campus-btn-outline:hover { // 描边按钮悬停态
+  background-color: vars.$color-primary-light; /* 使用淡粉色背景作提示 */
+}
+
+/* ======================== 全局标题与分割线 ======================== 提升页面一致性 */
+
+.campus-section-title { // 页面区块标题（例如“猜你喜欢”、“推荐兼职”等）
+  font-size: 20px; /* 稍大的字号用于标题 */
+  font-weight: 600; /* 加粗突出重点 */
+  color: vars.$color-text-main; /* 使用主文字颜色 */
+  margin-bottom: vars.$space-md; /* 标题与内容之间留出间距 */
+  display: flex; /* 使用 Flex 布局方便放置图标 */
+  align-items: center; /* 图标与文字垂直居中 */
+  gap: vars.$space-sm; /* 图标与文字之间的间距 */
+}
+
+.campus-section-title-icon { // 标题前的小图标容器
+  width: 28px; /* 固定宽度 */
+  height: 28px; /* 固定高度 */
+  border-radius: 50%; /* 圆形背景 */
+  display: inline-flex; /* 内部图标居中 */
+  align-items: center; /* 垂直居中图标 */
+  justify-content: center; /* 水平居中图标 */
+  background-color: vars.$color-primary-light; /* 使用主色浅色背景 */
+  color: vars.$color-primary; /* 使用主色图标 */
+}
+
+.campus-divider { // 通用分割线
+  height: 1px; /* 细线高度 */
+  background-color: vars.$color-border-light; /* 使用浅色边框颜色 */
+  margin: vars.$space-md 0; /* 分割线与上下内容保持合理间距 */
+}
