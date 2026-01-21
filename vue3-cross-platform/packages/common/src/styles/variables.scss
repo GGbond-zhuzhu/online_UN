@@ -1,9 +1,24 @@
 // ======================== 全局样式变量（颜色、间距、阴影等） ========================  // 定义整个项目通用的视觉风格
 
 // ===== 颜色相关 =====  // 统一维护平台主色、副色与文本颜色
-$color-primary: #d81b60; // 平台主色（粉红色），用于按钮、高亮文字、价格等
-$color-primary-light: #fce4ec; // 主色的浅色，用于浅色背景和 hover 状态
-$color-primary-dark: #c2185b; // 主色的深色，用于按下状态或重点强调
+// 主色调：柔和的玫红色（参考支付宝、微信等主流应用，降低饱和度，提高舒适度）
+$color-primary: #FF6B9D; // 柔和玫红色（主色），用于按钮、高亮文字、价格等，不刺眼
+$color-primary-light: #FFE5F0; // 主色的极浅色，用于浅色背景和 hover 状态
+$color-primary-dark: #FF4D7A; // 主色的深色，用于按下状态或重点强调
+$color-primary-gradient-start: #FF8FB3; // 渐变起始色（更柔和）
+$color-primary-gradient-end: #FF6B9D; // 渐变结束色
+
+// 马卡龙色系（柔和、低饱和度，参考现代UI设计）
+$color-macaron-pink: #FFB5D8; // 马卡龙粉
+$color-macaron-blue: #C7CEEA; // 马卡龙蓝
+$color-macaron-green: #A8E6CF; // 马卡龙绿
+$color-macaron-yellow: #FFE5B4; // 马卡龙黄
+$color-macaron-purple: #D4A5F5; // 马卡龙紫
+$color-macaron-orange: #FFD3B6; // 马卡龙橙
+$color-macaron-cyan: #B8E6E6; // 马卡龙青
+$color-macaron-coral: #FFAAA5; // 马卡龙珊瑚
+$color-macaron-mint: #B5EAD7; // 马卡龙薄荷
+$color-macaron-rose: #E8B4CB; // 马卡龙玫瑰
 
 $color-secondary: #4a90e2; // 次要高亮色（蓝色），用于定位、链接等
 $color-success: #4caf50; // 成功 / 通过 状态颜色
@@ -49,9 +64,23 @@ $breakpoint-xs: 480px;  // 小屏手机
 // ======================== 导出为 CSS 变量 ========================  // 方便在纯 CSS / UniApp 中直接使用
 :root { // 使用 :root 定义全局 CSS 变量
   /* 颜色变量：前缀统一使用 --campus- 保证命名唯一 */
-  --campus-color-primary: #{$color-primary}; // 主色：粉红色
+  --campus-color-primary: #{$color-primary}; // 主色：柔和玫红色
   --campus-color-primary-light: #{$color-primary-light}; // 主色浅色
   --campus-color-primary-dark: #{$color-primary-dark}; // 主色深色
+  --campus-color-primary-gradient-start: #{$color-primary-gradient-start}; // 渐变起始色
+  --campus-color-primary-gradient-end: #{$color-primary-gradient-end}; // 渐变结束色
+
+  /* 马卡龙色系 */
+  --campus-color-macaron-pink: #{$color-macaron-pink}; // 马卡龙粉
+  --campus-color-macaron-blue: #{$color-macaron-blue}; // 马卡龙蓝
+  --campus-color-macaron-green: #{$color-macaron-green}; // 马卡龙绿
+  --campus-color-macaron-yellow: #{$color-macaron-yellow}; // 马卡龙黄
+  --campus-color-macaron-purple: #{$color-macaron-purple}; // 马卡龙紫
+  --campus-color-macaron-orange: #{$color-macaron-orange}; // 马卡龙橙
+  --campus-color-macaron-cyan: #{$color-macaron-cyan}; // 马卡龙青
+  --campus-color-macaron-coral: #{$color-macaron-coral}; // 马卡龙珊瑚
+  --campus-color-macaron-mint: #{$color-macaron-mint}; // 马卡龙薄荷
+  --campus-color-macaron-rose: #{$color-macaron-rose}; // 马卡龙玫瑰
 
   --campus-color-secondary: #{$color-secondary}; // 次色：蓝色
   --campus-color-success: #{$color-success}; // 成功色

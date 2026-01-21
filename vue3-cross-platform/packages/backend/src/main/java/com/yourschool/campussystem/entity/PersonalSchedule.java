@@ -56,6 +56,12 @@ public class PersonalSchedule {
     @TableField("tag")
     private String tag;
 
+    @TableField("is_route_series")
+    private Boolean isRouteSeries = false;
+
+    @TableField("route_series_theme")
+    private String routeSeriesTheme;
+
     @TableField("creator_id")
     private Long creatorId;
 

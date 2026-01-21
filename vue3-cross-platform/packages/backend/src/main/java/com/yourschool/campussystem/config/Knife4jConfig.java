@@ -95,6 +95,30 @@ public class Knife4jConfig {
     }
 
     @Bean
+    public GroupedOpenApi accountBookApi() {
+        return GroupedOpenApi.builder()
+                .group("13-记账本管理")
+                .pathsToMatch("/api/account-book/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi dietRecordApi() {
+        return GroupedOpenApi.builder()
+                .group("14-饮食记录管理")
+                .pathsToMatch("/api/diet-record/**")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi mapApi() {
+        return GroupedOpenApi.builder()
+                .group("15-地图服务")
+                .pathsToMatch("/api/map/**")
+                .build();
+    }
+
+    @Bean
     public GroupedOpenApi messageApi() {
         return GroupedOpenApi.builder()
                 .group("08-消息中心")

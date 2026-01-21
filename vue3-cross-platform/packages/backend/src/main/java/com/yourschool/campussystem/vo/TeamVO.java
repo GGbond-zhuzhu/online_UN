@@ -49,6 +49,12 @@ public class TeamVO {
     @Schema(description = "团队邀请码", example = "ABC12345")
     private String inviteCode;
 
+    @Schema(description = "团队消息群ID（创建团队时自动创建）", example = "1")
+    private Long chatGroupId;
+
+    @Schema(description = "管理员最大数量（群主可设置）", example = "4")
+    private Integer maxAdmins = 4;
+
     @Schema(description = "成员列表")
     private List<TeamMemberVO> members;
 

@@ -325,20 +325,40 @@ onMounted(() => {
 
 .service-card {
   background: white;
-  border-radius: 12px;
-  padding: 25px;
+  border-radius: 16px;
+  padding: 30px 25px;
   width: calc(25% - 20px);
   min-width: 250px;
   text-align: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s;
-  border: 1px solid #f0f0f0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(216, 27, 96, 0.1);
   cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.service-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #d81b60 0%, #ffb6c1 100%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s ease;
 }
 
 .service-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(216, 27, 96, 0.15);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 35px rgba(216, 27, 96, 0.2);
+  border-color: rgba(216, 27, 96, 0.3);
+}
+
+.service-card:hover::before {
+  transform: scaleX(1);
 }
 
 .service-card.hidden {
@@ -402,21 +422,41 @@ onMounted(() => {
 
 .user-card {
   background: white;
-  border-radius: 12px;
-  padding: 30px;
+  border-radius: 16px;
+  padding: 35px 30px;
   text-align: center;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   flex: 1;
   min-width: 150px;
   cursor: pointer;
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.user-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(216, 27, 96, 0.05) 0%, rgba(255, 182, 193, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.user-card:hover::after,
+.user-card.active::after {
+  opacity: 1;
 }
 
 .user-card:hover,
 .user-card.active {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px rgba(216, 27, 96, 0.2);
-  border: 2px solid #d81b60;
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 10px 30px rgba(216, 27, 96, 0.25);
+  border-color: #d81b60;
 }
 
 .user-icon-large {
@@ -472,10 +512,23 @@ onMounted(() => {
 /* 特色优势区域 */
 .features-section {
   background: white;
-  border-radius: 16px;
-  padding: 50px;
+  border-radius: 20px;
+  padding: 60px 50px;
   margin: 50px 0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(216, 27, 96, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.features-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #d81b60 0%, #ffb6c1 100%);
 }
 
 .section-title {
@@ -495,15 +548,37 @@ onMounted(() => {
 .feature-item {
   display: flex;
   align-items: flex-start;
-  padding: 20px;
-  background: #f8f9fa;
-  border-radius: 10px;
-  transition: all 0.3s;
+  padding: 25px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #f5f5f5 100%);
+  border-radius: 12px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, #d81b60 0%, #ffb6c1 100%);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform 0.4s ease;
 }
 
 .feature-item:hover {
-  background: #f0f0f0;
-  transform: translateX(5px);
+  background: linear-gradient(135deg, #fff5f9 0%, #ffeef5 100%);
+  transform: translateX(8px);
+  border-color: rgba(216, 27, 96, 0.2);
+  box-shadow: 0 4px 15px rgba(216, 27, 96, 0.1);
+}
+
+.feature-item:hover::before {
+  transform: scaleY(1);
 }
 
 .feature-item i {

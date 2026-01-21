@@ -33,4 +33,10 @@ public class ScheduleQueryDTO {
 
     @Schema(description = "每页大小", example = "10")
     private Integer size = 10;
+
+    /**
+     * 兼容前端参数名 pageSize（web端部分页面使用该字段）
+     */
+    @Schema(description = "每页大小（兼容字段：pageSize）", example = "10")
+    private Integer pageSize;
 }

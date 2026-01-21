@@ -25,4 +25,8 @@ public class BrowseHistory {
 
     @TableField(value = "view_time", fill = FieldFill.INSERT)
     private LocalDateTime viewTime;
+
+    @TableField("is_deleted")
+    @TableLogic
+    private Integer isDeleted;  // 0-未删除，1-已删除
 }

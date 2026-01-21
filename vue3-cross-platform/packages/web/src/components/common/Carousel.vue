@@ -223,6 +223,11 @@ onUnmounted(() => {
   box-shadow: 0 5px 15px rgba(216, 27, 96, 0.3);
 }
 
+.btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.2);
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .carousel-section {

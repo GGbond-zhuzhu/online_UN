@@ -1,10 +1,10 @@
 <template>
-  <div class="publish-page">
-    <NavBar />
+  <div class="publish-page" :class="{ embedded }">
+    <NavBar v-if="!embedded" />
 
     <div class="page-container">
       <!-- 页面标题 -->
-      <section class="page-header">
+      <section v-if="!embedded" class="page-header">
         <h1 class="page-title">
           <i class="fas fa-plus-circle"></i> 发布闲置
         </h1>
@@ -279,18 +279,25 @@
       </section>
     </div>
 
-    <FloatingMenu />
-    <AppFooter />
+    <FloatingMenu v-if="!embedded" />
+    <AppFooter v-if="!embedded" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, toRefs } from 'vue'
 import { useRouter } from 'vue-router'
 import NavBar from '@/components/common/NavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 import FloatingMenu from '@/components/common/FloatingMenu.vue'
-import { publishGoods } from '@your-org/common'
+import { publishGoods } from '@campus/common'
+
+const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
+const emit = defineEmits<{
+  close: []
+  submitted: [goodsId?: number]
+}>()
+const { embedded } = toRefs(props)
 
 const router = useRouter()
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -425,11 +432,22 @@ const handleSubmit = async () => {
     const goods = await publishGoods(submitData as any)
 
     alert('发布成功！')
-    // 跳转到商品详情页
-    if ((goods as any)?.id) {
-      router.push(`/secondhand/detail/${(goods as any).id}`)
+    const goodsId = (goods as any)?.id as number | undefined
+
+    // 弹窗模式：关闭弹窗；如果返回了商品ID，则顺便跳到详情页
+    if (embedded.value) {
+      emit('submitted', goodsId)
+      emit('close')
+      if (goodsId) {
+        router.push(`/secondhand/detail/${goodsId}`)
+      }
+      return
+    }
+
+    // 页面模式：跳转到商品详情页
+    if (goodsId) {
+      router.push(`/secondhand/detail/${goodsId}`)
     } else {
-      // 如果未返回ID，则回到二手列表
       router.push('/secondhand')
     }
   } catch (error) {
@@ -470,6 +488,17 @@ const handleCancel = () => {
   min-height: 100vh;
   background: var(--bg);
   padding-bottom: 40px;
+}
+
+.publish-page.embedded {
+  min-height: auto;
+  background: transparent;
+  padding-bottom: 0;
+}
+
+.publish-page.embedded .page-container {
+  max-width: 100%;
+  padding: 0;
 }
 
 .page-container {
@@ -778,9 +807,8 @@ const handleCancel = () => {
 }
 
 .btn:active {
-  background: var(--primary-dark);
-  border-color: var(--primary-dark);
-  transform: translateY(0);
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.2);
 }
 
 .cancel-btn {

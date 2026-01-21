@@ -127,14 +127,38 @@ public class SecondhandServiceImpl extends ServiceImpl<SecondhandGoodsMapper, Se
             queryWrapper.le(SecondhandGoods::getPrice, queryDTO.getMaxPrice());
         }
 
-        // 排序
-        if ("price_asc".equals(queryDTO.getSortBy())) {
-            queryWrapper.orderByAsc(SecondhandGoods::getPrice);
-        } else if ("price_desc".equals(queryDTO.getSortBy())) {
-            queryWrapper.orderByDesc(SecondhandGoods::getPrice);
+        // 排序处理
+        String sortBy = queryDTO.getSortBy() != null ? queryDTO.getSortBy() : "publishTime";
+        String sortOrder = queryDTO.getSortOrder() != null ? queryDTO.getSortOrder() : "DESC";
+        
+        if ("price".equals(sortBy) || "price_asc".equals(sortBy)) {
+            if ("ASC".equalsIgnoreCase(sortOrder)) {
+                queryWrapper.orderByAsc(SecondhandGoods::getPrice);
+            } else {
+                queryWrapper.orderByDesc(SecondhandGoods::getPrice);
+            }
+        } else if ("viewCount".equals(sortBy) || "hot".equals(sortBy)) {
+            // 热度排序：按浏览量+收藏数综合排序
+            if ("ASC".equalsIgnoreCase(sortOrder)) {
+                queryWrapper.orderByAsc(SecondhandGoods::getViewCount)
+                           .orderByAsc(SecondhandGoods::getFavoriteCount);
+            } else {
+                queryWrapper.orderByDesc(SecondhandGoods::getViewCount)
+                           .orderByDesc(SecondhandGoods::getFavoriteCount);
+            }
+        } else if ("favoriteCount".equals(sortBy)) {
+            if ("ASC".equalsIgnoreCase(sortOrder)) {
+                queryWrapper.orderByAsc(SecondhandGoods::getFavoriteCount);
+            } else {
+                queryWrapper.orderByDesc(SecondhandGoods::getFavoriteCount);
+            }
         } else {
-            // 默认按发布时间倒序
-            queryWrapper.orderByDesc(SecondhandGoods::getPublishTime);
+            // 默认按发布时间排序
+            if ("ASC".equalsIgnoreCase(sortOrder)) {
+                queryWrapper.orderByAsc(SecondhandGoods::getPublishTime);
+            } else {
+                queryWrapper.orderByDesc(SecondhandGoods::getPublishTime);
+            }
         }
 
         // 分页查询

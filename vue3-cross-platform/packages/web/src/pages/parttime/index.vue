@@ -3,26 +3,94 @@
     <NavBar />
 
     <div class="page-container">
-      <!-- 顶部搜索与快捷操作 -->
-      <section class="top-bar">
-        <div class="search-box">
-          <input
-            v-model="filters.search"
-            type="text"
-            placeholder="搜索兼职岗位..."
-            @keyup.enter="handleFilter"
-          />
-          <i class="fas fa-search"></i>
+      <!-- 顶部横幅区域（参考app端） -->
+      <section class="top-banner">
+        <div class="top-bar">
+          <div class="location-section">
+            <i class="fas fa-map-marker-alt"></i>
+            <span class="location-text">{{ currentLocation }}</span>
+            <i class="fas fa-chevron-down"></i>
+          </div>
+          <div class="top-right-actions">
+            <button class="top-action-btn" @click="handleQuick('message')">
+              <i class="fas fa-comment"></i>
+              <span class="msg-badge" v-if="unreadMessages > 0">{{ unreadMessages > 99 ? '99+' : unreadMessages }}</span>
+            </button>
+            <button class="top-action-btn" @click="handleQuick('notification')">
+              <i class="fas fa-bell"></i>
+              <span class="noti-badge" v-if="unreadNotifications > 0"></span>
+            </button>
+          </div>
         </div>
-        <div class="top-actions">
-          <button class="action-btn" @click="handleQuick('publish')"><i class="fas fa-plus"></i> 发布兼职</button>
-          <button class="action-btn" @click="handleQuick('message')"><i class="fas fa-comment"></i> 消息</button>
-          <button class="action-btn" @click="handleQuick('profile')"><i class="fas fa-user"></i> 个人中心</button>
+        
+        <!-- 搜索框 -->
+        <div class="search-container">
+          <div class="search-box" @click="handleSearchClick">
+            <i class="fas fa-search"></i>
+            <input
+              v-model="filters.search"
+              type="text"
+              placeholder="搜索兼职/公司/岗位"
+              @keyup.enter="handleFilter"
+              @click.stop
+            />
+          </div>
+          <button class="filter-btn" @click="showQuickFilter = true">
+            <i class="fas fa-sliders-h"></i>
+          </button>
+        </div>
+
+        <!-- 快速筛选标签（参考app端） -->
+        <div class="quick-filter-tags">
+          <div class="tags-scroll-container">
+            <div 
+              v-for="tag in quickFilterTags" 
+              :key="tag.value"
+              class="filter-tag"
+              :class="{ active: activeQuickTag === tag.value }"
+              @click="toggleQuickTag(tag.value)"
+            >
+              <i :class="tag.icon"></i>
+              <span>{{ tag.label }}</span>
+            </div>
+          </div>
         </div>
       </section>
 
-      <!-- 顶部筛选区域 -->
+      <!-- 统一的筛选排序区域 -->
       <section class="filter-section">
+        <!-- 排序和薪资快捷筛选 -->
+        <div class="sort-salary-row">
+          <div class="sort-section">
+            <span class="sort-label">排序：</span>
+            <div 
+              v-for="(item, index) in sortOptions" 
+              :key="item.value"
+              class="sort-item"
+              :class="{ active: sortType === item.value }"
+              @click="handleSort(item.value)"
+            >
+              <i :class="item.icon"></i>
+              <span>{{ item.label }}</span>
+            </div>
+          </div>
+          <div class="salary-quick-section">
+            <span class="salary-label">薪资：</span>
+            <div class="salary-quick-btns">
+              <div 
+                v-for="(item, index) in salaryQuickOptions" 
+                :key="index"
+                class="salary-quick-btn"
+                :class="{ active: salaryQuickIndex === index }"
+                @click="handleSalaryQuick(index, item.min, item.max)"
+              >
+                {{ item.label }}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 详细筛选条件 -->
         <div class="filter-row">
           <div class="filter-item">
             <label>类型：</label>
@@ -52,7 +120,6 @@
             </select>
           </div>
           <div class="filter-actions">
-            <!-- “确定筛选”按钮视觉样式与“重置”保持一致，只保留基础 btn 样式 -->
             <button class="btn" @click="handleFilter">确定筛选</button>
             <button class="btn" @click="handleReset">重置</button>
           </div>
@@ -61,6 +128,50 @@
 
       <section class="content-section">
         <div class="main-column">
+          <!-- 热门兼职推荐（轮播图，参考app端） -->
+          <div class="hot-jobs-section" v-if="hotJobs.length > 0">
+            <div class="section-header">
+              <div class="section-title-with-icon">
+                <i class="fas fa-fire"></i>
+                <span>热门推荐</span>
+              </div>
+              <div class="section-subtitle">高薪靠谱 · 立即上岗</div>
+            </div>
+            <div class="hot-jobs-carousel">
+              <div 
+                v-for="(job, index) in hotJobs" 
+                :key="job.id"
+                class="hot-job-slide"
+                :style="{ background: getSlideColor(index) }"
+                @click="handleViewDetail(job.id)"
+              >
+                <div class="salary-badge">日结 {{ job.salary }}</div>
+                <div class="slide-info">
+                  <h3 class="job-title">{{ job.title }}</h3>
+                  <div class="job-meta">
+                    <div class="meta-item">
+                      <i class="fas fa-map-marker-alt"></i>
+                      <span>{{ job.location }}</span>
+                    </div>
+                    <div class="meta-item">
+                      <i class="fas fa-calendar"></i>
+                      <span>{{ job.workTime }}</span>
+                    </div>
+                  </div>
+                  <div class="company-info">
+                    <div class="company-avatar"></div>
+                    <span class="company-name">{{ job.company }}</span>
+                    <div class="verified-badge" v-if="job.verified">
+                      <i class="fas fa-check-circle" style="font-size: 14px;"></i>
+                      <span>已认证</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+
           <!-- 1. 搜索匹配盒子 - 有搜索/筛选时显示 -->
           <div v-if="hasSearchOrFilter" class="search-result-section">
             <h2 class="section-title"><i class="fas fa-search"></i> 搜索结果</h2>
@@ -104,6 +215,48 @@
               <i class="fas fa-exclamation-circle"></i>
               <h2>没有找到符合条件的兼职岗位~</h2>
               <p>请尝试调整搜索关键词或筛选条件</p>
+            </div>
+          </div>
+
+          <!-- 高薪专区（参考app端） -->
+          <div class="high-salary-section" v-if="highSalaryJobs.length > 0">
+            <div class="section-header">
+              <div class="section-title-with-icon">
+                <i class="fas fa-star"></i>
+                <span>高薪专区</span>
+              </div>
+              <div class="salary-range">日薪300元以上</div>
+            </div>
+            <div class="salary-grid">
+              <div 
+                v-for="job in highSalaryJobs" 
+                :key="job.id"
+                class="salary-job-card"
+                @click="handleViewDetail(job.id)"
+              >
+                <div class="salary-badge-high">高薪</div>
+                <div class="salary-content">
+                  <h3 class="salary-job-title">{{ job.title }}</h3>
+                  <div class="salary-info">
+                    <span class="salary-highlight">{{ job.salary }}</span>
+                    <span class="salary-desc">{{ job.salaryDesc }}</span>
+                  </div>
+                  <div class="salary-meta">
+                    <div class="meta-item">
+                      <i class="fas fa-map-marker-alt"></i>
+                      <span>{{ job.location }}</span>
+                    </div>
+                    <div class="meta-item">
+                      <i class="fas fa-calendar"></i>
+                      <span>{{ job.workTime }}</span>
+                    </div>
+                  </div>
+                  <div class="company-brief">
+                    <div class="company-avatar-tiny"></div>
+                    <span class="company-name-small">{{ job.company }}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -151,11 +304,28 @@
         </div>
 
         <aside class="sidebar">
-          <div class="sidebar-card">
-            <h3>热门分类</h3>
-            <ul>
-              <li v-for="item in hotCategories" :key="item" @click="filterByCategory(item)">{{ item }}</li>
-            </ul>
+          <div class="sidebar-card category-section">
+            <div class="section-header">
+              <div class="section-title-with-icon">
+                <i class="fas fa-th"></i>
+                <span>兼职分类</span>
+              </div>
+              <div class="view-all" @click="goToAllCategories">全部</div>
+            </div>
+            <div class="category-grid">
+              <div 
+                v-for="category in jobCategories" 
+                :key="category.value"
+                class="category-item"
+                @click="goToCategory(category.value)"
+              >
+                <div class="category-icon" :style="{ background: category.color }">
+                  <i :class="category.icon"></i>
+                </div>
+                <span class="category-name">{{ category.label }}</span>
+                <span class="job-count">{{ category.count }}个岗位</span>
+              </div>
+            </div>
           </div>
 
           <div class="sidebar-card">
@@ -175,48 +345,186 @@
             </ol>
           </div>
 
-          <div class="sidebar-card contact-card">
-            <h3>上大学Online</h3>
-            <p>我们致力于构建安全、可靠的校园兼职服务平台，帮助学生积累工作经验，丰富校园生活。</p>
-            <div class="contact-info">
-              <p>服务热线：400-123-4567</p>
-              <p>兼职服务客服：parttime@campus.edu.cn</p>
-              <p>问题反馈：feedback@campus.edu.cn</p>
-            </div>
-            <div class="quick-links">
-              <router-link to="/">首页</router-link>
-              <a href="#">发布指南</a>
-              <a href="#">安全提示</a>
-              <a href="#">纠纷处理</a>
-            </div>
-          </div>
+  
         </aside>
       </section>
     </div>
+    <!-- 快速筛选弹窗（参考app端） -->
+    <div v-if="showQuickFilter" class="filter-modal-overlay" @click="showQuickFilter = false">
+      <div class="filter-modal" @click.stop>
+        <div class="filter-modal-header">
+          <span class="filter-modal-title">快速筛选</span>
+          <span class="filter-modal-close" @click="showQuickFilter = false">×</span>
+        </div>
+        <div class="filter-modal-content">
+          <div class="filter-group">
+            <span class="filter-label">薪资范围</span>
+            <div class="filter-options">
+              <div 
+                v-for="range in salaryRanges" 
+                :key="range.value"
+                class="filter-option"
+                :class="{ active: filters.salaryRange === range.value }"
+                @click="filters.salaryRange = range.value"
+              >
+                {{ range.label }}
+              </div>
+            </div>
+          </div>
+          
+          <div class="filter-group">
+            <span class="filter-label">工作时间</span>
+            <div class="filter-options">
+              <div 
+                v-for="time in workTimes" 
+                :key="time.value"
+                class="filter-option"
+                :class="{ active: filters.workTime === time.value }"
+                @click="filters.workTime = time.value"
+              >
+                {{ time.label }}
+              </div>
+            </div>
+          </div>
+          
+          <div class="filter-group">
+            <span class="filter-label">结算方式</span>
+            <div class="filter-options">
+              <div 
+                v-for="settle in settleTypes" 
+                :key="settle.value"
+                class="filter-option"
+                :class="{ active: filters.settleType === settle.value }"
+                @click="filters.settleType = settle.value"
+              >
+                {{ settle.label }}
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="filter-modal-footer">
+          <button class="filter-reset-btn" @click="handleFilterReset">重置</button>
+          <button class="filter-confirm-btn" @click="handleFilterConfirm">确定</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 发布兼职：改为弹窗，不再跳转到独立发布页面 -->
+    <AppModal :visible="showPublishModal" title="发布兼职" @close="closePublishModal">
+      <ParttimePublish :embedded="true" @close="closePublishModal" @submitted="handlePublishSubmitted" />
+    </AppModal>
+
     <FloatingMenu />
     <AppFooter />
   </div>
 </template>
 
 <script setup lang="ts">
-// 引入Vue的响应式和生命周期方法（包含 onBeforeUnmount，方便卸载时移除滚动监听） 
-import { reactive, ref, computed, onMounted, onBeforeUnmount } from 'vue' // 从 vue 引入组合式 API
-import { useRouter } from 'vue-router' // 引入 Vue Router，用于处理路由跳转
+// 引入Vue的响应式和生命周期方法（包含 onBeforeUnmount，方便卸载时移除滚动监听）
+import { reactive, ref, computed, onMounted, onBeforeUnmount, watch } from 'vue' // 从 vue 引入组合式 API
+import { useRouter, useRoute } from 'vue-router' // 引入 Vue Router，用于处理路由跳转
 import NavBar from '@/components/common/NavBar.vue' // 顶部导航栏组件
 import AppFooter from '@/components/common/AppFooter.vue' // 页面底部统一的页脚组件
 import FloatingMenu from '@/components/common/FloatingMenu.vue' // 右下角悬浮快捷菜单
+import AppModal from '@/components/common/AppModal.vue'
+import ParttimePublish from './publish/index.vue'
 // 从公共包统一引入兼职 Store；随机推荐工具通过命名空间方式引入，避免浏览器对命名导出做严格校验导致运行时报错
 import { useParttimeStore } from '@campus/common' // useParttimeStore 管理兼职列表
 import * as formatUtils from '@campus/common/utils/format' // 包含 getRandomRecommendList 等推荐工具函数
 
 // 初始化路由与兼职 Store 实例
 const router = useRouter() // 获取路由实例
+const route = useRoute()
 const parttimeStore = useParttimeStore() // 获取兼职 Store，用于加载兼职列表并共享给全局其他页面
+
+// 发布弹窗（替代原“发布兼职页面”）
+const showPublishModal = ref(false)
+const openPublishModal = () => {
+  showPublishModal.value = true
+}
+const closePublishModal = () => {
+  showPublishModal.value = false
+  // 如果是通过 query 打开的弹窗，则关闭时同步清理 query（避免刷新后重复弹出）
+  if (route.query.publish) {
+    const nextQuery: Record<string, any> = { ...route.query }
+    delete nextQuery.publish
+    delete nextQuery.id
+    router.replace({ path: route.path, query: nextQuery })
+  }
+}
+
+const handlePublishSubmitted = () => {
+  closePublishModal()
+  // 重新拉取一次列表（可看到最新数据；失败也不影响关闭弹窗）
+  loadJobs(true)
+}
 
 // 基础数据定义
 const types = ['实习', '兼职', '家教', '促销', '调研', '其他']
 const locations = ['校内', '学校周边', '市中心', '远程']
 const timeOptions = ['工作日', '周末', '时间灵活']
+
+// 当前定位信息
+const currentLocation = ref('北京海淀区')
+
+// 消息通知数量
+const unreadMessages = ref(3)
+const unreadNotifications = ref(1)
+
+// 快速筛选标签配置（参考app端）
+const quickFilterTags = ref([
+  { label: '日结', value: 'daily', icon: 'fas fa-wallet' },
+  { label: '附近', value: 'nearby', icon: 'fas fa-map-marker-alt' },
+  { label: '高薪', value: 'high_salary', icon: 'fas fa-star' },
+  { label: '长期', value: 'long_term', icon: 'fas fa-calendar' },
+  { label: '短期', value: 'short_term', icon: 'fas fa-bolt' },
+  { label: '包餐', value: 'with_meal', icon: 'fas fa-utensils' },
+  { label: '可预支', value: 'advance', icon: 'fas fa-money-bill-wave' },
+  { label: '学生优选', value: 'student', icon: 'fas fa-user-graduate' }
+])
+
+// 当前激活的快速标签
+const activeQuickTag = ref('')
+
+// 排序选项（新增）
+const sortType = ref('default')
+const sortOptions = ref([
+  { label: '默认', value: 'default', icon: 'fas fa-list' },
+  { label: '薪资', value: 'salary', icon: 'fas fa-dollar-sign' },
+  { label: '最新', value: 'time', icon: 'fas fa-clock' },
+  { label: '热度', value: 'hot', icon: 'fas fa-fire' }
+])
+
+// 薪资快捷筛选选项（新增）
+const salaryQuickIndex = ref(-1)
+const salaryQuickOptions = ref([
+  { label: '50以下', min: 0, max: 50 },
+  { label: '50-100', min: 50, max: 100 },
+  { label: '100-200', min: 100, max: 200 },
+  { label: '200-300', min: 200, max: 300 },
+  { label: '300以上', min: 300, max: 999999 }
+])
+
+// 控制筛选弹窗显示
+const showQuickFilter = ref(false)
+
+// 热门兼职推荐（轮播图数据）
+const hotJobs = ref<any[]>([])
+
+// 兼职分类配置（参考app端）
+const jobCategories = ref([
+  { label: '家教助教', value: 'tutor', icon: 'fas fa-chalkboard-teacher', color: '#FFB6C1', count: 128 },
+  { label: '促销导购', value: 'promotion', icon: 'fas fa-bullhorn', color: '#B0E0E6', count: 89 },
+  { label: '服务员', value: 'waiter', icon: 'fas fa-concierge-bell', color: '#FFF8DC', count: 76 },
+  { label: '派发传单', value: 'flyer', icon: 'fas fa-paper-plane', color: '#DDA0DD', count: 45 },
+  { label: '客服', value: 'service', icon: 'fas fa-headset', color: '#98FB98', count: 67 },
+  { label: '地推', value: 'ground', icon: 'fas fa-users', color: '#FFE4B5', count: 52 },
+  { label: '展会协助', value: 'exhibition', icon: 'fas fa-images', color: '#B0E0E6', count: 34 },
+  { label: '线上兼职', value: 'online', icon: 'fas fa-laptop', color: '#FFF8DC', count: 112 }
+])
+
+// 高薪兼职列表
+const highSalaryJobs = ref<any[]>([])
 
 // 筛选条件（TS类型约束）
 interface Filters {
@@ -226,6 +534,9 @@ interface Filters {
   salaryMin: string
   salaryMax: string
   time: string
+  salaryRange: string
+  workTime: string
+  settleType: string
 }
 
 const filters = reactive<Filters>({
@@ -234,8 +545,36 @@ const filters = reactive<Filters>({
   location: '',
   salaryMin: '',
   salaryMax: '',
-  time: ''
+  time: '',
+  salaryRange: '',
+  workTime: '',
+  settleType: ''
 })
+
+// 筛选选项配置（用于弹窗）
+const salaryRanges = ref([
+  { label: '不限', value: '' },
+  { label: '100元以下', value: '0-100' },
+  { label: '100-200元', value: '100-200' },
+  { label: '200-300元', value: '200-300' },
+  { label: '300元以上', value: '300+' }
+])
+
+const workTimes = ref([
+  { label: '不限', value: '' },
+  { label: '周末', value: 'weekend' },
+  { label: '长期', value: 'long' },
+  { label: '短期', value: 'short' },
+  { label: '晚上', value: 'night' }
+])
+
+const settleTypes = ref([
+  { label: '不限', value: '' },
+  { label: '日结', value: 'daily' },
+  { label: '周结', value: 'weekly' },
+  { label: '月结', value: 'monthly' },
+  { label: '完工结', value: 'finish' }
+])
 
 // 兼职数据类型定义（约束每条兼职记录的字段）
 interface Job {
@@ -309,6 +648,21 @@ const loadJobs = async (reset = false) => {
     if (filters.salaryMax) {
       params.maxSalary = Number(filters.salaryMax)
     }
+    
+    // 添加排序参数（新增）
+    if (sortType.value === 'salary') {
+      params.sortBy = 'salaryPerHour'
+      params.sortOrder = 'DESC' // 薪资从高到低
+    } else if (sortType.value === 'time') {
+      params.sortBy = 'createTime'
+      params.sortOrder = 'DESC' // 最新发布
+    } else if (sortType.value === 'hot') {
+      params.sortBy = 'createTime' // 热度暂时用发布时间
+      params.sortOrder = 'DESC'
+    } else {
+      params.sortBy = 'createTime'
+      params.sortOrder = 'DESC' // 默认按发布时间倒序
+    }
 
     // 通过兼职 Store 统一发起请求（内部会调用 getParttimeList，并维护 loading / error 状态）
     await parttimeStore.loadJobList(params) // 加载当前页兼职列表
@@ -349,9 +703,23 @@ const loadJobs = async (reset = false) => {
         salaryMin: salaryPerHour,
         salaryMax: salaryPerHour,
         description: item.description || '',
-        publishTime: publishTime
+        publishTime: publishTime,
+        verified: true, // 默认已认证
+        workTime: item.workTime || '时间灵活'
       }
     })
+
+    // 更新热门兼职（取前3个作为轮播图）
+    if (mapped.length > 0) {
+      hotJobs.value = mapped.slice(0, 3).map((item: any) => ({
+        ...item,
+        salary: item.salary,
+        verified: true
+      }))
+    }
+
+    // 更新高薪兼职（薪资>=300的）
+    highSalaryJobs.value = mapped.filter((item: any) => item.salaryMin >= 300).slice(0, 4)
 
     // 如果当前是第一页，则用新数据覆盖；否则在原有列表后面追加，实现“加载更多”效果
     if (currentPage.value === 1) {
@@ -594,7 +962,32 @@ const handleReset = () => {
   filters.salaryMin = ''
   filters.salaryMax = ''
   filters.time = ''
+  filters.salaryRange = ''
+  filters.workTime = ''
+  filters.settleType = ''
+  sortType.value = 'default'
+  salaryQuickIndex.value = -1
+  activeQuickTag.value = ''
   loadJobs(true)
+}
+
+// 筛选重置（弹窗内）
+const handleFilterReset = () => {
+  filters.salaryRange = ''
+  filters.workTime = ''
+  filters.settleType = ''
+}
+
+// 筛选确认（弹窗内）
+const handleFilterConfirm = () => {
+  showQuickFilter.value = false
+  // 根据筛选条件重新加载数据
+  if (filters.salaryRange) {
+    const [min, max] = filters.salaryRange.split('-')
+    filters.salaryMin = min || ''
+    filters.salaryMax = max || ''
+  }
+  handleFilter()
 }
 
 // 页面加载时获取数据，并添加滚动监听实现“滑到底自动加载下一页 + 换一批推荐兼职”
@@ -613,7 +1006,7 @@ onBeforeUnmount(() => {
 const handleQuick = (type: string) => {
   switch (type) {
     case 'publish':
-      router.push('/parttime/publish') // 兼职发布页
+      openPublishModal() // 弹窗发布
       break
     case 'message':
       router.push('/messages') // 消息页
@@ -636,6 +1029,18 @@ const handleQuick = (type: string) => {
   }
 }
 
+// 兼容旧路由：/parttime/publish -> /parttime?publish=1（由路由表 redirect 触发）
+watch(
+  () => route.query.publish,
+  (val) => {
+    const v = Array.isArray(val) ? val[0] : val
+    if (v === '1') {
+      openPublishModal()
+    }
+  },
+  { immediate: true }
+)
+
 // 查看详情（路由跳转）
 const handleViewDetail = (jobId: number) => {
   router.push(`/parttime/detail/${jobId}`)
@@ -650,6 +1055,70 @@ const handleApply = (jobId: number) => {
 // 按分类筛选
 const filterByCategory = (category: string) => {
   filters.type = category
+  handleFilter()
+}
+
+// 切换快速标签（新增）
+const toggleQuickTag = (tagValue: string) => {
+  activeQuickTag.value = activeQuickTag.value === tagValue ? '' : tagValue
+  // 根据标签筛选数据
+  if (tagValue === 'high_salary') {
+    filters.salaryMin = '300'
+  } else if (tagValue === 'daily') {
+    // 日结标签，可以设置结算方式筛选
+  }
+  handleFilter()
+}
+
+// 处理排序（新增）
+const handleSort = (value: string) => {
+  sortType.value = value
+  loadJobs(true)
+}
+
+// 处理薪资快捷筛选（新增）
+const handleSalaryQuick = (index: number, min: number, max: number) => {
+  if (salaryQuickIndex.value === index) {
+    salaryQuickIndex.value = -1
+    filters.salaryMin = ''
+    filters.salaryMax = ''
+  } else {
+    salaryQuickIndex.value = index
+    filters.salaryMin = min.toString()
+    filters.salaryMax = max === 999999 ? '' : max.toString()
+  }
+  handleFilter()
+}
+
+// 获取轮播卡片颜色（新增）
+const getSlideColor = (index: number): string => {
+  const colors = [
+    '#FFE5F1', // 淡粉色
+    '#E6F3FF', // 淡蓝色
+    '#FFF4E6', // 淡黄色
+    '#F0E6FF', // 淡紫色
+    '#E6FFE6', // 淡绿色
+    '#FFE6F0'  // 淡粉红色
+  ]
+  return colors[index % colors.length]
+}
+
+// 跳转到分类页面（新增）
+const goToCategory = (category: string) => {
+  filters.type = category
+  handleFilter()
+}
+
+// 跳转到全部分类（新增）
+const goToAllCategories = () => {
+  // 可以跳转到分类列表页，这里先重置筛选
+  filters.type = ''
+  handleFilter()
+}
+
+// 处理搜索点击（新增）
+const handleSearchClick = () => {
+  // 可以跳转到搜索页面，这里先保持当前逻辑
 }
 </script>
 
@@ -660,6 +1129,779 @@ const filterByCategory = (category: string) => {
   min-height: 100vh;
   /* 直接用固定渐变背景，避免依赖上面删掉的全局变量 */
   background: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
+}
+
+/* 顶部横幅区域（统一二手交易页面风格） */
+.top-banner {
+  background: white;
+  border-radius: 12px;
+  padding: 15px 20px;
+  margin: 20px 0;
+  box-shadow: 0 4px 15px rgba(255, 107, 157, 0.12); /* 使用柔和的玫红色阴影，与二手交易页面一致 */
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.location-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #333;
+  font-size: 14px;
+  padding: 8px 16px;
+  background: #f5f5f5;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.location-section:hover {
+  background: rgba(255, 107, 157, 0.1); /* 使用柔和的玫红色背景，与二手交易页面一致 */
+  color: #FF6B9D; /* 使用柔和的玫红色 */
+}
+
+.location-text {
+  font-size: 14px;
+  color: inherit;
+}
+
+.location-section i {
+  color: inherit;
+  font-size: 14px;
+}
+
+.top-right-actions {
+  display: flex;
+  gap: 15px; /* 与二手交易页面一致 */
+}
+
+.top-action-btn {
+  width: 40px;
+  height: 40px;
+  background: none; /* 与二手交易页面一致，去掉背景 */
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.top-action-btn:hover {
+  background: rgba(255, 107, 157, 0.1); /* 使用柔和的玫红色背景，与二手交易页面一致 */
+  color: #FF6B9D; /* 使用柔和的玫红色 */
+  transform: scale(1.05);
+}
+
+.top-action-btn i {
+  color: inherit;
+  font-size: 18px;
+}
+
+.msg-badge, .noti-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: #FF6B9D; /* 使用柔和的玫红色，与二手交易页面一致 */
+  color: white;
+  font-size: 12px;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  box-shadow: 0 2px 8px rgba(255, 107, 157, 0.4); /* 使用柔和的玫红色阴影 */
+  font-weight: 600; /* 加粗字体，提升可读性 */
+}
+
+.noti-badge {
+  background: #FF6B9D; /* 使用柔和的玫红色 */
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  border-radius: 5px;
+  padding: 0;
+  border: 2px solid white;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 15px;
+}
+
+.search-box {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: #FFFFFF;
+  border-radius: 25px;
+  padding: 12px 15px 12px 20px; /* 与二手交易页面一致 */
+  min-height: 50px;
+  box-shadow: 0 2px 5px rgba(255, 107, 157, 0.15); /* 使用柔和的玫红色阴影，与二手交易页面一致 */
+  border: 2px solid #FF6B9D; /* 使用柔和的玫红色边框，与二手交易页面一致 */
+  gap: 12px;
+  transition: all 0.3s;
+  cursor: pointer;
+  position: relative;
+}
+
+.search-box:hover {
+  box-shadow: 0 4px 15px rgba(255, 107, 157, 0.25); /* 使用柔和的玫红色阴影 */
+  border-color: #FF6B9D; /* 保持玫红色边框 */
+}
+
+.search-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 16px;
+  color: #333;
+  background: transparent;
+}
+
+.search-box input::placeholder {
+  color: #666;
+  opacity: 0.8;
+}
+
+.search-box i {
+  color: #FF6B9D; /* 使用柔和的玫红色，与二手交易页面一致 */
+  font-size: 18px;
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.filter-btn {
+  width: 50px;
+  height: 50px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FF6B9D; /* 使用柔和的玫红色，与二手交易页面一致 */
+  box-shadow: 0 2px 5px rgba(255, 107, 157, 0.15); /* 使用柔和的玫红色阴影 */
+  border: 2px solid #FF6B9D; /* 使用柔和的玫红色边框，与二手交易页面一致 */
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.filter-btn:hover {
+  transform: scale(0.95);
+  box-shadow: 0 4px 15px rgba(255, 107, 157, 0.25); /* 使用柔和的玫红色阴影 */
+  border-color: #FF6B9D; /* 保持玫红色边框 */
+  background: rgba(255, 107, 157, 0.1); /* 悬停时添加柔和的玫红色背景 */
+}
+
+.quick-filter-tags {
+  margin-top: 10px;
+}
+
+.tags-scroll-container {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 5px;
+}
+
+.tags-scroll-container::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tags-scroll-container::-webkit-scrollbar-thumb {
+  background: #FF6B9D; /* 使用柔和的玫红色 */
+  border-radius: 3px;
+}
+
+.filter-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #f5f5f5;
+  color: #666;
+  border-radius: 20px;
+  font-size: 13px;
+  border: 1px solid #e0e0e0;
+  transition: all 0.3s;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.filter-tag:hover {
+  background: rgba(255, 107, 157, 0.1); /* 使用柔和的玫红色背景，与二手交易页面一致 */
+  color: #FF6B9D; /* 使用柔和的玫红色 */
+  border-color: #FF6B9D; /* 使用柔和的玫红色边框 */
+}
+
+.filter-tag.active {
+  background: linear-gradient(135deg, #FF6B9D 0%, #FF8FB3 100%); /* 使用柔和的玫红色渐变，与二手交易页面一致 */
+  border-color: #FF6B9D; /* 使用柔和的玫红色边框 */
+  transform: translateY(-2px);
+  color: #FFFFFF; /* 白色文字，确保对比度 */
+  font-weight: 600; /* 加粗字体，提升可读性 */
+  box-shadow: 0 2px 8px rgba(255, 107, 157, 0.3); /* 使用柔和的玫红色阴影 */
+}
+
+.filter-tag i {
+  color: inherit;
+}
+
+/* 筛选区域内的排序和薪资快捷筛选行 */
+.filter-section .sort-salary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.sort-section, .salary-quick-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sort-label, .salary-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.sort-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: #f5f5f5;
+  border-radius: 15px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.sort-item:hover {
+  background: #e0e0e0;
+}
+
+.sort-item.active {
+  background: linear-gradient(135deg, #FFE5E5 0%, #FFD1D1 100%);
+  color: #FF6B9D;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
+}
+
+.salary-quick-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.salary-quick-btn {
+  padding: 6px 12px;
+  background: #f5f5f5;
+  border-radius: 15px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+}
+
+.salary-quick-btn:hover {
+  background: #e0e0e0;
+}
+
+.salary-quick-btn.active {
+  background: linear-gradient(135deg, #FFE5E5 0%, #FFD1D1 100%);
+  color: #FF6B9D;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
+}
+
+/* 热门兼职推荐区域 */
+.hot-jobs-section {
+  margin-bottom: 30px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.section-title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.section-title-with-icon i {
+  color: #E91E63; /* 使用柔和的玫红色 */
+}
+
+.section-subtitle {
+  font-size: 13px;
+  color: #999;
+}
+
+.view-all, .salary-range {
+  font-size: 13px;
+  color: #E91E63; /* 使用柔和的玫红色 */
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.hot-jobs-carousel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 15px;
+}
+
+.hot-job-slide {
+  border-radius: 15px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  color: #333;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.hot-job-slide:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+}
+
+.salary-badge {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  padding: 6px 15px;
+  background: linear-gradient(135deg, #FFF9E5 0%, #FFF4D1 100%);
+  color: #FFA500;
+  border-radius: 15px;
+  font-size: 12px;
+  font-weight: bold;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 182, 193, 0.3);
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
+}
+
+.slide-info {
+  margin-top: 30px;
+}
+
+.hot-job-slide .job-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 15px;
+}
+
+.hot-job-slide .job-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.hot-job-slide .meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #666;
+}
+
+/* 公司信息区域 - 增加间距，避免元素拥挤 */
+.company-info {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* 增大元素间距，从10px增加到12px，让布局更舒展 */
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  flex-wrap: wrap; /* 允许换行，避免在小屏幕上拥挤 */
+}
+
+.company-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFE5E5 0%, #FFD1D1 100%);
+  box-shadow: 0 2px 6px rgba(255, 182, 193, 0.3);
+}
+
+.company-name {
+  flex: 1;
+  font-size: 13px;
+  color: #666;
+}
+
+/* 企业认证标识 - 使用柔和玫红色，增大尺寸和间距，避免拥挤 */
+.verified-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* 增大图标与文字间距，从4px增加到6px */
+  padding: 6px 14px; /* 增大内边距，从4px 10px增加到6px 14px，让标识更舒展 */
+  background: linear-gradient(135deg, rgba(255, 182, 193, 0.25) 0%, rgba(255, 192, 203, 0.2) 100%); /* 使用柔和的玫红色渐变背景，马卡龙风格 */
+  border-radius: 16px; /* 增大圆角，从12px增加到16px，更圆润 */
+  font-size: 12px; /* 增大字体，从11px增加到12px，提升可读性 */
+  color: #E91E63; /* 使用柔和的玫红色文字，比#FF1493更柔和，不刺眼 */
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 182, 193, 0.4); /* 使用更柔和的玫红色边框，从1px增加到2px */
+  font-weight: 500; /* 加粗字体，提升视觉重要性 */
+  box-shadow: 0 2px 6px rgba(255, 182, 193, 0.2); /* 添加柔和的阴影，增强层次感 */
+  margin-left: 8px; /* 增加左侧外边距，与公司名称保持适当距离 */
+}
+
+/* 兼职分类区域 */
+.category-section {
+  margin-bottom: 30px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* 侧边栏中的分类网格（2列布局） */
+.sidebar .category-section .category-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+/* 主内容区域的分类网格（4列布局） */
+.main-column .category-section .category-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.category-item {
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.category-item:hover {
+  transform: translateY(-3px);
+}
+
+.category-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 10px;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.category-icon i {
+  font-size: 24px;
+}
+
+.category-name {
+  font-size: 13px;
+  color: #333;
+  display: block;
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.job-count {
+  font-size: 11px;
+  color: #999;
+}
+
+/* 高薪专区 */
+.high-salary-section {
+  margin-bottom: 30px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.salary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.salary-job-card {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 15px;
+  padding: 15px;
+  box-shadow: 0 4px 20px rgba(255, 182, 193, 0.15);
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 182, 193, 0.1);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.salary-job-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 25px rgba(255, 182, 193, 0.25);
+}
+
+.salary-badge-high {
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 4px 15px;
+  background: linear-gradient(135deg, #FFF9E5 0%, #FFF4D1 100%);
+  color: #FFA500;
+  font-size: 11px;
+  font-weight: bold;
+  border-radius: 0 0 0 15px;
+  box-shadow: 0 2px 6px rgba(255, 182, 193, 0.3);
+  border: 1px solid rgba(255, 182, 193, 0.2);
+}
+
+.salary-content {
+  margin-top: 8px;
+}
+
+.salary-job-title {
+  font-size: 15px;
+  font-weight: bold;
+  color: #333;
+  display: block;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.4;
+  height: 42px;
+}
+
+.salary-info {
+  margin-bottom: 10px;
+}
+
+.salary-highlight {
+  font-size: 16px;
+  font-weight: bold;
+  color: #E91E63; /* 使用柔和的玫红色 */
+  display: block;
+  margin-bottom: 4px;
+}
+
+.salary-desc {
+  font-size: 11px;
+  color: #999;
+  display: block;
+}
+
+.salary-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.salary-meta .meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #999;
+}
+
+.company-brief {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.company-avatar-tiny {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E5FFE5 0%, #D1FFD1 100%);
+  box-shadow: 0 2px 4px rgba(182, 224, 255, 0.3);
+}
+
+.company-name-small {
+  font-size: 11px;
+  color: #666;
+  flex: 1;
+}
+
+/* 筛选弹窗 */
+.filter-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  align-items: flex-end;
+}
+
+.filter-modal {
+  width: 100%;
+  max-height: 80vh;
+  background-color: #fff;
+  border-radius: 20px 20px 0 0;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.filter-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.filter-modal-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+
+.filter-modal-close {
+  font-size: 32px;
+  color: #999;
+  line-height: 1;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.filter-modal-content {
+  max-height: calc(80vh - 150px);
+  overflow-y: auto;
+}
+
+.filter-group {
+  margin-bottom: 30px;
+}
+
+.filter-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 15px;
+  display: block;
+}
+
+.filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.filter-option {
+  padding: 10px 20px;
+  background-color: #f5f5f5;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #666;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.filter-option:hover {
+  background-color: #e0e0e0;
+}
+
+.filter-option.active {
+  background: linear-gradient(135deg, #FFE5E5 0%, #FFD1D1 100%);
+  color: #FF6B9D;
+  font-weight: bold;
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
+}
+
+.filter-modal-footer {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.filter-reset-btn,
+.filter-confirm-btn {
+  flex: 1;
+  padding: 15px;
+  border-radius: 12px;
+  font-size: 16px;
+  border: none;
+  min-height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.filter-reset-btn {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.filter-confirm-btn {
+  background: linear-gradient(135deg, #FFE5E5 0%, #FFD1D1 50%, #FFB6C1 100%);
+  color: #FF6B9D;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3);
+}
+
+.filter-confirm-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(255, 182, 193, 0.4);
 }
 
 .page-container {
@@ -751,6 +1993,18 @@ const filterByCategory = (category: string) => {
   margin-right: auto;
 }
 
+/* 筛选区域内的排序和薪资快捷筛选行 */
+.filter-section .sort-salary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
 .filter-row {
   display: flex;
   align-items: center;
@@ -827,10 +2081,8 @@ const filterByCategory = (category: string) => {
 }
 
 .btn:active {
-  background: var(--primary-dark);
-  border-color: var(--primary-dark);
-  transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(216, 27, 96, 0.25);
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.2);
 }
 
 .btn.primary {
@@ -950,15 +2202,16 @@ const filterByCategory = (category: string) => {
   background: white;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(255, 182, 193, 0.08); /* 使用柔和的玫红色阴影 */
   transition: all 0.3s ease;
-  border: 1px solid #eee;
+  border: 1px solid rgba(255, 182, 193, 0.15); /* 使用柔和的玫红色边框 */
   cursor: pointer;
 }
 
 .job-card:hover {
-  box-shadow: 0 4px 20px rgba(216, 27, 96, 0.15);
+  box-shadow: 0 4px 20px rgba(255, 182, 193, 0.15); /* 使用柔和的玫红色阴影 */
   transform: translateY(-2px);
+  border-color: rgba(255, 182, 193, 0.25); /* 悬停时边框颜色加深 */
 }
 
 .job-header {
@@ -988,10 +2241,11 @@ const filterByCategory = (category: string) => {
 
 .tag {
   padding: 4px 10px;
-  background: #f9f0ff;
-  color: var(--primary);
+  background: linear-gradient(135deg, rgba(255, 182, 193, 0.15) 0%, rgba(255, 192, 203, 0.1) 100%); /* 使用柔和的玫红色渐变背景 */
+  color: #E91E63; /* 使用柔和的玫红色文字 */
   border-radius: 4px;
   font-size: 12px;
+  border: 1px solid rgba(255, 182, 193, 0.2); /* 添加柔和的边框 */
 }
 
 .job-info {
@@ -1013,14 +2267,14 @@ const filterByCategory = (category: string) => {
 }
 
 .info-item i {
-  color: var(--primary);
+  color: #E91E63; /* 使用柔和的玫红色 */
   font-size: 12px;
 }
 
 .salary {
   font-size: 16px;
   font-weight: bold;
-  color: var(--primary);
+  color: #E91E63; /* 使用柔和的玫红色 */
   margin-bottom: 10px;
 }
 
@@ -1056,9 +2310,9 @@ const filterByCategory = (category: string) => {
 .btn-detail {
   padding: 6px 16px;
   border-radius: 6px;
-  border: 1px solid var(--primary);
+  border: 1px solid rgba(255, 182, 193, 0.4); /* 使用柔和的玫红色边框 */
   background: white;
-  color: var(--primary);
+  color: #E91E63; /* 使用柔和的玫红色文字 */
   cursor: pointer;
   font-size: 13px;
   transition: all 0.3s;
@@ -1067,16 +2321,17 @@ const filterByCategory = (category: string) => {
 .btn-detail:hover {
   /* 悬停时仅通过阴影和前移强调点击感受，文字与边框颜色保持不变 */
   background: white;
-  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.25);
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.25); /* 使用柔和的玫红色阴影 */
   transform: translateY(-1px);
+  border-color: rgba(255, 182, 193, 0.5); /* 悬停时边框颜色加深 */
 }
 
 .btn-apply {
   padding: 6px 16px;
   border-radius: 6px;
-  border: 1px solid var(--primary);
+  border: 1px solid rgba(255, 182, 193, 0.4); /* 使用柔和的玫红色边框 */
   background: white;
-  color: var(--primary);
+  color: #E91E63; /* 使用柔和的玫红色文字 */
   cursor: pointer;
   font-size: 13px;
   transition: all 0.3s;
@@ -1085,8 +2340,9 @@ const filterByCategory = (category: string) => {
 .btn-apply:hover {
   /* 悬停时保持按钮配色不变，只增加轻微阴影与前移效果 */
   background: white;
-  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.25);
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.25); /* 使用柔和的玫红色阴影 */
   transform: translateY(-1px);
+  border-color: rgba(255, 182, 193, 0.5); /* 悬停时边框颜色加深 */
 }
 
 /* 侧边栏 */
@@ -1110,6 +2366,65 @@ const filterByCategory = (category: string) => {
   padding-bottom: 10px;
   border-bottom: 2px solid var(--primary);
   color: var(--primary);
+}
+
+/* 侧边栏中的分类区域标题样式 */
+.sidebar-card.category-section .section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--primary);
+}
+
+.sidebar-card.category-section .section-title-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  color: var(--primary);
+}
+
+.sidebar-card.category-section .section-title-with-icon i {
+  color: #E91E63; /* 使用柔和的玫红色 */
+}
+
+.sidebar-card.category-section .view-all {
+  font-size: 13px;
+  color: #FF91A4;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.sidebar-card.category-section .category-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 8px;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-card.category-section .category-icon i {
+  font-size: 20px;
+}
+
+.sidebar-card.category-section .category-name {
+  font-size: 12px;
+  color: #333;
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+}
+
+.sidebar-card.category-section .job-count {
+  font-size: 10px;
+  color: #999;
 }
 
 .sidebar-card ul {
@@ -1167,41 +2482,7 @@ const filterByCategory = (category: string) => {
   line-height: 1.6;
 }
 
-.contact-card {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-  color: white;
-}
 
-.contact-card h3 {
-  color: white;
-  border-bottom-color: rgba(255, 255, 255, 0.3);
-}
-
-.contact-card p {
-  color: rgba(255, 255, 255, 0.9);
-  line-height: 1.8;
-  margin-bottom: 15px;
-}
-
-.contact-info {
-  margin: 15px 0;
-}
-
-.contact-info p {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 14px;
-  margin-bottom: 8px;
-}
-
-.contact-card .quick-links a {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-}
-
-.contact-card .quick-links a:hover {
-  background: white;
-  color: var(--primary);
-}
 
 /* 响应式适配 */
 @media (max-width: 768px) {

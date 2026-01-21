@@ -1,2424 +1,2369 @@
 <template>
-  <div class="schedule-page">
+  <div class="secondhand-page">
+    <!-- 顶部导航栏 - 完全复用，无修改 -->
     <NavBar />
 
-    <div class="page-container">
-      <!-- 今日行程概览 -->
-      <section class="overview-section">
-        <div class="overview-header">
-          <h2>今日行程概览</h2>
-          <div class="date-selector">
-            <button class="date-btn" @click="changeDate(-1)">
-              <i class="fas fa-chevron-left"></i>
-            </button>
-            <div class="current-date" @click="showDatePicker = true">
-              <i class="fas fa-calendar"></i>
-              <span>{{ currentDateText }}</span>
-              <i class="fas fa-chevron-down"></i>
-            </div>
-            <button class="date-btn" @click="changeDate(1)">
-              <i class="fas fa-chevron-right"></i>
-            </button>
-          </div>
+    <div class="container">
+      <!-- 顶部欢迎区域 -->
+      <section class="header-section">
+        <div class="greeting">
+          <h2 class="greeting-text">你好，今天也要加油哦~</h2>
+          <p class="date-text">{{ currentDate }}</p>
         </div>
-        <div class="stats-cards">
-          <div class="stat-card">
-            <i class="fas fa-list"></i>
-            <div class="stat-value">{{ todaySchedules.length }}</div>
-            <div class="stat-label">今日行程</div>
-          </div>
-          <div class="stat-card completed">
-            <i class="fas fa-check-circle"></i>
-            <div class="stat-value">{{ completedCount }}</div>
-            <div class="stat-label">已完成</div>
-          </div>
-          <div class="stat-card ongoing">
-            <i class="fas fa-clock"></i>
-            <div class="stat-value">{{ ongoingCount }}</div>
-            <div class="stat-label">进行中</div>
-          </div>
-          <div class="stat-card upcoming">
-            <i class="fas fa-hourglass-start"></i>
-            <div class="stat-value">{{ upcomingCount }}</div>
-            <div class="stat-label">即将开始</div>
-          </div>
+        <div class="weather-info">
+          <i class="fas fa-sun weather-icon"></i>
+          <span class="weather-text">{{ weatherInfo }}</span>
         </div>
       </section>
 
-      <!-- 分类筛选和操作 -->
-      <section class="filter-actions-section">
-        <div class="category-filters">
-          <button
-            v-for="category in categories"
-            :key="category.value"
-            :class="['category-btn', { active: filters.category === category.value }]"
-            @click="filters.category = category.value"
-          >
-            {{ category.label }}
-          </button>
-        </div>
-        <div class="action-buttons">
-          <button class="action-btn" @click="showImportModal = true">
-            <i class="fas fa-file-import"></i> 导入行程
-          </button>
-          <button class="action-btn" @click="showTeamModal = true">
-            <i class="fas fa-users"></i> 团队管理
-          </button>
+      <!-- 搜索栏区域 - 移到最上方 -->
+      <section class="search-bar-section">
+        <div class="search-container">
           <div class="search-box">
             <input
               v-model="filters.search"
               type="text"
-              placeholder="搜索行程关键词..."
-              @keyup.enter="handleSearch"
-              @input="handleSearch"
+              placeholder="搜索课程/日程/教室/教师..."
+              class="search-input"
+              @keyup.enter="handleFilter"
             />
-            <button class="search-btn" @click="handleSearch">
-              <i class="fas fa-search"></i> 搜索
+            <i class="fas fa-search search-icon"></i>
+          </div>
+          <div class="search-actions">
+            <button class="action-btn" @click="handleQuick('addSchedule')">
+              <i class="fas fa-plus"></i> 新增日程
             </button>
-          </div>
-        </div>
-        <!-- 搜索结果盒子 -->
-        <div v-if="filters.search && searchResults.length > 0" class="search-results-box">
-          <div class="search-results-header">
-            <h3>搜索结果 ({{ searchResults.length }})</h3>
-            <button class="clear-search-btn" @click="clearSearch">
-              <i class="fas fa-times"></i> 清除
+            <button class="action-btn" @click="handleQuick('remind')">
+              <i class="fas fa-bell"></i> 日程提醒
             </button>
-          </div>
-          <div class="search-results-list">
-            <div
-              v-for="result in searchResults"
-              :key="result.id"
-              :class="['search-result-item', `category-${result.category}`]"
-              @click="selectSchedule(result)"
-            >
-              <div class="result-time">
-                <div class="time">{{ result.time }}</div>
-                <div class="date">{{ result.date }}</div>
-              </div>
-              <div class="result-content">
-                <h4 class="result-title">{{ result.title }}</h4>
-                <p class="result-desc">{{ result.description }}</p>
-                <div class="result-meta">
-                  <span class="category-tag">{{ getCategoryLabel(result.category) }}</span>
-                  <span class="location" v-if="result.location">
-                    <i class="fas fa-map-marker-alt"></i> {{ result.location }}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div v-if="filters.search && searchResults.length === 0" class="search-results-box empty">
-          <div class="empty-search">
-            <i class="fas fa-search"></i>
-            <p>未找到相关行程</p>
-            <button class="clear-search-btn" @click="clearSearch">清除搜索</button>
+            <button class="action-btn" @click="handleQuick('profile')">
+              <i class="fas fa-user"></i> 个人日程
+            </button>
           </div>
         </div>
       </section>
 
-      <!-- 本周行程 -->
-      <section class="week-schedule-section">
-        <div class="section-header">
-          <h2>本周行程</h2>
-          <div class="section-actions">
-            <button class="export-btn" @click="exportPDF">
-              <i class="fas fa-file-pdf"></i> 导出PDF
-            </button>
-            <button class="export-btn" @click="exportWord">
-              <i class="fas fa-file-word"></i> 导出Word
-            </button>
-            <a href="#" class="month-view-link" @click.prevent="viewMonth">
-              查看月视图 <i class="fas fa-arrow-right"></i>
-            </a>
+      <!-- 快速操作卡片组 -->
+      <section class="quick-actions-section">
+        <div class="quick-actions-grid">
+          <div class="quick-action-card card-yellow" @click="handleQuick('addSchedule')">
+            <div class="action-icon-wrapper icon-yellow">
+              <i class="fas fa-calendar-plus"></i>
+            </div>
+            <span class="action-text">添加行程</span>
           </div>
-        </div>
-        <div class="week-grid">
-          <div
-            v-for="day in weekDays"
-            :key="day.date"
-            :class="['week-day', { today: day.isToday, active: day.isSelected }]"
-            @click="selectDay(day.date)"
-          >
-            <div class="day-name">{{ day.name }}</div>
-            <div class="day-number">{{ day.number }}</div>
-            <div class="day-count">{{ day.count }}个行程</div>
+          <div class="quick-action-card card-blue" @click="handleQuick('timeTable')">
+            <div class="action-icon-wrapper icon-blue">
+              <i class="fas fa-clock"></i>
+            </div>
+            <span class="action-text">时间表格</span>
+          </div>
+          <div class="quick-action-card card-pink" @click="handleQuick('courseTable')">
+            <div class="action-icon-wrapper icon-pink">
+              <i class="fas fa-graduation-cap"></i>
+            </div>
+            <span class="action-text">课程表</span>
+          </div>
+          <div class="quick-action-card card-purple" @click="handleQuick('team')">
+            <div class="action-icon-wrapper icon-purple">
+              <i class="fas fa-users"></i>
+            </div>
+            <span class="action-text">团队</span>
           </div>
         </div>
       </section>
 
-      <!-- 独立提醒 -->
-      <section class="reminder-section">
-        <div class="section-header">
-          <h2>独立提醒</h2>
-          <button class="add-btn" @click="showReminderModal = true">
-            <i class="fas fa-plus"></i> 添加提醒
-          </button>
-        </div>
-        <div class="reminder-list">
-          <div v-for="reminder in reminders" :key="reminder.id" class="reminder-item">
-            <div class="reminder-content">
-              <div class="reminder-title">{{ reminder.title }}</div>
-              <div class="reminder-time">{{ reminder.timeText }}</div>
-            </div>
-            <div class="reminder-actions">
-              <button class="icon-btn" @click="editReminder(reminder.id)" title="编辑">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="icon-btn" @click="toggleReminder(reminder.id)" :title="reminder.enabled ? '禁用' : '启用'">
-                <i :class="reminder.enabled ? 'fas fa-bell' : 'far fa-bell-slash'"></i>
-              </button>
-              <button class="icon-btn delete" @click="deleteReminder(reminder.id)" title="删除">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </div>
+      <!-- 今日统计卡片 -->
+      <section class="stats-section">
+        <div 
+          class="stat-card" 
+          v-for="(item, idx) in overviewList" 
+          :key="idx" 
+          :style="{ background: statCardColors[idx] }"
+        >
+          <div class="stat-number">{{ item.count }}</div>
+          <div class="stat-label">{{ item.name }}</div>
         </div>
       </section>
 
-      <!-- 今日行程 -->
-      <section class="today-schedule-section">
-        <div class="section-header">
-          <h2>今日行程</h2>
-          <button class="add-btn" @click="showAddModal = true">
-            <i class="fas fa-plus"></i> 添加行程
-          </button>
-        </div>
-        <div class="schedule-list">
-          <div
-            v-for="schedule in filteredTodaySchedules"
-            :key="schedule.id"
-            :class="['schedule-item', `category-${schedule.category}`]"
-          >
-            <div class="schedule-time">
-              <div class="time">{{ schedule.time }}</div>
-              <div class="period">{{ schedule.period }}</div>
-            </div>
-            <div class="schedule-content">
-              <div class="schedule-header">
-                <h3 class="schedule-title">{{ schedule.title }}</h3>
-                <span class="category-tag">{{ getCategoryLabel(schedule.category) }}</span>
-              </div>
-              <div class="schedule-location">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>{{ schedule.location }}</span>
-              </div>
-              <div class="schedule-desc">{{ schedule.description }}</div>
-              <div class="schedule-footer">
-                <span :class="['status-badge', schedule.status]">{{ getStatusLabel(schedule.status) }}</span>
-                <span v-if="schedule.sharedWith && schedule.sharedWith.length > 0" class="shared-info">
-                  <i class="fas fa-users"></i> 已共享给: {{ schedule.sharedWith.join(', ') }}
-                </span>
-                <div class="schedule-actions">
-                  <button class="action-link" @click="shareSchedule(schedule.id)">
-                    <i class="fas fa-share-alt"></i> 共享
-                  </button>
-                  <button class="action-link" @click="editSchedule(schedule.id)">
-                    <i class="fas fa-edit"></i> 编辑
-                  </button>
-                  <button class="action-link delete" @click="deleteSchedule(schedule.id)">
-                    <i class="fas fa-trash"></i> 删除
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
 
-    <!-- 添加行程模态框 -->
-    <div v-if="showAddModal" class="modal-overlay" @click="showAddModal = false">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>添加新行程</h3>
-          <button class="close-btn" @click="showAddModal = false">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label>行程标题</label>
-            <input v-model="newSchedule.title" type="text" placeholder="请输入行程标题" />
-          </div>
-          <div class="form-group">
-            <label>分类</label>
-            <select v-model="newSchedule.category">
-              <option value="">请选择分类</option>
-              <option v-for="cat in categories" :key="cat.value" :value="cat.value">{{ cat.label }}</option>
+      <!-- 快速筛选栏 - 完全复用样式，替换行程相关筛选条件 -->
+      <section class="filter-section">
+        <div class="filter-row">
+          <div class="filter-group">
+            <span class="filter-label">学期：</span>
+            <select class="filter-select" v-model="filters.semester">
+              <option value="all">全部学期</option>
+              <option value="2025-1">2025上学期</option>
+              <option value="2025-2">2025下学期</option>
+              <option value="2026-1">2026上学期</option>
             </select>
           </div>
-          <div class="form-group">
-            <label>时间</label>
-            <div class="datetime-inputs">
-              <input v-model="newSchedule.date" type="date" />
-              <input v-model="newSchedule.time" type="time" />
-            </div>
+          <div class="filter-group">
+            <span class="filter-label">周次：</span>
+            <select class="filter-select" v-model="filters.week">
+              <option value="all">全部周次</option>
+              <option value="1-5">第1-5周</option>
+              <option value="6-10">第6-10周</option>
+              <option value="11-15">第11-15周</option>
+              <option value="16-20">第16-20周</option>
+            </select>
           </div>
-          <div class="form-group">
-            <label>地点</label>
-            <input v-model="newSchedule.location" type="text" placeholder="请输入地点" />
+          <div class="filter-group">
+            <span class="filter-label">校区：</span>
+            <select class="filter-select" v-model="filters.campus">
+              <option value="all">全部校区</option>
+              <option value="main">主校区</option>
+              <option value="east">东校区</option>
+              <option value="west">西校区</option>
+            </select>
           </div>
-          <div class="form-group">
-            <label>描述</label>
-            <textarea v-model="newSchedule.description" placeholder="请输入描述"></textarea>
+          <div class="filter-group">
+            <span class="filter-label">类型：</span>
+            <select class="filter-select" v-model="filters.type">
+              <option value="all">全部类型</option>
+              <option value="course">课程安排</option>
+              <option value="study">自习规划</option>
+              <option value="activity">校园活动</option>
+              <option value="exam">考试安排</option>
+            </select>
           </div>
-          <div class="form-group">
-            <label class="checkbox-label">
-              <input v-model="newSchedule.hasReminder" type="checkbox" />
-              <span>提醒设置</span>
-            </label>
-            <div v-if="newSchedule.hasReminder" class="reminder-settings">
-              <div class="reminder-row">
-                <label>提醒频率</label>
-                <div class="reminder-input-group">
-                  <input v-model.number="newSchedule.reminderValue" type="number" min="1" />
-                  <select v-model="newSchedule.reminderUnit">
-                    <option value="minute">分钟前</option>
-                    <option value="hour">小时前</option>
-                    <option value="day">天前</option>
-                  </select>
-                </div>
-              </div>
-              <div class="reminder-row">
-                <label>提醒方式</label>
-                <div class="reminder-checkboxes">
-                  <label><input v-model="newSchedule.reminderMethods" type="checkbox" value="app" /> App弹窗</label>
-                  <label><input v-model="newSchedule.reminderMethods" type="checkbox" value="notification" /> 系统通知</label>
-                  <label><input v-model="newSchedule.reminderMethods" type="checkbox" value="alarm" /> 闹钟铃声</label>
-                  <label><input v-model="newSchedule.reminderMethods" type="checkbox" value="sms" /> 短信提醒</label>
-                </div>
-              </div>
-            </div>
+          <div class="filter-actions">
+            <button class="confirm-btn" @click="handleFilter">确定筛选</button>
+            <button class="reset-btn" @click="handleReset">重置</button>
           </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn cancel" @click="showAddModal = false">取消</button>
-          <button class="btn primary" @click="addSchedule">添加行程</button>
-        </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- 导入行程模态框 -->
-    <div v-if="showImportModal" class="modal-overlay" @click="showImportModal = false">
-      <div class="modal-content large" @click.stop>
-        <div class="modal-header">
-          <h3>导入行程</h3>
-          <button class="close-btn" @click="showImportModal = false">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="import-options">
-            <button class="import-option-btn" @click="goToImport('file')">
-              <i class="fas fa-file-excel"></i>
-              <span>从文件导入</span>
-              <p>支持Excel和CSV格式</p>
-            </button>
-            <button class="import-option-btn" @click="goToImport('manual')">
-              <i class="fas fa-keyboard"></i>
-              <span>手动录入</span>
-              <p>逐条添加课程信息</p>
-            </button>
-            <button class="import-option-btn" @click="goToImport('link')">
-              <i class="fas fa-link"></i>
-              <span>链接导入</span>
-              <p>从教务系统链接导入</p>
-            </button>
+      <!-- 快捷标签筛选 -->
+      <section class="filter-tabs-section">
+        <div class="filter-tabs-container">
+          <div 
+            class="filter-tab" 
+            v-for="(item, idx) in funcTabs" 
+            :key="idx"
+            :class="{ active: activeTab === idx }"
+            @click="handleTabChange(idx)"
+          >
+            <i :class="getTabIcon(item.icon)" class="filter-icon"></i>
+            <span class="filter-text">{{ item.name }}</span>
           </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn cancel" @click="showImportModal = false">取消</button>
-        </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- 团队管理模态框 -->
-    <div v-if="showTeamModal" class="modal-overlay" @click="showTeamModal = false">
-      <div class="modal-content large" @click.stop>
-        <div class="modal-header">
-          <h3>团队管理</h3>
-          <button class="close-btn" @click="showTeamModal = false">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <button class="create-team-btn" @click="showCreateTeamModal = true">
-            <i class="fas fa-plus"></i> 创建新团队
-          </button>
-          <div class="team-section">
-            <h4>我的团队</h4>
-            <div class="team-list">
-              <div v-for="team in myTeams" :key="team.id" class="team-item" @click="viewTeam(team.id)">
-                <div class="team-avatar">{{ team.name.charAt(0) }}</div>
-                <div class="team-info">
-                  <div class="team-name">{{ team.name }}</div>
-                  <div class="team-members">{{ team.memberCount }} 名成员</div>
-                </div>
-                <i class="fas fa-chevron-right"></i>
-              </div>
-            </div>
+      <!-- 本周概览日历 -->
+      <section class="week-overview-section">
+        <div class="week-overview-card">
+          <div class="card-header">
+            <h3 class="card-title">本周行程</h3>
+            <button class="action-icon-btn" @click="switchToMonth">
+              <i class="fas fa-calendar-alt"></i>
+            </button>
           </div>
-          <div class="team-section">
-            <h4>团队邀请</h4>
-            <div class="invitation-list">
-              <div v-for="invitation in teamInvitations" :key="invitation.id" class="invitation-item">
-                <div class="invitation-icon">
-                  <i class="fas fa-user-plus"></i>
-                </div>
-                <div class="invitation-info">
-                  <div class="invitation-team">{{ invitation.teamName }}</div>
-                  <div class="invitation-inviter">{{ invitation.inviter }} 邀请您加入</div>
-                </div>
-                <div class="invitation-actions">
-                  <button class="btn accept" @click="acceptInvitation(invitation.id)">接受</button>
-                  <button class="btn reject" @click="rejectInvitation(invitation.id)">拒绝</button>
-                </div>
-              </div>
+          <div class="calendar-grid">
+            <div 
+              class="calendar-day" 
+              v-for="(day, idx) in weekCalendarDays" 
+              :key="idx" 
+              :class="{ today: day.isToday }"
+            >
+              <span class="day-name">{{ day.name }}</span>
+              <span class="day-number">{{ day.date }}</span>
+              <div class="day-dot" v-if="day.tag && day.tag !== '无'"></div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- 共享行程模态框 -->
-    <div v-if="showShareModal" class="modal-overlay" @click="showShareModal = false">
-      <div class="modal-content" @click.stop>
-        <div class="modal-header">
-          <h3>共享行程</h3>
-          <button class="close-btn" @click="showShareModal = false">
-            <i class="fas fa-times"></i>
-          </button>
-        </div>
-        <div class="modal-body">
-          <div class="form-group">
-            <label>添加共享对象</label>
-            <input v-model="shareInput" type="text" placeholder="输入用户名或邮箱" @keyup.enter="addShareUser" />
-            <button class="add-share-btn" @click="addShareUser">
-              <i class="fas fa-plus"></i> 添加
-            </button>
+      <!-- 排序和快捷筛选栏 - 样式不变，替换行程相关选项 -->
+      <section class="sort-price-bar">
+        <div class="sort-section">
+          <span class="sort-label">排序：</span>
+          <div 
+            v-for="(item, index) in sortOptions" 
+            :key="item.value"
+            class="sort-item"
+            :class="{ active: sortType === item.value }"
+            @click="handleSort(item.value)"
+          >
+            <i :class="item.icon"></i>
+            <span>{{ item.label }}</span>
           </div>
-          <div v-if="shareUsers.length > 0" class="share-users">
-            <div v-for="(user, idx) in shareUsers" :key="idx" class="share-user-tag">
-              {{ user }}
-              <button @click="removeShareUser(idx)">
-                <i class="fas fa-times"></i>
+        </div>
+        <div class="price-quick-section">
+          <span class="price-label">快捷筛选：</span>
+          <div class="price-quick-btns">
+            <div 
+              v-for="(item, index) in quickOptions" 
+              :key="index"
+              class="price-quick-btn"
+              :class="{ active: quickIndex === index }"
+              @click="handleQuickFilter(index, item.type)"
+            >
+              {{ item.label }}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 主要内容区域 - 核心：直接展示课程表+日程表，置顶无隐藏 -->
+      <div class="main-content">
+        <div class="product-list">
+          <!-- ===== 核心1：本周课程表 置顶展示 ===== -->
+          <div class="search-result-section" style="margin-bottom: 25px;">
+            <h2 class="section-title">
+              <i class="fas fa-calendar-check"></i> 本周课程表
+              <button class="refresh-btn" type="button" @click="refreshCourseTable" style="margin-left:auto">切换周次</button>
+            </h2>
+            <div class="course-table-container">
+              <div class="course-table">
+                <div class="table-header">
+                  <div class="table-cell empty"></div>
+                  <div class="table-cell" v-for="day in weekDays" :key="day">{{day}}</div>
+                </div>
+                <div class="table-row" v-for="(section, idx) in sections" :key="idx">
+                  <div class="table-cell section-cell">{{idx+1}}节</div>
+                  <div class="table-cell" v-for="(day, dayIdx) in weekDays" :key="dayIdx">
+                    <div 
+                      class="course-card" 
+                      v-for="course in getCourseByDayAndSection(dayIdx, idx)" 
+                      :key="course.id"
+                      :style="{background: course.color}"
+                      @click="goToDetail(course.id)"
+                    >
+                      <div class="course-name">{{course.name}}</div>
+                      <div class="course-teacher">{{course.teacher}}</div>
+                      <div class="course-place">{{course.place}}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== 核心2：今日日程表 紧随课程表展示 ===== -->
+          <div class="recommendation-section" style="margin-bottom: 25px;">
+            <h2 class="section-title">
+              <i class="fas fa-list-check"></i> {{todayDate}} 今日日程
+              <button class="refresh-btn" type="button" @click="refreshTodaySchedule">刷新</button>
+            </h2>
+            <!-- 今日待办日程 -->
+            <div class="schedule-todo">
+              <div class="schedule-header">
+                <i class="fas fa-clock"></i> 待办事项
+              </div>
+              <div class="schedule-list">
+                <div 
+                  class="schedule-item-card" 
+                  v-for="item in filteredTodayScheduleList" 
+                  :key="item.id" 
+                  @click="goToDetail(item.id)"
+                  :style="{ borderLeftColor: getTagBorderColor(item.tag) }"
+                >
+                  <div class="schedule-time-block">
+                    <div class="time-main">{{ item.time }}</div>
+                    <div class="time-end" v-if="item.endTime">{{ item.endTime }}</div>
+                  </div>
+                  <div class="schedule-content">
+                    <div class="schedule-header-row">
+                      <div class="schedule-title">{{ item.title }}</div>
+                      <div class="schedule-tag" :style="{ background: getTagColor(item.tag) }">
+                        {{ item.tag }}
+                      </div>
+                    </div>
+                    <div class="schedule-desc" v-if="item.desc">{{ item.desc }}</div>
+                    <div class="schedule-meta">
+                      <div class="schedule-location" v-if="item.location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>{{ item.location }}</span>
+                      </div>
+                      <div class="series-badge-mini" v-if="item.isRouteSeries">
+                        <i class="fas fa-route"></i>
+                        <span>多地点</span>
+                      </div>
+                    </div>
+                    <div class="remind-badges" v-if="item.remindTypes && item.remindTypes.length > 0">
+                      <div class="remind-badge" v-for="(type, typeIdx) in item.remindTypes" :key="typeIdx">
+                        <i :class="getRemindMethodIcon(type)" class="remind-icon"></i>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="schedule-status" :style="{ color: item.statusColor }">
+                    <i class="fas fa-circle status-dot" :style="{ color: item.statusColor }"></i>
+                    <div class="status-text">{{ item.status }}</div>
+                  </div>
+                </div>
+                <div class="empty-state" v-if="filteredTodayScheduleList.length === 0">
+                  <i class="fas fa-calendar-check empty-icon"></i>
+                  <p class="empty-text">{{ activeTab === 0 ? '今天还没有行程，点击上方按钮添加吧~' : `暂无${funcTabs[activeTab]?.name || ''}类型的行程` }}</p>
+                </div>
+              </div>
+            </div>
+            <!-- 今日已完成日程 -->
+            <div class="schedule-done" style="margin-top:15px;">
+              <div class="schedule-header">
+                <i class="fas fa-check-circle"></i> 已完成事项
+              </div>
+              <div class="schedule-grid">
+                <div class="schedule-card done-card" v-for="item in todayDoneList" :key="item.id">
+                  <div class="schedule-time">
+                    <i class="fas fa-calendar-check"></i> {{item.time}}
+                  </div>
+                  <div class="schedule-title">{{item.title}}</div>
+                  <div class="schedule-desc">{{item.desc}}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== 独立提醒模块 ===== -->
+          <div class="reminder-section">
+            <div class="section-header">
+              <div class="header-left">
+                <i class="fas fa-bell section-icon"></i>
+                <h2 class="section-title">独立提醒</h2>
+                <span class="section-count">({{ reminderList.length }})</span>
+              </div>
+              <button class="add-btn-small" @click="handleQuick('addReminder')">
+                <i class="fas fa-plus"></i>
               </button>
             </div>
+            <div class="reminder-list">
+              <div 
+                class="reminder-item-card" 
+                v-for="(item, idx) in reminderList" 
+                :key="idx"
+                :class="{ completed: item.completed }"
+              >
+                <div class="reminder-checkbox" @click.stop="toggleReminderComplete(idx)">
+                  <i class="fas fa-check" v-if="item.completed"></i>
+                </div>
+                <div class="reminder-content">
+                  <div class="reminder-title">{{ item.title }}</div>
+                  <div class="reminder-time">
+                    <i class="fas fa-clock"></i>
+                    <span>{{ item.time }}</span>
+                  </div>
+                </div>
+                <div class="reminder-actions">
+                  <button class="action-icon-btn-small" @click.stop="goToEditReminderPage(idx)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="action-icon-btn-small" @click.stop="deleteReminder(idx)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="empty-state" v-if="reminderList.length === 0">
+                <i class="fas fa-bell-slash empty-icon"></i>
+                <p class="empty-text">还没有提醒事项</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== 团队管理功能模块 ===== -->
+          <div class="team-management-section">
+            <div class="section-header">
+              <div class="header-left">
+                <i class="fas fa-users section-icon"></i>
+                <h2 class="section-title">团队管理</h2>
+                <span class="section-count">({{ teamList.length }})</span>
+              </div>
+              <button class="add-btn-small" @click="handleQuick('createTeam')">
+                <i class="fas fa-plus"></i>
+              </button>
+            </div>
+            <div class="team-list">
+              <div 
+                class="team-item-card" 
+                v-for="(item, idx) in teamList" 
+                :key="idx"
+                @click="goToTeamDetail(idx)"
+              >
+                <div class="team-info">
+                  <div class="team-avatar">
+                    <span class="avatar-text">{{ item.name.substring(0, 1) }}</span>
+                  </div>
+                  <div class="team-detail">
+                    <div class="team-name-row">
+                      <div class="team-name">{{ item.name }}</div>
+                      <div class="admin-badge" v-if="item.isAdmin">
+                        <i class="fas fa-crown"></i>
+                        <span>管理员</span>
+                      </div>
+                    </div>
+                    <div class="team-member-count">{{ item.memberCount }} 名成员</div>
+                  </div>
+                </div>
+                <div class="team-actions">
+                  <button class="team-action-btn" @click.stop="goToEditTeam(idx)" title="编辑">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="team-action-btn" @click.stop="goToMemberManage(idx)" title="成员管理">
+                    <i class="fas fa-users"></i>
+                  </button>
+                  <button class="team-action-btn" @click.stop="goToSyncSchedule(idx)" v-if="item.isAdmin" title="同步行程">
+                    <i class="fas fa-sync-alt"></i>
+                  </button>
+                  <button class="team-action-btn danger" @click.stop="deleteTeam(idx)" title="删除">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="empty-state" v-if="teamList.length === 0">
+                <i class="fas fa-users empty-icon"></i>
+                <p class="empty-text">还没有团队，点击上方按钮创建吧~</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== 补充：近期日程列表 按需查看 ===== -->
+          <div class="recommendation-section">
+            <h2 class="section-title">
+              <i class="fas fa-calendar-days"></i> 近期日程安排
+            </h2>
+            <div class="recommendation-grid">
+              <div class="product-card" v-for="item in recentScheduleList" :key="item.id" @click="goToDetail(item.id)">
+                <div class="product-image">
+                  <i :class="item.icon"></i>
+                  <div class="product-tag" :style="{background: item.tagColor}">{{item.tag}}</div>
+                  <div class="wishlist-btn" @click.stop="toggleFavorite(item.id)">
+                    <i :class="item.isFavorite ? 'fas fa-star' : 'far fa-star'" :style="{ color: item.isFavorite ? '#ffc107' : '#999' }"></i>
+                  </div>
+                </div>
+                <div class="product-info">
+                  <div class="product-title">{{ item.title }}</div>
+                  <div class="product-desc">{{ item.date }} {{item.time}} | {{item.place}}</div>
+                  <div class="product-price" style="color:#666;">{{ item.typeName }}</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="modal-footer">
-          <button class="btn cancel" @click="showShareModal = false">取消</button>
-          <button class="btn primary" @click="confirmShare">确认共享</button>
-        </div>
+
+        <!-- 侧边栏 - 样式完全复用，内容替换为行程相关，配色不变 -->
+        <aside class="sidebar">
+          <div class="sidebar-widget featured-tags-widget">
+            <h3 class="widget-title">
+              <i class="fas fa-tags"></i>
+              行程分类
+            </h3>
+            <div class="tags-grid">
+              <div 
+                v-for="(tag, index) in featuredTags" 
+                :key="index"
+                class="featured-tag-card"
+                :style="{ background: tag.color }"
+                @click="handleTagClick(tag.value)"
+              >
+                <div class="tag-icon">
+                  <i :class="tag.icon"></i>
+                </div>
+                <span class="tag-label">{{ tag.label }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-widget">
+            <h3 class="widget-title">
+              <i class="fas fa-fire"></i>
+              常用分类
+            </h3>
+            <ul class="category-list">
+              <li 
+                class="category-item" 
+                v-for="item in hotCategories" 
+                :key="item.key" 
+                :class="{ active: filters.type === item.key }"
+                @click="filterByType(item.key)"
+              >
+                <i class="fas fa-chevron-right"></i>
+                {{ item.name }}
+              </li>
+            </ul>
+          </div>
+
+          <div class="sidebar-widget">
+            <h3 class="widget-title">
+              <i class="fas fa-bolt"></i>
+              快捷操作
+            </h3>
+            <div class="quick-action">
+              <a href="#" @click.prevent="handleQuick('addSchedule')" class="action-button primary">
+                <i class="fas fa-plus-circle"></i>
+                <span>新增日程</span>
+              </a>
+              <a href="#" @click.prevent="handleQuick('remind')" class="action-button">
+                <i class="fas fa-bell"></i>
+                <span>日程提醒</span>
+              </a>
+              <a href="#" @click.prevent="handleQuick('exam')" class="action-button">
+                <i class="fas fa-pen-to-square"></i>
+                <span>考试安排</span>
+              </a>
+              <a href="#" @click.prevent="handleQuick('favorite')" class="action-button">
+                <i class="fas fa-star"></i>
+                <span>我的收藏</span>
+              </a>
+            </div>
+          </div>
+
+          <div class="sidebar-widget tips-widget">
+            <h3 class="widget-title">
+              <i class="fas fa-lightbulb"></i>
+              温馨提示
+            </h3>
+            <div class="safety-tips">
+              <div class="tip-item" v-for="(item, idx) in tips" :key="idx">
+                <i class="fas fa-check-circle"></i>
+                <span>{{ item }}</span>
+              </div>
+            </div>
+          </div>
+        </aside>
       </div>
     </div>
 
-    <!-- 添加独立提醒模态框 -->
-    <div v-if="showReminderModal" class="modal-overlay" @click="showReminderModal = false">
-      <div class="modal-content" @click.stop>
+    <!-- 校车实时信息卡片 - 移到页脚上方 -->
+    <section class="bus-info-section-bottom">
+      <div class="bus-info-card">
+        <div class="bus-card-header">
+          <div class="bus-header-left">
+            <i class="fas fa-bus bus-icon"></i>
+            <h3 class="bus-title">校车实时</h3>
+          </div>
+          <button class="bus-refresh-btn" @click="refreshBusInfo">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+        </div>
+        <div class="bus-routes-list">
+          <div 
+            class="bus-route-item" 
+            v-for="(route, idx) in busRoutes" 
+            :key="idx"
+            @click="goToBusRouteDetail(route)"
+          >
+            <div class="route-info">
+              <div class="route-name-row">
+                <span class="route-name">{{ route.name }}</span>
+                <span class="route-status-badge" :class="route.status">
+                  {{ route.statusText }}
+                </span>
+              </div>
+              <div class="route-details">
+                <span class="route-stops">{{ route.startStop }} → {{ route.endStop }}</span>
+                <span class="route-time">下一班：{{ route.nextBusTime }}</span>
+              </div>
+            </div>
+            <div class="route-arrow">
+              <i class="fas fa-chevron-right"></i>
+            </div>
+          </div>
+          <div class="bus-empty-state" v-if="busRoutes.length === 0">
+            <i class="fas fa-bus empty-icon"></i>
+            <p class="empty-text">暂无校车信息</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 页脚 - 完全复用，无修改 -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-content">
+          <div class="footer-section">
+            <div class="footer-logo">上大学Online</div>
+            <p class="contact-info">我们致力于构建便捷的校园行程管理体系，让课程与日程一目了然，丰富校园生活。</p>
+          </div>
+          <div class="footer-section">
+            <h3>联系我们</h3>
+            <div class="contact-info">
+              <p>服务热线：400-123-4567</p>
+              <p>行程管理客服：schedule@campus.edu.cn</p>
+              <p>问题反馈：feedback@campus.edu.cn</p>
+            </div>
+          </div>
+          <div class="footer-section">
+            <h3>快速链接</h3>
+            <div class="footer-links">
+              <router-link to="/">首页</router-link>
+              <a href="#">日程指南</a>
+              <a href="#">课程查询</a>
+              <a href="#">意见反馈</a>
+            </div>
+          </div>
+        </div>
+        <div class="copyright">
+          © 2024 上大学Online校园综合服务平台 版权所有 | 让校园生活更简单
+        </div>
+      </div>
+    </footer>
+
+    <!-- 创建行程弹窗（替代独立页面） -->
+    <div class="modal-overlay" v-if="showCreateScheduleModal" @click.self="closeCreateScheduleModal">
+      <div class="modal-card">
         <div class="modal-header">
-          <h3>添加独立提醒</h3>
-          <button class="close-btn" @click="showReminderModal = false">
+          <div class="modal-title">
+            <i class="fas fa-calendar-plus"></i>
+            创建行程
+          </div>
+          <button class="modal-close" type="button" @click="closeCreateScheduleModal">
             <i class="fas fa-times"></i>
           </button>
         </div>
         <div class="modal-body">
-          <div class="form-group">
-            <label>提醒标题 <span class="required">*</span></label>
-            <input v-model="newReminder.title" type="text" placeholder="请输入提醒标题" />
-          </div>
-          <div class="form-group">
-            <label>提醒时间 <span class="required">*</span></label>
-            <div class="datetime-inputs">
-              <input v-model="newReminder.date" type="date" />
-              <input v-model="newReminder.time" type="time" />
+          <div class="modal-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label>标题 <span class="req">*</span></label>
+                <input v-model="createForm.title" type="text" placeholder="请输入行程标题" />
+              </div>
+              <div class="form-group">
+                <label>日期</label>
+                <input v-model="createForm.date" type="date" />
+              </div>
             </div>
-          </div>
-          <div class="form-group">
-            <label>提醒内容</label>
-            <textarea v-model="newReminder.content" placeholder="请输入提醒内容（选填）" rows="3"></textarea>
-          </div>
-          <div class="form-group">
-            <label class="checkbox-label">
-              <input v-model="newReminder.enabled" type="checkbox" checked />
-              <span>立即启用</span>
-            </label>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>开始时间</label>
+                <input v-model="createForm.startTime" type="time" />
+              </div>
+              <div class="form-group">
+                <label>结束时间</label>
+                <input v-model="createForm.endTime" type="time" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>地点</label>
+                <input v-model="createForm.location" type="text" placeholder="例如：教学楼205" />
+              </div>
+              <div class="form-group">
+                <label>分类</label>
+                <select v-model="createForm.tag">
+                  <option value="事务">事务</option>
+                  <option value="课程">课程</option>
+                  <option value="自习">自习</option>
+                  <option value="活动">活动</option>
+                  <option value="考试">考试</option>
+                  <option value="会议">会议</option>
+                  <option value="校车">校车</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>备注</label>
+              <textarea v-model="createForm.desc" rows="3" placeholder="可选：补充说明"></textarea>
+            </div>
+
+            <div class="form-row switches">
+              <label class="switch-item">
+                <input type="checkbox" v-model="createForm.isRouteSeries" />
+                <span>多地点行程</span>
+              </label>
+              <div class="switch-item">
+                <span style="margin-right:8px;">提醒</span>
+                <label class="mini-check"><input type="checkbox" value="notification" v-model="createForm.remindTypes" />通知</label>
+                <label class="mini-check"><input type="checkbox" value="alarm" v-model="createForm.remindTypes" />闹钟</label>
+                <label class="mini-check"><input type="checkbox" value="message" v-model="createForm.remindTypes" />短信</label>
+              </div>
+            </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn cancel" @click="showReminderModal = false">取消</button>
-          <button class="btn primary" @click="addReminder">添加提醒</button>
+          <button class="btn ghost" type="button" @click="closeCreateScheduleModal">取消</button>
+          <button class="btn primary" type="button" @click="submitCreateSchedule">创建</button>
         </div>
       </div>
     </div>
 
     <FloatingMenu />
-    <AppFooter />
   </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+// 引入和二手页面完全一致的依赖，无新增
+import { reactive, ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import NavBar from '@/components/common/NavBar.vue'
-import AppFooter from '@/components/common/AppFooter.vue'
 import FloatingMenu from '@/components/common/FloatingMenu.vue'
-import { createTeam as createTeamAPI } from '@campus/common'
 
 const router = useRouter()
+const route = useRoute()
+const loading = ref(false)
+const currentPage = ref(1)
+const pageSize = ref(20)
+const hasMore = ref(true)
+
+// 天气信息
+const weatherInfo = ref('晴 13℃')
 
 // 当前日期
-const currentDate = ref(new Date())
-const showDatePicker = ref(false)
+const currentDate = computed(() => {
+  const date = new Date()
+  const weekDayNames = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  const weekDay = weekDayNames[date.getDay()]
+  return `${month}月${day}日 ${weekDay}`
+})
 
-// 筛选条件
+// 快捷标签
+const funcTabs = ref([
+  { name: '全部', icon: 'grid', value: '全部' },
+  { name: '课程', icon: 'book', value: '课程' },
+  { name: '考试', icon: 'pen-alt', value: '考试' },
+  { name: '社团', icon: 'users', value: '社团' },
+  { name: '兼职', icon: 'briefcase', value: '兼职' },
+  { name: '事务', icon: 'list', value: '事务' },
+  { name: '校车', icon: 'bus', value: '校车' }
+])
+const activeTab = ref(0)
+
+// 统计卡片颜色（马卡龙色系）
+const statCardColors = ref([
+  '#FFF9C4', // 鹅黄色
+  '#B3E5FC', // 淡蓝色
+  '#FFB6C1', // 淡粉红色
+  '#E1BEE7'  // 淡紫色
+])
+
+// 今日概览
+const overviewList = ref([
+  { count: '5', name: '今日行程' },
+  { count: '2', name: '已完成' },
+  { count: '3', name: '进行中' },
+  { count: '1', name: '即将开始' }
+])
+
+// 校车路线信息
+const busRoutes = ref([
+  {
+    id: 1,
+    name: '1号线',
+    startStop: '东门',
+    endStop: '西门',
+    nextBusTime: '15:30',
+    status: 'running',
+    statusText: '运行中',
+    distance: '距离本站500米',
+    remainingSeats: 15
+  },
+  {
+    id: 2,
+    name: '2号线',
+    startStop: '南门',
+    endStop: '北门',
+    nextBusTime: '15:45',
+    status: 'waiting',
+    statusText: '等待发车',
+    distance: '距离本站1.2公里',
+    remainingSeats: 20
+  },
+  {
+    id: 3,
+    name: '3号线',
+    startStop: '图书馆',
+    endStop: '体育馆',
+    nextBusTime: '16:00',
+    status: 'running',
+    statusText: '运行中',
+    distance: '距离本站800米',
+    remainingSeats: 8
+  }
+])
+
+// 本周概览日历数据
+const weekCalendarDays = ref([
+  { name: '周一', date: '7', tag: '', isToday: false },
+  { name: '周二', date: '8', tag: '2个', isToday: false },
+  { name: '周三', date: '9', tag: '2个', isToday: false },
+  { name: '周四', date: '10', tag: '2个', isToday: true },
+  { name: '周五', date: '11', tag: '1个', isToday: false },
+  { name: '周六', date: '12', tag: '1个', isToday: false },
+  { name: '周日', date: '13', tag: '1个', isToday: false }
+])
+
+// 独立提醒
+const reminderList = ref([
+  { title: '提交课程作业', time: '今天 18:00', completed: false },
+  { title: '准备小组讨论', time: '明天 14:00', completed: false },
+  { title: '还图书馆书籍', time: '1月18日 16:00', completed: true }
+])
+
+// 团队列表
+const teamList = ref([
+  {
+    id: 1,
+    name: '数据结构学习小组',
+    memberCount: 8,
+    isAdmin: true,
+    avatar: ''
+  },
+  {
+    id: 2,
+    name: '项目开发团队',
+    memberCount: 5,
+    isAdmin: false,
+    avatar: ''
+  },
+  {
+    id: 3,
+    name: '英语角活动组',
+    memberCount: 12,
+    isAdmin: true,
+    avatar: ''
+  }
+])
+
+// 行程筛选条件 - 替换二手商品筛选，字段适配行程场景
 const filters = reactive({
-  category: 'all',
+  semester: 'all',
+  week: 'all',
+  campus: 'all',
+  type: 'all',
   search: ''
 })
 
-// 分类选项
-const categories = [
-  { label: '全部', value: 'all' },
-  { label: '课程', value: 'course' },
-  { label: '考试', value: 'exam' },
-  { label: '社团', value: 'club' },
-  { label: '兼职', value: 'parttime' },
-  { label: '个人事务', value: 'personal' }
-]
+// 行程特色标签 - 配色完全复用二手页的马卡龙色系
+const featuredTags = ref([
+  { label: '今日重点', value: 'today', icon: 'fas fa-star', color: '#FFB6C1' },
+  { label: '本周课程', value: 'course', icon: 'fas fa-book', color: '#B0E0E6' },
+  { label: '自习规划', value: 'study', icon: 'fas fa-lightbulb', color: '#FFF8DC' },
+  { label: '校园活动', value: 'activity', icon: 'fas fa-users', color: '#98FB98' },
+  { label: '考试安排', value: 'exam', icon: 'fas fa-pen-to-square', color: '#DDA0DD' },
+  { label: '重要事项', value: 'important', icon: 'fas fa-flag', color: '#FFE4B5' }
+])
 
-// 行程数据
-const schedules = ref([
+// 排序选项 - 适配行程场景
+const sortType = ref('default')
+const sortOptions = ref([
+  { label: '默认', value: 'default', icon: 'fas fa-list' },
+  { label: '时间', value: 'time', icon: 'fas fa-clock' },
+  { label: '重要性', value: 'level', icon: 'fas fa-star' },
+  { label: '校区', value: 'campus', icon: 'fas fa-building' }
+])
+
+// 行程快捷筛选 - 替换价格筛选
+const quickIndex = ref(-1)
+const quickOptions = ref([
+  { label: '今日日程', type: 'today' },
+  { label: '本周课程', type: 'weekCourse' },
+  { label: '本月活动', type: 'monthActivity' },
+  { label: '考试安排', type: 'exam' },
+  { label: '重要事项', type: 'important' }
+])
+
+// 课程表基础配置 - 核心数据
+const weekDays = ref(['周一','周二','周三','周四','周五','周六','周日'])
+const sections = ref([1,2,3,4,5,6,7,8,9,10])
+const todayDate = ref(new Date().toLocaleDateString().replace(/\//g,'-'))
+// 本周课程数据 - 模拟真实课程表，可直接替换接口数据
+const courseList = ref([
+  {id:1, dayIdx:0, sectionIdx:0, name:'高等数学', teacher:'张教授', place:'主教学楼101', color:'#FFB6C1'},
+  {id:2, dayIdx:0, sectionIdx:1, name:'高等数学', teacher:'张教授', place:'主教学楼101', color:'#FFB6C1'},
+  {id:3, dayIdx:1, sectionIdx:2, name:'大学英语', teacher:'李老师', place:'东校区203', color:'#B0E0E6'},
+  {id:4, dayIdx:1, sectionIdx:3, name:'大学英语', teacher:'李老师', place:'东校区203', color:'#B0E0E6'},
+  {id:5, dayIdx:2, sectionIdx:0, name:'数据结构', teacher:'王老师', place:'西校区机房', color:'#FFF8DC'},
+  {id:6, dayIdx:3, sectionIdx:4, name:'操作系统', teacher:'赵老师', place:'主教学楼302', color:'#98FB98'},
+  {id:7, dayIdx:4, sectionIdx:1, name:'体育', teacher:'孙老师', place:'体育场', color:'#DDA0DD'},
+  {id:8, dayIdx:4, sectionIdx:2, name:'体育', teacher:'孙老师', place:'体育场', color:'#DDA0DD'},
+])
+
+// 今日日程-待办（优化数据结构，添加状态和提醒方式）
+const todayTodoList = ref([
   {
-    id: 1,
-    title: '高等数学',
-    category: 'course',
-    time: '08:00',
-    period: '上午',
-    date: '2024-12-15',
-    location: '3号教学楼201室',
-    description: '第二章：多元函数微分学',
-    status: 'completed',
-    sharedWith: ['李四', '王五']
+    id:101, 
+    title:'高数作业提交', 
+    time:'09:00', 
+    endTime:'10:00',
+    desc:'提交至学习通平台', 
+    tag:'作业', 
+    tagColor:'#FF6B9D', 
+    isFavorite:true,
+    location: '学习通平台',
+    isRouteSeries: false,
+    status: '已完成',
+    statusColor: '#66BB6A',
+    remindTypes: ['notification', 'message']
   },
   {
-    id: 2,
-    title: '大学英语期末考试',
-    category: 'exam',
-    time: '10:00',
-    period: '上午',
-    date: '2024-12-15',
-    location: '外语学院101室',
-    description: 'Unit 3: Cultural Differences',
-    status: 'completed',
-    sharedWith: []
+    id:102, 
+    title:'班级例会', 
+    time:'14:30', 
+    endTime:'15:30',
+    desc:'教学楼205教室，班委参会', 
+    tag:'会议', 
+    tagColor:'#FF8FB3', 
+    isFavorite:false,
+    location: '教学楼205教室',
+    isRouteSeries: false,
+    status: '进行中',
+    statusColor: '#42A5F5',
+    remindTypes: ['notification', 'alarm']
   },
   {
-    id: 3,
-    title: '数据结构与算法',
-    category: 'course',
-    time: '14:00',
-    period: '下午',
-    date: '2024-12-15',
-    location: '计算机学院305室',
-    description: '树与二叉树的应用',
-    status: 'ongoing',
-    sharedWith: ['赵六']
+    id:103, 
+    title:'图书馆自习', 
+    time:'18:00', 
+    endTime:'21:00',
+    desc:'图书馆3楼自习室', 
+    tag:'自习', 
+    tagColor:'#98FB98', 
+    isFavorite:true,
+    location: '图书馆3楼自习室',
+    isRouteSeries: false,
+    status: '即将开始',
+    statusColor: '#FFA726',
+    remindTypes: ['notification', 'vibration']
   },
   {
-    id: 4,
-    title: '编程俱乐部技术分享',
-    category: 'club',
-    time: '16:30',
-    period: '下午',
-    date: '2024-12-15',
-    location: '学生活动中心B201',
-    description: '每周技术分享会',
-    status: 'upcoming',
-    sharedWith: ['钱七', '孙八']
-  },
-  {
-    id: 5,
-    title: '图书馆自习',
-    category: 'personal',
-    time: '19:00',
-    period: '晚上',
-    date: '2024-12-15',
-    location: '图书馆3楼自习区',
-    description: '准备期末考试',
-    status: 'upcoming',
-    sharedWith: []
-  },
-  {
-    id: 6,
-    title: '家教兼职',
-    category: 'parttime',
-    time: '20:00',
-    period: '晚上',
-    date: '2024-12-15',
-    location: '线上会议',
-    description: '高中数学辅导',
-    status: 'upcoming',
-    sharedWith: []
+    id:104,
+    title: '乘坐校车1号线',
+    time: '15:30',
+    endTime: '16:00',
+    location: '东门 → 西门',
+    desc: '校车班次，预计30分钟到达',
+    tag: '校车',
+    tagColor: '#FFB6C1',
+    isFavorite: false,
+    isRouteSeries: true,
+    status: '即将开始',
+    statusColor: '#FF1493',
+    remindTypes: ['notification', 'alarm']
   }
 ])
 
-// 提醒数据
-const reminders = ref([
-  {
-    id: 1,
-    title: '提交课程作业',
-    timeText: '今天 18:00',
-    enabled: true
-  },
-  {
-    id: 2,
-    title: '准备小组讨论',
-    timeText: '明天 14:00',
-    enabled: true
-  },
-  {
-    id: 3,
-    title: '还图书馆书籍',
-    timeText: '1月18日 16:00',
-    enabled: false
+// 根据选中的标签筛选今日行程列表
+const filteredTodayScheduleList = computed(() => {
+  if (activeTab.value === 0) {
+    return todayTodoList.value // 显示全部
   }
+  const selectedTag = funcTabs.value[activeTab.value].value
+  return todayTodoList.value.filter(item => item.tag === selectedTag)
+})
+// 今日日程-已完成
+const todayDoneList = ref([
+  {id:201, title:'晨读打卡', time:'07:00-07:30', desc:'校园晨读区'},
+  {id:202, title:'计算机课', time:'10:20-12:00', desc:'西校区机房'},
 ])
 
-// 团队数据
-const myTeams = ref([
-  { id: 1, name: '项目开发组', memberCount: 5 },
-  { id: 2, name: '学习小组', memberCount: 3 },
-  { id: 3, name: '社团活动', memberCount: 8 }
+// 近期日程列表
+const recentScheduleList = ref([
+  {id:301, title:'篮球赛决赛', date:'2026-01-12', time:'16:00-18:00', place:'体育场', tag:'活动', tagColor:'#FF6B9D', icon:'fas fa-users', typeName:'校园活动', isFavorite:false},
+  {id:302, title:'期末考试-高数', date:'2026-01-18', time:'09:00-11:00', place:'主教学楼101', tag:'考试', tagColor:'#DDA0DD', icon:'fas fa-pen-to-square', typeName:'考试安排', isFavorite:true},
+  {id:303, title:'社团招新', date:'2026-01-15', time:'12:00-17:00', place:'食堂门口', tag:'活动', tagColor:'#98FB98', icon:'fas fa-handshake', typeName:'校园活动', isFavorite:false},
+  {id:304, title:'专业课答疑', date:'2026-01-11', time:'15:00-16:00', place:'教师办公室', tag:'答疑', tagColor:'#FFB6C1', icon:'fas fa-question-circle', typeName:'课程相关', isFavorite:true},
 ])
 
-const teamInvitations = ref([
-  { id: 1, teamName: '竞赛团队', inviter: '李四' },
-  { id: 2, teamName: '研究小组', inviter: '王五' }
+// 常用分类
+const hotCategories = ref([
+  { key: 'course', name: '课程安排' },
+  { key: 'study', name: '自习规划' },
+  { key: 'activity', name: '校园活动' },
+  { key: 'exam', name: '考试安排' },
+  { key: 'meeting', name: '会议安排' },
+  { key: 'others', name: '其他事项' }
 ])
 
-// 模态框状态
-const showAddModal = ref(false)
-const showImportModal = ref(false)
-const showTeamModal = ref(false)
-const showShareModal = ref(false)
-const showCreateTeamModal = ref(false)
-const showReminderModal = ref(false)
+// 温馨提示
+const tips = ref([
+  '课程表每周自动更新',
+  '重要日程可点击收藏置顶',
+  '考试安排提前一周提醒',
+  '校区切换请在筛选栏选择',
+  '新增日程支持重复提醒'
+])
 
-// 创建团队表单
-const newTeamForm = reactive({
-  name: '',
-  description: ''
+// 判断是否有搜索或筛选操作
+const hasSearchOrFilter = computed(() => {
+  return filters.search.trim() !== '' ||
+         filters.semester !== 'all' ||
+         filters.week !== 'all' ||
+         filters.campus !== 'all' ||
+         filters.type !== 'all'
 })
 
-// 新提醒表单
-const newReminder = reactive({
-  title: '',
-  date: '',
-  time: '',
-  content: '',
-  enabled: true
-})
-
-// 新行程表单
-const newSchedule = reactive({
-  title: '',
-  category: '',
-  date: '',
-  time: '',
-  location: '',
-  description: '',
-  hasReminder: false,
-  reminderValue: 15,
-  reminderUnit: 'minute',
-  reminderMethods: []
-})
-
-// 共享相关
-const shareInput = ref('')
-const shareUsers = ref<string[]>([])
-const currentShareScheduleId = ref<number | null>(null)
-
-// 计算属性
-const currentDateText = computed(() => {
-  const date = currentDate.value
-  const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
-  const year = date.getFullYear()
-  const month = date.getMonth() + 1
-  const day = date.getDate()
-  const weekday = weekdays[date.getDay()]
-  return `${year}年${month}月${day}日${weekday}`
-})
-
-const todaySchedules = computed(() => {
-  const today = formatDate(currentDate.value)
-  return schedules.value.filter(s => s.date === today)
-})
-
-const completedCount = computed(() => {
-  return todaySchedules.value.filter(s => s.status === 'completed').length
-})
-
-const ongoingCount = computed(() => {
-  return todaySchedules.value.filter(s => s.status === 'ongoing').length
-})
-
-const upcomingCount = computed(() => {
-  return todaySchedules.value.filter(s => s.status === 'upcoming').length
-})
-
-const filteredTodaySchedules = computed(() => {
-  let result = todaySchedules.value
-
-  if (filters.category !== 'all') {
-    result = result.filter(s => s.category === filters.category)
-  }
-
-  if (filters.search) {
-    const key = filters.search.trim().toLowerCase()
-    result = result.filter(s =>
-      s.title.toLowerCase().includes(key) ||
-      s.description.toLowerCase().includes(key) ||
-      s.location.toLowerCase().includes(key)
-    )
-  }
-
-  return result.sort((a, b) => {
-    const timeA = a.time.split(':').map(Number)
-    const timeB = b.time.split(':').map(Number)
-    return timeA[0] * 60 + timeA[1] - (timeB[0] * 60 + timeB[1])
-  })
-})
-
-const weekDays = computed(() => {
-  const today = new Date()
-  const startOfWeek = new Date(currentDate.value)
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay())
-
-  const days = []
-  const dayNames = ['日', '一', '二', '三', '四', '五', '六']
-
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(startOfWeek)
-    date.setDate(startOfWeek.getDate() + i)
-    const dateStr = formatDate(date)
-    const count = schedules.value.filter(s => s.date === dateStr).length
-    const isToday = formatDate(today) === dateStr
-    const isSelected = formatDate(currentDate.value) === dateStr
-
-    days.push({
-      name: dayNames[i],
-      number: date.getDate(),
-      date: dateStr,
-      count,
-      isToday,
-      isSelected
-    })
-  }
-
-  return days
-})
-
-// 方法
-const formatDate = (date: Date) => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+// 根据周几和节次匹配课程
+const getCourseByDayAndSection = (dayIdx:number, sectionIdx:number) => {
+  return courseList.value.filter(item => item.dayIdx === dayIdx && item.sectionIdx === sectionIdx)
 }
 
-const changeDate = (days: number) => {
-  const newDate = new Date(currentDate.value)
-  newDate.setDate(newDate.getDate() + days)
-  currentDate.value = newDate
+// 刷新课程表
+const refreshCourseTable = () => {
+  // 实际项目中调用接口切换周次，这里模拟刷新
+  courseList.value = [...courseList.value]
 }
 
-const selectDay = (dateStr: string) => {
-  currentDate.value = new Date(dateStr)
+// 刷新今日日程
+const refreshTodaySchedule = () => {
+  todayTodoList.value = [...todayTodoList.value]
+  todayDoneList.value = [...todayDoneList.value]
 }
 
-const getCategoryLabel = (category: string) => {
-  const cat = categories.find(c => c.value === category)
-  return cat ? cat.label : category
-}
-
-const getStatusLabel = (status: string) => {
-  const statusMap: Record<string, string> = {
-    completed: '已完成',
-    ongoing: '进行中',
-    upcoming: '即将开始'
-  }
-  return statusMap[status] || status
-}
-
-// 搜索结果
-const searchResults = computed(() => {
-  if (!filters.search) return []
-  
-  const keyword = filters.search.trim().toLowerCase()
-  return schedules.value.filter(s =>
-    s.title.toLowerCase().includes(keyword) ||
-    s.description.toLowerCase().includes(keyword) ||
-    s.location.toLowerCase().includes(keyword) ||
-    getCategoryLabel(s.category).toLowerCase().includes(keyword)
-  )
-})
-
-const handleSearch = () => {
-  // 搜索逻辑已在 computed 中实现
-  // 可以在这里添加额外的搜索处理逻辑
-}
-
-const clearSearch = () => {
-  filters.search = ''
-}
-
-const selectSchedule = (schedule: any) => {
-  // 选中搜索结果中的行程，跳转到对应日期
-  currentDate.value = new Date(schedule.date)
-  filters.search = '' // 清除搜索，显示该日期的行程
-}
-
-const addSchedule = () => {
-  if (!newSchedule.title || !newSchedule.category || !newSchedule.date || !newSchedule.time) {
-    alert('请填写必填项')
-    return
-  }
-
-  const [hours, minutes] = newSchedule.time.split(':')
-  const period = getPeriod(parseInt(hours))
-
-  const newScheduleItem = {
-    id: schedules.value.length + 1,
-    title: newSchedule.title,
-    category: newSchedule.category,
-    time: newSchedule.time,
-    period,
-    date: newSchedule.date,
-    location: newSchedule.location || '未设置',
-    description: newSchedule.description || '',
-    status: 'upcoming',
-    sharedWith: []
-  }
-
-  schedules.value.push(newScheduleItem)
-
-  // 如果设置了提醒，创建独立提醒
-  if (newSchedule.hasReminder) {
-    const reminderDate = new Date(newSchedule.date)
-    const [hour, minute] = newSchedule.time.split(':')
-    reminderDate.setHours(parseInt(hour), parseInt(minute), 0, 0)
-    
-    // 计算提醒时间
-    let reminderTime = new Date(reminderDate)
-    if (newSchedule.reminderUnit === 'minute') {
-      reminderTime.setMinutes(reminderTime.getMinutes() - newSchedule.reminderValue)
-    } else if (newSchedule.reminderUnit === 'hour') {
-      reminderTime.setHours(reminderTime.getHours() - newSchedule.reminderValue)
-    } else if (newSchedule.reminderUnit === 'day') {
-      reminderTime.setDate(reminderTime.getDate() - newSchedule.reminderValue)
-    }
-
-    reminders.value.push({
-      id: reminders.value.length + 1,
-      title: newSchedule.title,
-      timeText: formatReminderTime(reminderTime),
-      enabled: true
-    } as any)
-  }
-
-  // 重置表单
-  Object.assign(newSchedule, {
-    title: '',
-    category: '',
-    date: formatDate(new Date()),
-    time: '',
-    location: '',
-    description: '',
-    hasReminder: false,
-    reminderValue: 15,
-    reminderUnit: 'minute',
-    reminderMethods: []
-  })
-
-  showAddModal.value = false
-  
-  // 跳转到新添加的行程日期
-  currentDate.value = new Date(newScheduleItem.date)
-  
-  // 显示成功提示
-  alert(`行程"${newScheduleItem.title}"已添加成功！`)
-}
-
-const getPeriod = (hour: number) => {
-  if (hour < 12) return '上午'
-  if (hour < 18) return '下午'
-  return '晚上'
-}
-
-const editSchedule = (id: number) => {
-  const schedule = schedules.value.find(s => s.id === id)
-  if (schedule) {
-    Object.assign(newSchedule, {
-      title: schedule.title,
-      category: schedule.category,
-      date: schedule.date,
-      time: schedule.time,
-      location: schedule.location,
-      description: schedule.description
-    })
-    showAddModal.value = true
-    // 这里可以添加编辑逻辑
-  }
-}
-
-const deleteSchedule = (id: number) => {
-  if (confirm('确定要删除这个行程吗？')) {
-    const index = schedules.value.findIndex(s => s.id === id)
-    if (index > -1) {
-      schedules.value.splice(index, 1)
+// 节流滚动监听 - 完全复用二手页逻辑
+let lastScrollRefreshTime = 0
+const handleScroll = () => {
+  const now = Date.now()
+  if (now - lastScrollRefreshTime < 1000) return
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0
+  const windowHeight = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight
+  const docHeight = document.documentElement.scrollHeight || document.body.scrollHeight
+  if (docHeight - (scrollTop + windowHeight) < 150) {
+    lastScrollRefreshTime = now
+    if (hasMore.value) {
+      loadData(false)
     }
   }
 }
 
-const shareSchedule = (id: number) => {
-  currentShareScheduleId.value = id
-  const schedule = schedules.value.find(s => s.id === id)
-  if (schedule) {
-    shareUsers.value = [...schedule.sharedWith]
-  }
-  showShareModal.value = true
-}
-
-const addShareUser = () => {
-  if (shareInput.value.trim() && !shareUsers.value.includes(shareInput.value.trim())) {
-    shareUsers.value.push(shareInput.value.trim())
-    shareInput.value = ''
-  }
-}
-
-const removeShareUser = (index: number) => {
-  shareUsers.value.splice(index, 1)
-}
-
-const confirmShare = () => {
-  if (currentShareScheduleId.value) {
-    const schedule = schedules.value.find(s => s.id === currentShareScheduleId.value)
-    if (schedule) {
-      schedule.sharedWith = [...shareUsers.value]
-    }
-  }
-  showShareModal.value = false
-  shareUsers.value = []
-  shareInput.value = ''
-  currentShareScheduleId.value = null
-}
-
-const exportPDF = () => {
+// 加载行程数据
+const loadData = async (reset = false) => {
   try {
-    // TODO: 实现PDF导出功能
-    // 可以使用jsPDF等库实现
-    alert('PDF导出功能开发中...')
-  } catch (error) {
-    console.error('PDF导出失败:', error)
-    alert('导出失败，请稍后重试')
-  }
-}
-
-const exportWord = () => {
-  try {
-    // TODO: 实现Word导出功能
-    // 可以使用docx等库实现
-    alert('Word导出功能开发中...')
-  } catch (error) {
-    console.error('Word导出失败:', error)
-    alert('导出失败，请稍后重试')
-  }
-}
-
-const viewMonth = () => {
-  // TODO: 实现月视图功能
-  // router.push('/schedule/month')
-  alert('月视图功能开发中...')
-}
-
-const editReminder = (id: number) => {
-  // TODO: 实现编辑提醒功能
-  // 可以打开编辑模态框或跳转到编辑页面
-  const reminder = reminders.value.find(r => r.id === id)
-  if (reminder) {
-    // 打开编辑模态框
-    alert(`编辑提醒：${reminder.title}`)
-  }
-}
-
-const toggleReminder = (id: number) => {
-  const reminder = reminders.value.find(r => r.id === id)
-  if (reminder) {
-    reminder.enabled = !reminder.enabled
-    // TODO: 调用API更新提醒状态
-    // await updateReminderAPI(id, { enabled: reminder.enabled })
-  }
-}
-
-const deleteReminder = (id: number) => {
-  if (confirm('确定要删除这个提醒吗？')) {
-    try {
-      const index = reminders.value.findIndex(r => r.id === id)
-      if (index > -1) {
-        reminders.value.splice(index, 1)
-        // TODO: 调用API删除提醒
-        // await deleteReminderAPI(id)
-        alert('提醒已删除')
-      }
-    } catch (error) {
-      console.error('删除提醒失败:', error)
-      alert('删除失败，请稍后重试')
+    if (loading.value) return
+    if (reset) {
+      currentPage.value = 1
+      hasMore.value = true
     }
-  }
-}
-
-// 格式化提醒时间
-const formatReminderTime = (date: Date) => {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hours}:${minutes}`
-}
-
-// 跳转到导入页面
-const goToImport = (method: 'file' | 'manual' | 'link') => {
-  showImportModal.value = false
-  router.push({
-    path: '/schedule/import',
-    query: { method }
-  })
-}
-
-// 创建团队
-const createTeam = async () => {
-  if (!newTeamForm.name.trim()) {
-    alert('请输入团队名称')
-    return
-  }
-
-  try {
-    const team = await createTeamAPI({
-      name: newTeamForm.name,
-      description: newTeamForm.description || undefined
-    })
-    
-    myTeams.value.push({
-      id: team.id,
-      name: team.name,
-      memberCount: team.members?.length || 1
-    })
-    
-    newTeamForm.name = ''
-    newTeamForm.description = ''
-    showCreateTeamModal.value = false
-    showTeamModal.value = true // 保持在团队管理模态框
-    alert(`团队创建成功！邀请码：${team.inviteCode || '已生成'}`)
+    loading.value = true
+    // 实际项目中调用行程接口，这里使用模拟数据
+    loading.value = false
   } catch (error: any) {
-    console.error('创建团队失败:', error)
-    alert(error?.message || '创建失败，请稍后重试')
+    console.error('加载行程数据失败:', error)
+    loading.value = false
   }
 }
 
-// 添加独立提醒
-const addReminder = () => {
-  if (!newReminder.title.trim() || !newReminder.date || !newReminder.time) {
-    alert('请填写提醒标题和时间')
-    return
+// 筛选相关方法 - 逻辑不变，适配行程字段
+const handleFilter = () => { loadData(true) }
+const handleReset = () => {
+  filters.semester = 'all'
+  filters.week = 'all'
+  filters.campus = 'all'
+  filters.type = 'all'
+  filters.search = ''
+  sortType.value = 'default'
+  quickIndex.value = -1
+  loadData(true)
+}
+const filterByType = (typeKey: string) => { filters.type = typeKey; handleFilter() }
+const handleTagClick = (tagValue: string) => {
+  const tagMap: Record<string, string> = {
+    'today':'all','course':'course','study':'study','activity':'activity','exam':'exam','important':'all'
   }
+  filters.type = tagMap[tagValue] || 'all'
+  handleFilter()
+}
+const handleSort = (value: string) => { sortType.value = value; loadData(true) }
+const handleQuickFilter = (index: number, type: string) => {
+  quickIndex.value = index
+  // 快捷筛选逻辑
+  handleFilter()
+}
 
-  try {
-    const reminderDate = new Date(`${newReminder.date} ${newReminder.time}`)
-    
-    reminders.value.push({
-      id: reminders.value.length + 1,
-      title: newReminder.title,
-      timeText: formatReminderTime(reminderDate),
-      enabled: newReminder.enabled
-    } as any)
-    
-    // 重置表单
-    newReminder.title = ''
-    newReminder.date = ''
-    newReminder.time = ''
-    newReminder.content = ''
-    newReminder.enabled = true
-    
-    showReminderModal.value = false
-    alert('提醒添加成功！')
-  } catch (error) {
-    console.error('添加提醒失败:', error)
-    alert('添加失败，请稍后重试')
+// 跳转详情
+const goToDetail = (id: number) => {
+  router.push(`/schedule/detail/${id}`)
+}
+
+// 生命周期 - 完全复用
+onMounted(() => {
+  loadData(true)
+  updateStats()
+  window.addEventListener('scroll', handleScroll)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', handleScroll)
+})
+
+// 获取标签图标
+const getTabIcon = (iconName: string) => {
+  const iconMap: Record<string, string> = {
+    'grid': 'fas fa-th',
+    'book': 'fas fa-book',
+    'pen-alt': 'fas fa-pen-alt',
+    'users': 'fas fa-users',
+    'briefcase': 'fas fa-briefcase',
+    'list': 'fas fa-list',
+    'bus': 'fas fa-bus'
+  }
+  return iconMap[iconName] || 'fas fa-circle'
+}
+
+// 获取提醒方式图标
+const getRemindMethodIcon = (type: string) => {
+  const iconMap: Record<string, string> = {
+    'notification': 'fas fa-bell',
+    'message': 'fas fa-comment',
+    'alarm': 'fas fa-clock',
+    'vibration': 'fas fa-mobile-alt'
+  }
+  return iconMap[type] || 'fas fa-bell'
+}
+
+// 获取标签颜色（马卡龙色系）
+const getTagColor = (tag: string) => {
+  const tagColorMap: Record<string, string> = {
+    '课程': '#F8BBD0', // 淡粉色
+    '考试': '#FFB3BA', // 淡珊瑚色
+    '社团': '#E1BEE7', // 淡紫色
+    '兼职': '#FFF9C4', // 鹅黄色
+    '事务': '#B3E5FC', // 淡蓝色
+    '校车': '#FFB6C1', // 淡粉红色
+    '作业': '#FFB6C1',
+    '会议': '#FF8FB3',
+    '自习': '#98FB98'
+  }
+  return tagColorMap[tag] || '#E1BEE7'
+}
+
+// 获取标签边框颜色（更深的对比色）
+const getTagBorderColor = (tag: string) => {
+  const tagBorderColorMap: Record<string, string> = {
+    '课程': '#F06292', // 粉色
+    '考试': '#EF5350', // 红色
+    '社团': '#BA68C8', // 紫色
+    '兼职': '#FFD54F', // 黄色
+    '事务': '#4FC3F7', // 蓝色
+    '校车': '#FF1493', // 玫红色
+    '作业': '#FF1493',
+    '会议': '#FF6B9D',
+    '自习': '#66BB6A'
+  }
+  return tagBorderColorMap[tag] || '#BA68C8'
+}
+
+// 切换标签筛选
+const handleTabChange = (idx: number) => {
+  activeTab.value = idx
+}
+
+// 切换月视图
+const switchToMonth = () => {
+  alert('月视图开发中')
+}
+
+// 刷新校车信息
+const refreshBusInfo = () => {
+  // 模拟刷新数据
+  console.log('刷新校车信息')
+}
+
+// 查看校车路线详情
+const goToBusRouteDetail = (route: any) => {
+  console.log('查看校车路线详情', route)
+  // router.push(`/schedule/bus-detail/${route.id}`)
+}
+
+// 实时更新统计数据
+const updateStats = () => {
+  const total = todayTodoList.value.length
+  const completed = todayTodoList.value.filter(item => item.status === '已完成').length
+  const inProgress = todayTodoList.value.filter(item => item.status === '进行中').length
+  const upcoming = todayTodoList.value.filter(item => item.status === '即将开始').length
+  
+  overviewList.value = [
+    { count: String(total), name: '今日行程' },
+    { count: String(completed), name: '已完成' },
+    { count: String(inProgress), name: '进行中' },
+    { count: String(upcoming), name: '即将开始' }
+  ]
+}
+
+// 切换提醒完成状态
+const toggleReminderComplete = (idx: number) => {
+  reminderList.value[idx].completed = !reminderList.value[idx].completed
+}
+
+// 删除提醒
+const deleteReminder = (idx: number) => {
+  if (confirm('是否确定删除该提醒？')) {
+    reminderList.value.splice(idx, 1)
   }
 }
 
-const viewTeam = (id: number) => {
-  // 跳转到团队详情页
-  router.push(`/schedule/team/${id}`)
+// 跳转到编辑提醒页面
+const goToEditReminderPage = (idx: number) => {
+  // 暂时使用提醒管理页面，后续可以创建专门的编辑页面
+  router.push({ name: 'schedule-reminder', query: { edit: 'true', idx: String(idx) } })
 }
 
-const acceptInvitation = (id: number) => {
-  const invitation = teamInvitations.value.find(inv => inv.id === id)
-  if (invitation) {
-    myTeams.value.push({
-      id: myTeams.value.length + 1,
-      name: invitation.teamName,
-      memberCount: 1
-    })
-    const index = teamInvitations.value.findIndex(inv => inv.id === id)
-    if (index > -1) {
-      teamInvitations.value.splice(index, 1)
-    }
+// 团队管理相关方法
+const goToTeamDetail = (idx: number) => {
+  router.push({ name: 'schedule-team-detail', params: { id: teamList.value[idx].id } })
+}
+
+const goToEditTeam = (idx: number) => {
+  console.log('编辑团队', teamList.value[idx])
+  // router.push({ name: 'schedule-team-edit', params: { id: teamList.value[idx].id } })
+}
+
+const goToMemberManage = (idx: number) => {
+  console.log('成员管理', teamList.value[idx])
+  // 可以打开成员管理弹窗或跳转到成员管理页面
+}
+
+const goToSyncSchedule = (idx: number) => {
+  console.log('同步行程', teamList.value[idx])
+  // 可以打开同步行程弹窗
+}
+
+const deleteTeam = (idx: number) => {
+  if (confirm(`确定要删除团队"${teamList.value[idx].name}"吗？此操作不可恢复。`)) {
+    teamList.value.splice(idx, 1)
   }
 }
 
-const rejectInvitation = (id: number) => {
-  const index = teamInvitations.value.findIndex(inv => inv.id === id)
-  if (index > -1) {
-    teamInvitations.value.splice(index, 1)
+// ========= 创建行程弹窗（替代 /schedule/add 页面）=========
+const showCreateScheduleModal = ref(false)
+const createForm = reactive({
+  title: '',
+  date: new Date().toISOString().slice(0, 10), // yyyy-mm-dd
+  startTime: '',
+  endTime: '',
+  location: '',
+  desc: '',
+  tag: '事务',
+  remindTypes: [] as string[],
+  isRouteSeries: false
+})
+
+const openCreateScheduleModal = (preset?: Partial<typeof createForm>) => {
+  createForm.title = ''
+  createForm.date = new Date().toISOString().slice(0, 10)
+  createForm.startTime = ''
+  createForm.endTime = ''
+  createForm.location = ''
+  createForm.desc = ''
+  createForm.tag = '事务'
+  createForm.remindTypes = []
+  createForm.isRouteSeries = false
+  if (preset) Object.assign(createForm, preset)
+  showCreateScheduleModal.value = true
+}
+
+const closeCreateScheduleModal = () => {
+  showCreateScheduleModal.value = false
+}
+
+const submitCreateSchedule = () => {
+  if (!createForm.title.trim()) return
+  todayTodoList.value.unshift({
+    id: Date.now(),
+    title: createForm.title.trim(),
+    time: createForm.startTime || '09:00',
+    endTime: createForm.endTime || '',
+    desc: createForm.desc || '',
+    tag: createForm.tag,
+    tagColor: getTagColor(createForm.tag),
+    isFavorite: false,
+    location: createForm.location || '',
+    isRouteSeries: createForm.isRouteSeries,
+    status: '即将开始',
+    statusColor: '#FFA726',
+    remindTypes: createForm.remindTypes || []
+  })
+  showCreateScheduleModal.value = false
+}
+
+// 快捷操作
+const handleQuick = (type: string) => {
+  switch (type) {
+    case 'addSchedule': openCreateScheduleModal(); break
+    case 'remind': router.push('/schedule/remind'); break
+    case 'addReminder': router.push({ name: 'schedule-reminder', query: { add: 'true' } }); break
+    case 'timeTable': router.push('/schedule/time-table'); break
+    case 'courseTable': router.push('/schedule/course-table'); break
+    case 'team': router.push('/schedule/team'); break
+    case 'createTeam': router.push('/schedule/team-create'); break
+    case 'exam': router.push('/schedule/exam'); break
+    case 'favorite': router.push('/schedule/favorites'); break
+    case 'profile': router.push('/profile'); break
   }
 }
 
 onMounted(() => {
-  // 初始化当前日期
-  const today = formatDate(new Date())
-  newSchedule.date = today
-  newReminder.date = today
-  
-  // 如果有导入方法的查询参数，跳转到导入页面
-  const route = router.currentRoute.value
-  if (route.query.method) {
-    showImportModal.value = false
-    // 导入页面会根据method参数自动切换标签
+  // 兼容旧入口：访问 /schedule/add 会重定向到 /schedule?create=1
+  if (route.query.create === '1') {
+    openCreateScheduleModal()
+    const { create, ...rest } = route.query
+    router.replace({ query: rest })
   }
 })
+
+// 收藏行程
+const toggleFavorite = async (id: number) => {
+  const item = recentScheduleList.value.find(p => p.id === id) || todayTodoList.value.find(p => p.id === id)
+  if (item) {
+    try {
+      item.isFavorite = !item.isFavorite
+    } catch (error) {
+      console.error('收藏操作失败:', error)
+      item.isFavorite = !item.isFavorite
+    }
+  }
+}
 </script>
 
+<!-- 完全复用二手交易页面的所有样式 + 新增课程表/日程表专属样式，配色不变 -->
 <style scoped>
-:root {
-  --primary: #d81b60;
-  --primary-dark: #c2185b;
-  --text: #333;
-  --muted: #666;
-  --bg: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
-  --card-shadow: 0 4px 18px rgba(216, 27, 96, 0.12);
-  --border: #f1d9e9;
-}
-
-.schedule-page {
+/* 基础布局/配色/通用样式 - 完全复制二手页，无修改 */
+.secondhand-page {
   min-height: 100vh;
-  background: var(--bg);
+  background: linear-gradient(135deg, #FFF0F5 0%, #F0F8FF 100%);
+  color: #333333;
+  line-height: 1.6;
+  font-family: 'Arial', 'Microsoft YaHei', 'PingFang SC', sans-serif;
 }
+* { margin: 0;padding: 0;box-sizing: border-box;}
+a { text-decoration: none;color: #444;transition: all 0.3s;}
+a:hover { color: #d81b60 !important;}
+li { list-style: none;}
+.container { max-width: 1200px;margin: 0 auto;padding: 0 15px;}
 
-.page-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px 15px 40px;
-}
-
-/* 今日行程概览 */
-.overview-section {
+/* 搜索栏样式 - 完全复用 */
+.search-bar-section {
   background: white;
   border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-  border: 1px solid #eee;
-  max-width: calc(100% - 30px);
-  margin-left: auto;
-  margin-right: auto;
+	padding: 15px 20px;
+	margin: 20px 0;
+	box-shadow: 0 4px 15px rgba(255, 107, 157, 0.12);
+}
+.search-container { display: flex;align-items: center;justify-content: space-between;gap: 20px;}
+.search-box { flex:1;max-width:600px;position:relative;}
+.search-input {
+  width:100%;padding:12px 15px 12px 20px;border:2px solid #FF6B9D;border-radius:25px;
+  font-size:16px;outline:none;box-shadow:0 2px 5px rgba(255,107,157,0.15);color:#333;
+}
+.search-input::placeholder { color:#666;opacity:0.8;}
+.search-icon { position:absolute;right:15px;top:50%;transform:translateY(-50%);color:#FF6B9D;font-size:18px;cursor:pointer;}
+.search-actions { display:flex;align-items:center;gap:15px;}
+.action-btn {
+  background:none;border:none;font-size:16px;cursor:pointer;color:#333;
+  display:flex;align-items:center;padding:8px 15px;border-radius:20px;transition:all 0.3s;
+}
+.action-btn:hover { background:rgba(255,107,157,0.1);color:#FF6B9D !important;}
+.action-btn i { margin-right:5px;}
+
+/* 特色标签样式 - 完全复用 */
+.featured-tags-widget { margin-bottom:24px;}
+.tags-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+.featured-tag-card {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:16px 12px;border-radius:12px;color:white;font-size:13px;gap:8px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.1);transition:all 0.3s;cursor:pointer;text-align:center;min-height:90px;
+}
+.featured-tag-card:hover { transform:translateY(-3px);box-shadow:0 4px 12px rgba(0,0,0,0.2);}
+.tag-icon { font-size:24px;margin-bottom:4px;}
+.tag-label { font-weight:600;font-size:12px;}
+
+/* 排序和快捷筛选栏 - 完全复用 */
+.sort-price-bar {
+  background:white;border-radius:12px;padding:20px;margin:20px 0;
+  box-shadow:0 4px 15px rgba(0,0,0,0.08);
+}
+.sort-section { display:flex;align-items:center;gap:15px;margin-bottom:15px;flex-wrap:wrap;}
+.sort-label { font-size:14px;color:#666;font-weight:500;}
+.sort-item {
+  display:flex;align-items:center;gap:6px;padding:8px 16px;background:#F5F5F5;
+  border-radius:20px;font-size:14px;color:#666;transition:all 0.3s;cursor:pointer;
+}
+.sort-item:hover { background:#e0e0e0;}
+.sort-item.active {
+  background:linear-gradient(135deg, #FF6B9D 0%, #FF8FB3 100%);
+  color:#FFFFFF;font-weight:600;
+}
+.sort-item i { font-size:12px;}
+.price-quick-section { display:flex;align-items:center;gap:15px;flex-wrap:wrap;}
+.price-label { font-size:14px;color:#666;font-weight:500;}
+.price-quick-btns { display:flex;gap:10px;flex-wrap:wrap;flex:1;}
+.price-quick-btn {
+  padding:8px 16px;background:#F5F5F5;border-radius:20px;font-size:14px;
+  color:#666;transition:all 0.3s;white-space:nowrap;cursor:pointer;
+}
+.price-quick-btn:hover { background:#e0e0e0;}
+.price-quick-btn.active {
+  background:linear-gradient(135deg, #FF6B9D 0%, #FF8FB3 100%);
+  color:#FFFFFF;font-weight:600;
 }
 
-.overview-header {
+/* 筛选栏 - 完全复用 */
+.filter-section {
+  background:white;border-radius:12px;padding:20px;margin:20px 0;
+  box-shadow:0 4px 15px rgba(0,0,0,0.08);
+}
+.filter-row { display:flex;flex-wrap:wrap;gap:15px;margin-bottom:15px;align-items:center;}
+.filter-group { display:flex;align-items:center;gap:10px;}
+.filter-label { font-size:14px;color:#666;white-space:nowrap;}
+.filter-select,.filter-input {
+  padding:8px 12px;border:1px solid #ddd;border-radius:6px;
+  background:white;font-size:14px;
+}
+.filter-input { width:100px;}
+.price-range { display:flex;align-items:center;gap:5px;}
+.filter-actions { display:flex;gap:10px;margin-left:auto;}
+.confirm-btn {
+  background:linear-gradient(135deg, #FF6B9D 0%, #FF8FB3 100%) !important;
+  color:#FFFFFF !important;border:none;padding:10px 20px;border-radius:6px;
+  font-size:14px;font-weight:600;cursor:pointer;transition:all 0.3s;
+}
+.confirm-btn:hover {
+  background:linear-gradient(135deg, #E91E63 0%, #FF6B9D 100%) !important;
+  transform:translateY(-2px);box-shadow:0 4px 10px rgba(255,107,157,0.3);
+}
+.reset-btn {
+  background:#f5f5f5 !important;color:#666 !important;border:1px solid #ddd;
+  padding:10px 20px;border-radius:6px;font-size:14px;cursor:pointer;transition:all 0.3s;
+}
+.reset-btn:hover { background:#e0e0e0 !important;}
+
+/* 主要内容区域 - 复用+新增课程表/日程表样式 */
+.main-content { display:flex;gap:20px;margin-bottom:40px;}
+.product-list { flex:1;}
+.search-result-section {
+  background:white;border-radius:12px;padding:20px;margin-bottom:20px;
+  box-shadow:0 4px 15px rgba(0,0,0,0.08);
+}
+.recommendation-section {
+  background:white;border-radius:12px;padding:20px;
+  box-shadow:0 4px 15px rgba(0,0,0,0.08);
+}
+.section-title {
+  font-size:20px;font-weight:bold;margin-bottom:15px;color:#333;
+  display:flex;align-items:center;justify-content:flex-start;
+}
+.section-title i { color:#FF6B9D !important;margin-right:8px;}
+.refresh-btn {
+  margin-left:auto;padding:4px 10px;font-size:12px;border-radius:12px;
+  border:1px solid #FF6B9D;background:#fff;color:#FF6B9D;cursor:pointer;
+  transition:all 0.2s;font-weight:500;
+}
+.refresh-btn:hover { background:#FF6B9D;color:#fff;}
+.recommendation-grid { display:grid;grid-template-columns:repeat(auto-fill, minmax(180px,1fr));gap:15px;}
+
+/* ===== 新增：课程表专属样式 ===== */
+.course-table-container { width:100%;overflow-x:auto;padding:10px 0;}
+.course-table { width:100%;border-collapse:collapse;}
+.table-header { display:flex;width:100%;border-bottom:1px solid #eee;}
+.table-row { display:flex;width:100%;border-bottom:1px solid #eee;}
+.table-cell {
+  flex:1;text-align:center;padding:8px;border-right:1px solid #eee;
+  display:flex;align-items:center;justify-content:center;min-height:70px;
+  position:relative;
+}
+.table-cell.empty { flex:0;width:60px;border-right:none;}
+.section-cell { font-size:12px;color:#666;font-weight:bold;}
+.course-card {
+  width:95%;padding:6px;border-radius:8px;color:#333;margin:4px 0;
+  box-shadow:0 2px 6px rgba(0,0,0,0.1);cursor:pointer;transition:all 0.3s;
+}
+.course-card:hover { transform:scale(1.02);box-shadow:0 3px 8px rgba(0,0,0,0.2);}
+.course-name { font-size:13px;font-weight:bold;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.course-teacher { font-size:11px;color:#444;margin-bottom:2px;}
+.course-place { font-size:10px;color:#666;}
+
+/* ===== 新增：日程表专属样式 ===== */
+.schedule-header {
+  font-size:16px;font-weight:bold;color:#333;padding:8px 0;border-bottom:1px solid #eee;
+  display:flex;align-items:center;margin-bottom:10px;
+}
+.schedule-header i { color:#FF6B9D;margin-right:8px;}
+.schedule-grid { display:grid;grid-template-columns:repeat(auto-fill, minmax(280px,1fr));gap:12px;}
+.schedule-card {
+  background:#fff;border-radius:10px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  border:1px solid #f0f0f0;cursor:pointer;transition:all 0.3s;
+}
+.schedule-card:hover { transform:translateY(-3px);box-shadow:0 5px 15px rgba(255,107,157,0.2);}
+.done-card { opacity:0.7;background:#f9f9f9;}
+.schedule-time { font-size:12px;color:#666;margin-bottom:6px;display:flex;align-items:center;}
+.schedule-time i { color:#FF6B9D;margin-right:4px;font-size:10px;}
+.schedule-title { font-size:14px;font-weight:bold;margin-bottom:4px;}
+.schedule-desc { font-size:12px;color:#666;margin-bottom:8px;}
+.schedule-tag {
+  display:inline-block;padding:2px 8px;border-radius:12px;font-size:10px;
+  color:#fff;font-weight:bold;
+}
+
+/* 商品卡片/行程卡片样式 - 完全复用 */
+.product-card {
+  background:white;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);
+  transition:transform 0.3s;cursor:pointer;border:1px solid #f0f0f0;
+}
+.product-card:hover { transform:translateY(-5px);box-shadow:0 5px 15px rgba(255,107,157,0.2);}
+.product-image {
+  height:150px;background:#f5f5f5;display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.product-image img { width:100%;height:100%;object-fit:cover;}
+.product-image i { font-size:50px;color:#FF6B9D !important;}
+.wishlist-btn {
+  position:absolute;bottom:8px;right:8px;width:36px;height:36px;
+  background:rgba(255,255,255,0.95);border-radius:50%;display:flex;
+  align-items:center;justify-content:center;color:#FF6B9D;font-size:16px;
+  box-shadow:0 2px 8px rgba(255,107,157,0.25);transition:all 0.3s;z-index:3;cursor:pointer;
+}
+.wishlist-btn:hover { background:#FF6B9D;color:white;transform:scale(1.1);}
+.product-info { padding:10px;}
+.product-title { font-size:14px;font-weight:bold;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.product-desc { font-size:12px;color:#666;margin-bottom:5px;}
+.product-price { font-size:16px;font-weight:bold;color:#E91E63 !important;letter-spacing:0.3px;}
+.product-tag {
+  position:absolute;top:5px;right:5px;background:#FF6B9D !important;color:white !important;
+  padding:2px 8px;border-radius:10px;font-size:12px;font-weight:600;
+}
+.seller-info { display:flex;align-items:center;margin-top:8px;font-size:12px;color:#888;}
+.seller-avatar { width:20px;height:20px;border-radius:50%;background:#ddd;margin-right:5px;}
+.seller-rating { margin-left:auto;display:flex;align-items:center;}
+.seller-rating i { color:#ffc107 !important;font-size:10px;margin-right:2px;}
+
+/* 无结果提示 - 复用 */
+.no-results { text-align:center;padding:60px 20px;background:#fafafa;border-radius:10px;margin:10px 0;}
+.no-results i { font-size:60px;color:#FF6B9D !important;margin-bottom:20px;}
+.no-results h2 { font-size:24px;margin-bottom:10px;color:#333;}
+.no-results p { color:#666;margin-bottom:20px;}
+
+/* 侧边栏 - 完全复用 */
+.sidebar {
+  width:280px;flex-shrink:0;position:sticky;top:20px;align-self:flex-start;
+  max-height:calc(100vh - 40px);overflow-y:auto;
+}
+.sidebar::-webkit-scrollbar { width:6px;}
+.sidebar::-webkit-scrollbar-thumb { background:#FF6B9D;border-radius:3px;}
+.sidebar-widget {
+  background:white;border-radius:16px;padding:20px;margin-bottom:20px;
+  box-shadow:0 2px 12px rgba(0,0,0,0.08);transition:box-shadow 0.3s;
+}
+.sidebar-widget:hover { box-shadow:0 4px 16px rgba(0,0,0,0.12);}
+.widget-title {
+  font-size:16px;font-weight:600;margin-bottom:16px;padding-bottom:12px;
+  border-bottom:2px solid #f1f5f9;color:#1e293b;display:flex;align-items:center;gap:8px;
+}
+.widget-title i { color:#FF6B9D;font-size:18px;}
+.category-list { list-style:none;padding:0;margin:0;}
+.category-item {
+  display:flex;align-items:center;padding:12px 16px;margin-bottom:4px;
+  border-radius:8px;cursor:pointer;transition:all 0.2s;color:#64748b;font-size:14px;position:relative;
+}
+.category-item i { font-size:10px;margin-right:8px;color:#94a3b8;transition:all 0.2s;}
+.category-item:hover {
+  background:rgba(255,107,157,0.1);color:#FF6B9D;transform:translateX(4px);
+}
+.category-item:hover i { color:#FF6B9D;}
+.category-item.active {
+  background:linear-gradient(135deg, #FFE5F1 0%, #FFB3D1 100%);
+  color:#E91E63;font-weight:600;
+}
+.category-item.active i { color:#E91E63;}
+.quick-action { display:flex;flex-direction:column;gap:10px;}
+.action-button {
+  display:flex;align-items:center;padding:12px 16px;background:#f8fafc;
+  border-radius:10px;cursor:pointer;transition:all 0.3s;color:#475569;
+  font-size:14px;font-weight:500;border:2px solid transparent;
+}
+.action-button.primary {
+  background:linear-gradient(135deg, #FF6B9D 0%, #FF8FB3 100%);color:white;
+  box-shadow:0 2px 8px rgba(255,107,157,0.25);font-weight:600;
+}
+.action-button.primary:hover {
+  transform:translateY(-2px);box-shadow:0 4px 12px rgba(255,107,157,0.35);
+}
+.action-button:not(.primary):hover {
+  background:rgba(255,107,157,0.1);border-color:#FFB3D1;color:#FF6B9D;
+  transform:translateX(4px);
+}
+.action-button i { margin-right:10px;font-size:16px;width:20px;text-align:center;}
+.tips-widget {
+  background:linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-left:4px solid #f59e0b;
+}
+.tips-widget .widget-title { color:#92400e;border-bottom-color:rgba(245,158,11,0.2);}
+.tips-widget .widget-title i { color:#f59e0b;}
+.safety-tips { display:flex;flex-direction:column;gap:10px;}
+.tip-item {
+  display:flex;align-items:flex-start;gap:10px;padding:8px 0;
+  color:#78350f;font-size:13px;line-height:1.5;
+}
+.tip-item i { color:#f59e0b;margin-top:2px;flex-shrink:0;font-size:14px;}
+
+/* 页脚 - 完全复用 */
+.footer {
+  background:#2c3e50 !important;color:white !important;padding:50px 0 20px;
+  margin-top:60px;
+}
+.footer-content {
+  display:grid;grid-template-columns:repeat(auto-fit, minmax(250px,1fr));
+  gap:40px;margin-bottom:30px;
+}
+.footer-section h3 { color:white !important;margin-bottom:20px;font-size:18px;}
+.footer-logo { font-size:24px;font-weight:bold;color:#FF6B9D !important;margin-bottom:15px;}
+.footer-links a { color:#bdc3c7 !important;display:block;margin-bottom:10px;transition:color 0.3s;}
+.footer-links a:hover { color:#FF6B9D !important;}
+.contact-info { color:#bdc3c7 !important;line-height:1.8;}
+.copyright {
+  text-align:center;padding-top:30px;margin-top:30px;border-top:1px solid #34495e;
+  color:#bdc3c7 !important;font-size:14px;
+}
+
+/* ===== 新增：顶部欢迎区域样式 ===== */
+.header-section {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 20px 0;
   margin-bottom: 20px;
 }
-
-.overview-header h2 {
-  font-size: 20px;
-  font-weight: bold;
-  color: var(--text);
+.greeting-text {
+  font-size: 24px;
+  font-weight: 600;
+  color: #5a4f7a;
+  margin-bottom: 8px;
 }
-
-.date-selector {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.date-text {
+  font-size: 16px;
+  color: #8b7fa8;
 }
-
-.date-btn {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.date-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-.current-date {
+.weather-info {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  cursor: pointer;
+  padding: 10px 20px;
+  background: #FFF9C4;
+  border-radius: 30px;
+  box-shadow: 0 2px 8px rgba(255, 213, 79, 0.2);
+}
+.weather-icon {
+  color: #F57F17;
+  font-size: 18px;
+}
+.weather-text {
   font-size: 14px;
-  color: var(--text);
+  color: #5a4f7a;
 }
 
-.current-date i:first-child {
-  color: var(--primary);
+/* ===== 新增：快速操作卡片组样式 ===== */
+.quick-actions-section {
+  margin-bottom: 20px;
 }
-
-.stats-cards {
+.quick-actions-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
+  gap: 16px;
 }
-
-.stat-card {
-  background: #f9f0ff;
-  border-radius: 10px;
-  padding: 20px;
-  text-align: center;
-  border: 2px solid transparent;
-  transition: all 0.3s;
-}
-
-.stat-card.completed {
-  background: #e8f5e9;
-}
-
-.stat-card.ongoing {
-  background: #fff3e0;
-}
-
-.stat-card.upcoming {
-  background: #e3f2fd;
-}
-
-.stat-card i {
-  font-size: 24px;
-  color: var(--primary);
-  margin-bottom: 10px;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: bold;
-  color: var(--text);
-  margin-bottom: 5px;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: var(--muted);
-}
-
-/* 筛选和操作区域 */
-.filter-actions-section {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-  border: 1px solid #eee;
-  max-width: calc(100% - 30px);
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.category-filters {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-  flex-wrap: wrap;
-}
-
-.category-btn {
-  padding: 8px 16px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.3s;
-  color: var(--text);
-}
-
-.category-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-  box-shadow: 0 4px 12px rgba(216, 27, 96, 0.3);
-  transform: translateY(-2px);
-}
-
-.category-btn.active {
-  background: var(--primary);
-  border-color: #c2185b;
-  box-shadow: 0 4px 12px rgba(216, 27, 96, 0.3);
-  transform: translateY(-2px);
-}
-
-.action-buttons {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.action-btn {
-  padding: 8px 16px;
-  border-radius: 12px;
-  border: 2px solid rgba(240, 240, 240, 0.9);
-  background: white;
-  color: var(--primary);
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.action-btn:hover {
-  background: var(--primary);
-  border-color: var(--primary);
-  box-shadow: 0 4px 12px rgba(216, 27, 96, 0.3);
-  transform: translateY(-2px);
-}
-
-.search-box {
-  display: flex;
-  gap: 8px;
-  flex: 1;
-  min-width: 200px;
-}
-
-.search-box input {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-}
-
-.search-btn {
-  padding: 8px 16px;
-  border-radius: 12px;
-  border: 2px solid rgba(240, 240, 240, 0.9);
-  background: white;
-  color: var(--primary);
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.search-btn:hover {
-  background: var(--primary);
-  border-color: #b02777;
-  box-shadow: 0 4px 12px rgba(216, 27, 96, 0.3);
-  transform: translateY(-2px);
-}
-
-/* 搜索结果盒子 */
-.search-results-box {
-  margin-top: 15px;
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  border: 1px solid #eee;
-  max-width: calc(100% - 30px);
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.search-results-box.empty {
-  padding: 40px 20px;
-  text-align: center;
-}
-
-.search-results-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
-}
-
-.search-results-header h3 {
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--text);
-  margin: 0;
-}
-
-.clear-search-btn {
-  padding: 6px 12px;
-  border: 1px solid #ddd;
-  background: white;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 12px;
-  color: var(--muted);
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.clear-search-btn:hover {
-  border-color: var(--primary);
-  color: var(--primary);
-}
-
-.search-results-list {
+.quick-action-card {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.search-result-item {
-  display: flex;
-  gap: 15px;
-  padding: 15px;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-  background: #fafafa;
-}
-
-.search-result-item:hover {
-  border-color: var(--primary);
-  background: white;
-  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.1);
-  transform: translateY(-2px);
-}
-
-.result-time {
-  min-width: 80px;
-  text-align: center;
-  padding: 10px;
-  background: var(--primary);
-  color: white;
-  border-radius: 8px;
-  display: flex;
-  flex-direction: column;
+  align-items: center;
   justify-content: center;
+  padding: 20px 12px;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  min-height: 120px;
+  transition: all 0.3s;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+.quick-action-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+.card-yellow {
+  background: #FFF9C4;
+  border-color: rgba(255, 213, 79, 0.5);
+}
+.card-blue {
+  background: #B3E5FC;
+  border-color: rgba(79, 195, 247, 0.5);
+}
+.card-pink {
+  background: #F8BBD0;
+  border-color: rgba(240, 98, 146, 0.5);
+}
+.card-purple {
+  background: #E1BEE7;
+  border-color: rgba(186, 104, 200, 0.5);
+}
+.action-icon-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  display: flex;
   align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
-
-.result-time .time {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 4px;
+.icon-yellow { background: rgba(255, 213, 79, 0.3); }
+.icon-blue { background: rgba(79, 195, 247, 0.3); }
+.icon-pink { background: rgba(240, 98, 146, 0.3); }
+.icon-purple { background: rgba(186, 104, 200, 0.3); }
+.action-icon-wrapper i {
+  font-size: 28px;
+  color: #FF1493;
 }
-
-.result-time .date {
-  font-size: 12px;
-  opacity: 0.9;
-}
-
-.result-content {
-  flex: 1;
-}
-
-.result-title {
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--text);
-  margin-bottom: 8px;
-}
-
-.result-desc {
+.action-text {
   font-size: 14px;
-  color: var(--muted);
-  margin-bottom: 8px;
-  line-height: 1.5;
+  color: #5a4f7a;
+  font-weight: 600;
 }
 
-.result-meta {
-  display: flex;
+/* ===== 新增：统计卡片样式 ===== */
+.stats-section {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.result-meta .category-tag {
-  padding: 4px 10px;
-  background: var(--primary);
-  color: white;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-.result-meta .location {
-  font-size: 12px;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.empty-search {
-  padding: 40px 20px;
-}
-
-.empty-search i {
-  font-size: 48px;
-  color: #ddd;
-  margin-bottom: 15px;
-}
-
-.empty-search p {
-  color: var(--muted);
-  margin-bottom: 15px;
-}
-
-/* 本周行程 */
-.week-schedule-section {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
-  border: 1px solid #eee;
-  max-width: calc(100% - 30px);
-  margin-left: auto;
-  margin-right: auto;
+}
+.stat-card {
+  padding: 20px 12px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  transition: all 0.3s;
+}
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+.stat-number {
+  display: block;
+  font-size: 32px;
+  font-weight: 700;
+  color: #5a4f7a;
+  margin-bottom: 8px;
+}
+.stat-label {
+  display: block;
+  font-size: 14px;
+  color: #5a4f7a;
+  font-weight: 500;
 }
 
-.section-header {
+/* ===== 新增：校车信息卡片样式 ===== */
+.bus-info-section {
+  margin-bottom: 20px;
+}
+.bus-info-section-bottom {
+  margin: 40px 0 20px 0;
+}
+.bus-info-card {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 6px 24px rgba(255, 20, 147, 0.2);
+  border: 2px solid rgba(255, 20, 147, 0.2);
+  position: relative;
+}
+.bus-info-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #FF1493 0%, #FF69B4 50%, #FFB6C1 100%);
+  border-radius: 20px 20px 0 0;
+}
+.bus-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
-
-.section-header h2 {
+.bus-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.bus-icon {
+  color: #FF1493;
+  font-size: 24px;
+  animation: busMove 2s ease-in-out infinite;
+}
+@keyframes busMove {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+.bus-title {
   font-size: 20px;
-  font-weight: bold;
-  color: var(--text);
+  font-weight: 700;
+  color: #FF1493;
 }
-
-.section-actions {
+.bus-refresh-btn {
+  width: 40px;
+  height: 40px;
   display: flex;
-  gap: 10px;
   align-items: center;
-}
-
-.export-btn {
-  padding: 8px 16px;
-  border-radius: 12px;
-  border: 2px solid rgba(240, 240, 240, 0.9);
-  background: white;
-  color: var(--primary);
+  justify-content: center;
+  background: rgba(255, 20, 147, 0.1);
+  border-radius: 50%;
+  border: 2px solid rgba(255, 20, 147, 0.2);
+  transition: all 0.3s;
   cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.3s ease;
+  color: #FF1493;
+}
+.bus-refresh-btn:hover {
+  background: rgba(255, 20, 147, 0.2);
+  transform: rotate(180deg);
+}
+.bus-routes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.bus-route-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  background: linear-gradient(135deg, #FFF9C4 0%, #FFE0E6 100%);
+  border-radius: 12px;
+  border-left: 6px solid #FF1493;
+  box-shadow: 0 4px 12px rgba(255, 20, 147, 0.15);
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.bus-route-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 6px 16px rgba(255, 20, 147, 0.25);
+}
+.route-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   gap: 6px;
 }
-
-.export-btn:hover {
-  background: var(--primary);
-  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.1);
-  transform: translateY(-2px);
-  border-color: #b02777;
-}
-
-.month-view-link {
-  color: var(--primary);
-  text-decoration: none;
-  font-size: 14px;
+.route-name-row {
   display: flex;
   align-items: center;
+  gap: 12px;
+}
+.route-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #FF1493;
+}
+.route-status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.route-status-badge.running {
+  background: #C8E6C9;
+  color: #2E7D32;
+}
+.route-status-badge.waiting {
+  background: #FFF9C4;
+  color: #F57F17;
+}
+.route-details {
+  display: flex;
+  flex-direction: column;
   gap: 4px;
 }
+.route-stops {
+  font-size: 14px;
+  color: #8b7fa8;
+  font-weight: 500;
+}
+.route-time {
+  font-size: 13px;
+  color: #FF1493;
+  font-weight: 600;
+}
+.route-arrow {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 20, 147, 0.1);
+  border-radius: 50%;
+  color: #FF1493;
+}
+.bus-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #b8a9d4;
+}
+.bus-empty-state .empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+.bus-empty-state .empty-text {
+  font-size: 14px;
+  color: #b8a9d4;
+}
 
-.week-grid {
+/* ===== 新增：快捷标签筛选样式 ===== */
+.filter-tabs-section {
+  margin-bottom: 20px;
+}
+.filter-tabs-container {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 10px 0;
+}
+.filter-tabs-container::-webkit-scrollbar {
+  height: 4px;
+}
+.filter-tabs-container::-webkit-scrollbar-thumb {
+  background: #FF1493;
+  border-radius: 2px;
+}
+.filter-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: white;
+  border-radius: 30px;
+  box-shadow: 0 2px 8px rgba(225, 190, 231, 0.15);
+  transition: all 0.3s;
+  cursor: pointer;
+  border: 2px solid transparent;
+  white-space: nowrap;
+}
+.filter-tab:hover {
+  background: rgba(255, 20, 147, 0.1);
+}
+.filter-tab.active {
+  background: linear-gradient(135deg, #FF1493 0%, #FF69B4 100%);
+  box-shadow: 0 4px 12px rgba(255, 20, 147, 0.3);
+  border-color: rgba(255, 20, 147, 0.3);
+  transform: scale(1.05);
+}
+.filter-tab.active .filter-text {
+  color: white;
+  font-weight: 600;
+}
+.filter-icon {
+  font-size: 14px;
+  color: #8b7fa8;
+}
+.filter-tab.active .filter-icon {
+  color: white;
+}
+.filter-text {
+  font-size: 14px;
+  color: #8b7fa8;
+}
+
+/* ===== 新增：本周概览日历样式 ===== */
+.week-overview-section {
+  margin-bottom: 20px;
+}
+.week-overview-card {
+  background: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 6px 24px rgba(255, 20, 147, 0.2);
+  border: 2px solid rgba(255, 20, 147, 0.2);
+  position: relative;
+}
+.week-overview-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #FF1493 0%, #FF69B4 50%, #FFB6C1 100%);
+  border-radius: 20px 20px 0 0;
+}
+.week-overview-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.week-overview-card .card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #5a4f7a;
+}
+.action-icon-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FF1493;
+  font-size: 16px;
+  border-radius: 50%;
+  transition: all 0.3s;
+  background: rgba(255, 20, 147, 0.1);
+  border: 1px solid rgba(255, 20, 147, 0.2);
+  cursor: pointer;
+}
+.action-icon-btn:hover {
+  background: rgba(255, 20, 147, 0.2);
+  transform: scale(0.9);
+}
+.calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
-
-.week-day {
-  background: #f9f0ff;
-  border-radius: 8px;
-  padding: 15px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s;
-  border: 2px solid transparent;
-}
-
-.week-day:hover {
-  border-color: var(--primary);
-  transform: translateY(-2px);
-}
-
-.week-day.today {
-  color: white;
-}
-
-.week-day.active {
-  border-color: var(--primary);
-  background: #fff3e0;
-}
-
-.day-name {
-  font-size: 14px;
-  color: var(--muted);
-  margin-bottom: 5px;
-}
-
-.week-day.today .day-name {
-  color: #ffa20d;
-}
-
-.day-number {
-  font-size: 20px;
-  font-weight: bold;
-  color: var(--text);
-  margin-bottom: 5px;
-}
-
-.week-day.today .day-number {
-  color: rgb(249, 182, 11);
-}
-
-.day-count {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.week-day.today .day-count {
-  color: rgb(249, 182, 11);
-}
-
-/* 独立提醒 */
-.reminder-section {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-  border: 1px solid #eee;
-  max-width: calc(100% - 30px);
-  margin-left: auto;
-  margin-right: auto;
-}
-
-.add-btn {
-  padding: 8px 16px;
-  border-radius: 12px;
-  border: 2px solid rgba(240, 240, 240, 0.9);
-  background: white;
-  color: var(--primary);
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.3s ease;
+.calendar-day {
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 6px;
+  padding: 12px 8px;
+  border-radius: 12px;
+  background: #F3E5F5;
+  position: relative;
+  border: 2px solid transparent;
+  transition: all 0.3s;
+}
+.calendar-day.today {
+  background: #FFF9C4;
+  box-shadow: 0 4px 12px rgba(255, 213, 79, 0.4);
+  border-color: #FFD54F;
+}
+.day-name {
+  font-size: 12px;
+  color: #8b7fa8;
+}
+.calendar-day.today .day-name {
+  color: #F57F17;
+  font-weight: 600;
+}
+.day-number {
+  font-size: 18px;
+  font-weight: 600;
+  color: #5a4f7a;
+}
+.calendar-day.today .day-number {
+  color: #F57F17;
+}
+.day-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #81D4FA;
+  margin-top: 2px;
+}
+.calendar-day.today .day-dot {
+  background: #F57F17;
 }
 
-.add-btn:hover {
-  background: var(--primary);
-  border-color: var(--primary);
-  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.1);
-  transform: translateY(-2px);
+/* ===== 新增：独立提醒模块样式 ===== */
+.reminder-section {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
-
+.reminder-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.reminder-section .header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.reminder-section .section-icon {
+  color: #b8a9d4;
+  font-size: 20px;
+}
+.reminder-section .section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #5a4f7a;
+  margin: 0;
+}
+.reminder-section .section-count {
+  font-size: 14px;
+  color: #b8a9d4;
+}
+.add-btn-small {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #FF1493 0%, #FF69B4 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 16px;
+  box-shadow: 0 4px 12px rgba(255, 20, 147, 0.4);
+  transition: all 0.3s;
+  border: none;
+  cursor: pointer;
+}
+.add-btn-small:hover {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(255, 20, 147, 0.3);
+}
 .reminder-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
-
-.reminder-item {
+.reminder-item-card {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 12px;
-  background: #f9f0ff;
-  border-radius: 8px;
+  padding: 16px;
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFF9C4 100%);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(255, 182, 193, 0.15);
+  border-left: 6px solid #FFB6C1;
+  transition: all 0.3s;
 }
-
+.reminder-item-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 6px 20px rgba(255, 182, 193, 0.25);
+}
+.reminder-item-card.completed {
+  opacity: 0.6;
+  border-left-color: #81C784;
+}
+.reminder-checkbox {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #FF1493;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  background: rgba(255, 20, 147, 0.1);
+  transition: all 0.3s;
+  cursor: pointer;
+  color: #FF1493;
+}
+.reminder-item-card.completed .reminder-checkbox {
+  background: linear-gradient(135deg, #FF1493 0%, #FF69B4 100%);
+  border-color: #FF69B4;
+}
 .reminder-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-
 .reminder-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 4px;
+  font-size: 16px;
+  color: #5a4f7a;
+  font-weight: 500;
 }
-
+.reminder-item-card.completed .reminder-title {
+  text-decoration: line-through;
+}
 .reminder-time {
-  font-size: 12px;
-  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #b8a9d4;
 }
-
+.reminder-time i {
+  font-size: 12px;
+}
 .reminder-actions {
   display: flex;
   gap: 8px;
 }
-
-.icon-btn {
-  padding: 6px 10px;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  border-radius: 4px;
+.action-icon-btn-small {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FF1493;
+  font-size: 14px;
+  border-radius: 50%;
   transition: all 0.3s;
+  background: rgba(255, 182, 193, 0.1);
+  border: 1px solid rgba(255, 182, 193, 0.2);
+  cursor: pointer;
+}
+.action-icon-btn-small:hover {
+  background: rgba(255, 182, 193, 0.2);
+  transform: scale(0.9);
 }
 
-.icon-btn:hover {
-  background: var(--primary);
-  color: white;
-}
-
-.icon-btn.delete:hover {
-  background: #f44336;
-  color: white;
-}
-
-/* 今日行程 */
-.today-schedule-section {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-  border: 1px solid #eee;
-  max-width: calc(100% - 30px);
-  margin-left: auto;
-  margin-right: auto;
-}
-
+/* ===== 优化：今日行程列表样式 ===== */
 .schedule-list {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
 }
-
-.schedule-item {
+.schedule-item-card {
   display: flex;
-  gap: 20px;
-  padding: 20px;
-  background: #f9f0ff;
-  border-radius: 10px;
-  border-left: 4px solid var(--primary);
+  align-items: flex-start;
+  padding: 16px;
+  background: white;
+  border-radius: 16px;
+  border-left: 8px solid;
+  box-shadow: 0 4px 16px rgba(255, 20, 147, 0.18);
   transition: all 0.3s;
+  cursor: pointer;
+  position: relative;
 }
-
-.schedule-item:hover {
-  box-shadow: 0 4px 12px rgba(216, 27, 96, 0.15);
-  transform: translateX(4px);
+.schedule-item-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #FF1493 0%, #FF69B4 50%, #FFB6C1 100%);
+  border-radius: 16px 16px 0 0;
+  opacity: 0.7;
 }
-
-.schedule-item.category-course {
-  border-left-color: #4caf50;
+.schedule-item-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(255, 20, 147, 0.3);
 }
-
-.schedule-item.category-exam {
-  border-left-color: #f44336;
-}
-
-.schedule-item.category-club {
-  border-left-color: #ff9800;
-}
-
-.schedule-item.category-parttime {
-  border-left-color: #2196f3;
-}
-
-.schedule-item.category-personal {
-  border-left-color: #9c27b0;
-}
-
-.schedule-time {
+.schedule-time-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   min-width: 80px;
-  text-align: center;
+  margin-right: 16px;
 }
-
-.time {
+.time-main {
   font-size: 18px;
-  font-weight: bold;
-  color: var(--text);
+  font-weight: 600;
+  color: #5a4f7a;
 }
-
-.period {
+.time-end {
   font-size: 12px;
-  color: var(--muted);
+  color: #b8a9d4;
   margin-top: 4px;
 }
-
 .schedule-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
-
-.schedule-header {
+.schedule-header-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 12px;
 }
-
 .schedule-title {
   font-size: 16px;
-  font-weight: bold;
-  color: var(--text);
-  margin: 0;
+  font-weight: 600;
+  color: #5a4f7a;
 }
-
-.category-tag {
-  padding: 4px 10px;
-  background: var(--primary);
-  color: white;
-  border-radius: 4px;
+.schedule-tag {
+  padding: 4px 12px;
+  border-radius: 12px;
   font-size: 12px;
+  color: #5a4f7a;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-
+.schedule-desc {
+  font-size: 13px;
+  color: #8b7fa8;
+}
+.schedule-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
 .schedule-location {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
-  color: var(--muted);
-  margin-bottom: 8px;
+  font-size: 12px;
+  color: #b8a9d4;
 }
-
 .schedule-location i {
-  color: var(--primary);
   font-size: 12px;
 }
-
-.schedule-desc {
-  font-size: 14px;
-  color: var(--muted);
-  margin-bottom: 12px;
-}
-
-.schedule-footer {
+.series-badge-mini {
   display: flex;
   align-items: center;
-  gap: 15px;
-  flex-wrap: wrap;
-}
-
-.status-badge {
+  gap: 6px;
   padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: 600;
+  background: #FFB6C1;
+  border-radius: 10px;
+  font-size: 11px;
+  color: #FF1493;
+  font-weight: 500;
 }
-
-.status-badge.completed {
-  background: #e8f5e9;
-  color: #2e7d32;
+.series-badge-mini i {
+  font-size: 10px;
 }
-
-.status-badge.ongoing {
-  background: #fff3e0;
-  color: #f57c00;
-}
-
-.status-badge.upcoming {
-  background: #e3f2fd;
-  color: #1976d2;
-}
-
-.shared-info {
-  font-size: 12px;
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.schedule-actions {
-  display: flex;
-  gap: 10px;
-  margin-left: auto;
-}
-
-.action-link {
-  padding: 4px 8px;
-  border: none;
-  background: transparent;
-  color: var(--primary);
-  cursor: pointer;
-  font-size: 13px;
-  transition: all 0.3s;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.action-link:hover {
-  color: var(--primary-dark);
-  text-decoration: underline;
-}
-
-.action-link.delete {
-  color: #f44336;
-}
-
-.action-link.delete:hover {
-  color: #d32f2f;
-}
-
-/* 模态框 */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 12px;
-  padding: 0;
-  max-width: 600px;
-  width: 90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-}
-
-.modal-content.large {
-  max-width: 800px;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  border-bottom: 1px solid #eee;
-}
-
-.modal-header h3 {
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--text);
-  margin: 0;
-}
-
-.close-btn {
-  padding: 8px;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: 18px;
-  transition: all 0.3s;
-}
-
-.close-btn:hover {
-  color: var(--primary);
-}
-
-.modal-body {
-  padding: 20px;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  padding: 20px;
-  border-top: 1px solid #eee;
-}
-
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 8px;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  transition: border-color 0.3s;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--primary);
-}
-
-.form-group textarea {
-  min-height: 80px;
-  resize: vertical;
-}
-
-.datetime-inputs {
-  display: flex;
-  gap: 10px;
-}
-
-.datetime-inputs input {
-  flex: 1;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-}
-
-.reminder-settings {
-  margin-top: 10px;
-  padding: 15px;
-  background: #f9f0ff;
-  border-radius: 6px;
-}
-
-.reminder-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.reminder-row:last-child {
-  margin-bottom: 0;
-}
-
-.reminder-input-group {
-  display: flex;
-  gap: 8px;
-}
-
-.reminder-input-group input {
-  width: 80px;
-}
-
-.reminder-checkboxes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-}
-
-.reminder-checkboxes label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: normal;
-  margin: 0;
-  cursor: pointer;
-}
-
-.btn {
-  padding: 10px 24px;
-  border-radius: 12px;
-  border: 2px solid rgba(240, 240, 240, 0.9);
-  background: white;
-  color: var(--primary);
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  transition: all 0.3s ease;
-}
-
-.btn:hover {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
-}
-
-.btn.cancel {
-  border-color: #ddd;
-  color: var(--muted);
-}
-
-.btn.cancel:hover {
-  background: #f5f5f5;
-  border-color: #ddd;
-  color: var(--muted);
-}
-
-.btn.primary {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary);
-}
-
-.btn.primary:hover {
-  background: var(--primary-dark);
-  border-color: var(--primary-dark);
-}
-
-.btn.accept {
-  background: #4caf50;
-  color: white;
-  border-color: #4caf50;
-}
-
-.btn.reject {
-  background: #f44336;
-  color: white;
-  border-color: #f44336;
-}
-
-/* 导入选项 */
-.import-options {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 15px;
-}
-
-.import-option-btn {
-  padding: 30px 20px;
-  border: 2px dashed #ddd;
-  background: white;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
+.schedule-status {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-}
-
-.import-option-btn:hover {
-  border-color: var(--primary);
-  background: #f9f0ff;
-}
-
-.import-option-btn i {
-  font-size: 32px;
-  color: var(--primary);
-}
-
-.import-option-btn span {
-  font-size: 14px;
-  color: var(--text);
-  font-weight: 600;
-}
-
-.import-option-btn p {
-  font-size: 12px;
-  color: var(--muted);
-  margin: 0;
-}
-
-/* 团队管理 */
-.create-team-btn {
-  width: 100%;
-  padding: 12px;
-  border: 2px dashed #ddd;
-  background: white;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  color: var(--primary);
-  font-weight: 600;
-  transition: all 0.3s;
-}
-
-.create-team-btn:hover {
-  border-color: var(--primary);
-  background: #f9f0ff;
-}
-
-.team-section {
-  margin-bottom: 30px;
-}
-
-.team-section h4 {
-  font-size: 16px;
-  font-weight: bold;
-  color: var(--text);
-  margin-bottom: 15px;
-}
-
-.team-list,
-.invitation-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.team-item {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 15px;
-  background: #f9f0ff;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.team-item:hover {
-  background: #f0e6ff;
-  transform: translateX(4px);
-}
-
-.empty-team {
-  padding: 40px 20px;
-  text-align: center;
-  background: #f9f0ff;
-  border-radius: 8px;
-  border: 2px dashed #ddd;
-}
-
-.empty-team i {
-  font-size: 48px;
-  color: #ddd;
-  margin-bottom: 15px;
-}
-
-.empty-team p {
-  color: var(--muted);
-  margin: 0;
-}
-
-.team-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--primary);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 18px;
-}
-
-.team-info {
-  flex: 1;
-}
-
-.team-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 4px;
-}
-
-.team-members {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.team-item i {
-  color: var(--muted);
-}
-
-.invitation-item {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 15px;
-  background: #fff3e0;
-  border-radius: 8px;
-}
-
-.invitation-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: #ff9800;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.invitation-info {
-  flex: 1;
-}
-
-.invitation-team {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
-  margin-bottom: 4px;
-}
-
-.invitation-inviter {
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.invitation-actions {
-  display: flex;
-  gap: 8px;
-}
-
-/* 共享用户 */
-.add-share-btn {
-  margin-top: 8px;
-  padding: 6px 12px;
-  border: 1px solid var(--primary);
-  background: var(--primary);
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  display: flex;
-  align-items: center;
   gap: 4px;
+  min-width: 60px;
 }
-
-.add-share-btn:hover {
-  background: var(--primary-dark);
+.status-dot {
+  font-size: 8px;
 }
-
-.share-users {
+.status-text {
+  font-size: 12px;
+  font-weight: 500;
+}
+.remind-badges {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.share-user-tag {
-  display: flex;
-  align-items: center;
   gap: 6px;
-  padding: 6px 12px;
-  background: #f9f0ff;
-  border-radius: 6px;
-  font-size: 13px;
-  color: var(--text);
+  margin-top: 6px;
 }
-
-.share-user-tag button {
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 0;
-  width: 16px;
-  height: 16px;
+.remind-badge {
+  width: 28px;
+  height: 28px;
+  background: #FFB6C1;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 2px 4px rgba(255, 20, 147, 0.3);
+}
+.remind-icon {
+  font-size: 12px;
+  color: #FF1493;
 }
 
-.share-user-tag button:hover {
-  color: var(--primary);
-}
-
+/* 响应式适配 - 完全复用+适配课程表 */
 @media (max-width: 768px) {
-  .stats-cards {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .week-grid {
-    grid-template-columns: repeat(7, 1fr);
-    gap: 5px;
-  }
-
-  .week-day {
-    padding: 10px 5px;
-  }
-
-  .day-number {
-    font-size: 16px;
-  }
-
-  .day-count {
-    font-size: 11px;
-  }
-
-  .schedule-item {
-    flex-direction: column;
-  }
-
-  .schedule-time {
-    text-align: left;
-    display: flex;
-    gap: 10px;
-  }
-
-  .action-buttons {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .search-box {
-    width: 100%;
-  }
-
-  .import-options {
-    grid-template-columns: 1fr;
-  }
+  .search-container { flex-direction:column;gap:15px;}
+  .search-box { width:100%;max-width:none;}
+  .search-actions { width:100%;justify-content:center;}
+  .main-content { flex-direction:column;}
+  .sidebar { width:100%;position:static;max-height:none;}
+  .tags-grid { grid-template-columns:repeat(3,1fr);}
+  .recommendation-grid { grid-template-columns:repeat(2,1fr);}
+  .filter-row { flex-direction:column;align-items:flex-start;}
+  .filter-actions { margin-left:0;width:100%;justify-content:center;margin-top:10px;}
+  .schedule-grid { grid-template-columns:1fr;}
+  .quick-actions-grid { grid-template-columns:repeat(2,1fr);}
+  .stats-section { grid-template-columns:repeat(2,1fr);}
+  .calendar-grid { grid-template-columns:repeat(4,1fr);}
 }
-
 @media (max-width: 480px) {
-  .stats-cards {
-    grid-template-columns: 1fr;
-  }
-
-  .category-filters {
-    flex-direction: column;
-  }
-
-  .category-btn {
-    width: 100%;
-  }
+  .search-actions { flex-wrap:wrap;gap:10px;}
+  .action-btn { padding:6px 10px;font-size:14px;}
+  .recommendation-grid { grid-template-columns:1fr;}
+  .filter-input { width:80px;}
+  .table-cell { min-height:60px;}
+  .course-name { font-size:12px;}
+  .quick-actions-grid { grid-template-columns:1fr;}
+  .stats-section { grid-template-columns:1fr;}
 }
 </style>

@@ -4,11 +4,20 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yourschool.campussystem.dto.LoginDTO;
 import com.yourschool.campussystem.dto.UserRegisterDTO;
+import com.yourschool.campussystem.dto.UserUpdateDTO;
+import com.yourschool.campussystem.entity.BrowseHistory;
+import com.yourschool.campussystem.entity.Favorite;
+import com.yourschool.campussystem.entity.Parttime;
+import com.yourschool.campussystem.entity.SecondhandGoods;
 import com.yourschool.campussystem.entity.User;
+import com.yourschool.campussystem.entity.UserLoginLog;
 import com.yourschool.campussystem.enums.UserRoleEnum;
 import com.yourschool.campussystem.common.ErrorCode;
 import com.yourschool.campussystem.exception.BusinessException;
-import com.yourschool.campussystem.entity.UserLoginLog;
+import com.yourschool.campussystem.mapper.BrowseHistoryMapper;
+import com.yourschool.campussystem.mapper.FavoriteMapper;
+import com.yourschool.campussystem.mapper.ParttimeMapper;
+import com.yourschool.campussystem.mapper.SecondhandGoodsMapper;
 import com.yourschool.campussystem.mapper.UserLoginLogMapper;
 import com.yourschool.campussystem.mapper.UserMapper;
 import com.yourschool.campussystem.service.IpLocationService;
@@ -24,6 +33,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -34,6 +45,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private final UserLoginLogMapper userLoginLogMapper;
     private final BCryptPasswordEncoder passwordEncoder;
     private final IpLocationService ipLocationService;
+    private final FavoriteMapper favoriteMapper;
+    private final BrowseHistoryMapper browseHistoryMapper;
+    private final SecondhandGoodsMapper secondhandGoodsMapper;
+    private final ParttimeMapper parttimeMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -295,6 +310,107 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         return userInfo;
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public UserInfoVO updateUserInfo(Long userId, UserUpdateDTO updateDTO) {
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_EXIST);
+        }
+
+        // 更新用户信息
+        if (updateDTO.getNickname() != null) {
+            user.setNickname(updateDTO.getNickname());
+        }
+        if (updateDTO.getAvatarUrl() != null) {
+            user.setAvatarUrl(updateDTO.getAvatarUrl());
+        }
+        if (updateDTO.getPhone() != null) {
+            user.setPhone(updateDTO.getPhone());
+        }
+        if (updateDTO.getEmail() != null) {
+            user.setEmail(updateDTO.getEmail());
+        }
+
+        userMapper.updateById(user);
+
+        // 返回更新后的用户信息
+        return getUserInfo(userId);
+    }
+
+    @Override
+    public Map<String, Object> getUserStats(Long userId) {
+        Map<String, Object> stats = new HashMap<>();
+
+        // 统计收藏数（二手商品 + 兼职岗位）
+        LambdaQueryWrapper<Favorite> favoriteWrapper = new LambdaQueryWrapper<>();
+        favoriteWrapper.eq(Favorite::getUserId, userId);
+        favoriteWrapper.eq(Favorite::getIsDeleted, 0);
+        Long favoritesCount = favoriteMapper.selectCount(favoriteWrapper);
+        stats.put("favoritesCount", favoritesCount);
+
+        // 统计浏览历史数
+        LambdaQueryWrapper<BrowseHistory> historyWrapper = new LambdaQueryWrapper<>();
+        historyWrapper.eq(BrowseHistory::getUserId, userId);
+        historyWrapper.eq(BrowseHistory::getIsDeleted, 0);
+        Long historyCount = browseHistoryMapper.selectCount(historyWrapper);
+        stats.put("historyCount", historyCount);
+
+        // 统计发布数（二手商品 + 兼职岗位）
+        LambdaQueryWrapper<SecondhandGoods> secondhandWrapper = new LambdaQueryWrapper<>();
+        secondhandWrapper.eq(SecondhandGoods::getPublisherId, userId);
+        secondhandWrapper.eq(SecondhandGoods::getIsDeleted, 0);
+        Long secondhandCount = secondhandGoodsMapper.selectCount(secondhandWrapper);
+
+        LambdaQueryWrapper<Parttime> parttimeWrapper = new LambdaQueryWrapper<>();
+        parttimeWrapper.eq(Parttime::getPublisherId, userId);
+        parttimeWrapper.eq(Parttime::getIsDeleted, 0);
+        Long parttimeCount = parttimeMapper.selectCount(parttimeWrapper);
+
+        Long publishCount = secondhandCount + parttimeCount;
+        stats.put("publishCount", publishCount);
+
+        // 积分（暂时返回默认值，后续可以从积分表查询）
+        stats.put("pointsCount", 1280);
+
+        return stats;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void changePassword(Long userId, String oldPassword, String newPassword) {
+        log.info("开始修改密码: userId={}", userId);
+        
+        // 1. 查询用户
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_EXIST);
+        }
+        
+        // 2. 验证旧密码
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            log.warn("旧密码验证失败: userId={}", userId);
+            throw new BusinessException(ErrorCode.USER_PASSWORD_ERROR, "旧密码不正确");
+        }
+        
+        // 3. 验证新密码不能与旧密码相同
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            log.warn("新密码不能与旧密码相同: userId={}", userId);
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "新密码不能与旧密码相同");
+        }
+        
+        // 4. 加密新密码
+        String encodedPassword = passwordEncoder.encode(newPassword);
+        
+        // 5. 更新密码
+        user.setPassword(encodedPassword);
+        user.setUpdateTime(LocalDateTime.now());
+        userMapper.updateById(user);
+        
+        log.info("密码修改成功: userId={}", userId);
+    }
+
     @Override
     public Long applyAuth(Long userId, String applyRole, String realName, String idCard,
                           String schoolName, String major, String grade,

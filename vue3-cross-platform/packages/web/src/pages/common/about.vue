@@ -1,134 +1,184 @@
 <template>
   <div class="common-page about-page">
-    <!-- 全局导航栏 -->
     <NavBar />
 
-    <!-- 页面内容 -->
-    <div class="page-content">
-      <div class="content-container">
-        <!-- 页面标题 -->
-        <div class="page-header">
-          <h1 class="page-title">{{ aboutInfo?.platformName || '上大学Online' }}</h1>
-          <p class="page-subtitle">{{ aboutInfo?.slogan || '让校园生活更简单' }}</p>
-        </div>
+    <main class="about-main">
+      <div class="container">
+        <!-- 顶部轮播 + 标题 -->
+        <section class="hero">
+          <Carousel :slides="carouselSlides" :autoplay="true" :interval="6500" />
 
-        <!-- 平台介绍内容 -->
-        <div class="about-content" v-if="aboutInfo">
-          <!-- 愿景展示 -->
-          <div class="vision-section">
-            <div class="vision-card">
-              <h2 class="vision-title">我们的愿景</h2>
-              <p class="vision-text">{{ aboutInfo.vision }}</p>
+          <div class="hero-head">
+            <p class="breadcrumb">首页 / 平台介绍</p>
+            <h1 class="title">{{ aboutInfo?.platformName || '上大学Online' }}</h1>
+            <p class="subtitle">{{ aboutInfo?.slogan || '让校园生活更简单' }}</p>
+          </div>
+        </section>
+
+        <!-- 平台概览 -->
+        <section class="section">
+          <div class="section-header">
+            <h2 class="section-title">平台概览</h2>
+            <p class="section-subtitle">用更少的步骤，完成更多的校园事务。</p>
+          </div>
+
+          <div class="overview-grid">
+            <article class="overview-card">
+              <div class="overview-icon"><i class="fas fa-layer-group"></i></div>
+              <div class="overview-title">一站式服务</div>
+              <div class="overview-desc">校园卡、二手、兼职、行程等模块统一入口。</div>
+            </article>
+            <article class="overview-card">
+              <div class="overview-icon"><i class="fas fa-user-check"></i></div>
+              <div class="overview-title">身份可信</div>
+              <div class="overview-desc">多重身份认证机制，保障平台与交易安全。</div>
+            </article>
+            <article class="overview-card">
+              <div class="overview-icon"><i class="fas fa-shield-alt"></i></div>
+              <div class="overview-title">安全合规</div>
+              <div class="overview-desc">加密传输、权限分级与风控策略，持续守护数据。</div>
+            </article>
+            <article class="overview-card">
+              <div class="overview-icon"><i class="fas fa-rocket"></i></div>
+              <div class="overview-title">持续迭代</div>
+              <div class="overview-desc">围绕真实校园场景不断完善体验与效率。</div>
+            </article>
+          </div>
+        </section>
+
+        <!-- 平台时间线 -->
+        <section class="section">
+          <div class="section-header">
+            <h2 class="section-title">平台时间线</h2>
+            <p class="section-subtitle">从立项到迭代，我们记录每一步关键进展。</p>
+          </div>
+
+          <div class="timeline">
+            <div v-for="(item, idx) in timeline" :key="idx" class="timeline-item">
+              <div class="timeline-dot" aria-hidden="true"></div>
+              <div class="timeline-card">
+                <div class="timeline-time">{{ item.time }}</div>
+                <div class="timeline-title">{{ item.title }}</div>
+                <div class="timeline-desc">{{ item.desc }}</div>
+              </div>
             </div>
           </div>
+        </section>
 
-          <!-- 平台描述 -->
-          <div class="description-section">
-            <h2 class="section-title">平台简介</h2>
-            <p class="description-text">{{ aboutInfo.description }}</p>
+        <!-- 详细介绍 -->
+        <section class="section">
+          <div class="section-header">
+            <h2 class="section-title">平台介绍</h2>
+            <p class="section-subtitle">面向高校与大学生的综合校园服务平台。</p>
           </div>
 
-          <!-- 核心特性 -->
-          <div class="features-section">
+          <div class="intro-grid">
+            <article class="intro-card">
+              <div class="intro-card-head">
+                <i class="fas fa-bullseye"></i>
+                <h3>我们的愿景</h3>
+              </div>
+              <p class="intro-text">{{ aboutInfo?.vision || '让每一所高校都拥有更高效、更安全、更贴近学生的数字化服务体验。' }}</p>
+            </article>
+
+            <article class="intro-card">
+              <div class="intro-card-head">
+                <i class="fas fa-info-circle"></i>
+                <h3>平台简介</h3>
+              </div>
+              <p class="intro-text">{{ aboutInfo?.description || '整合校园多类服务，提供统一入口与可信身份体系，并持续迭代安全机制与用户体验。' }}</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- 核心特性 -->
+        <section class="section">
+          <div class="section-header">
             <h2 class="section-title">核心特性</h2>
-            <div class="features-grid">
-              <div
-                v-for="(feature, index) in aboutInfo.features"
-                :key="index"
-                class="feature-card"
-              >
-                <div class="feature-icon"><i :class="['fas', getFeatureIcon(feature)]"></i></div>
-                <h3 class="feature-title">{{ feature }}</h3>
-              </div>
-            </div>
+            <p class="section-subtitle">围绕“效率、安全、可信”打造的关键能力。</p>
           </div>
 
-          <!-- 平台优势 -->
-          <div class="advantages-section">
-            <h2 class="section-title">平台优势</h2>
-            <div class="advantages-list">
-              <div class="advantage-item">
-                <div class="advantage-icon"><i class="fas fa-university"></i></div>
-                <div class="advantage-content">
-                  <h4>一校一集合</h4>
-                  <p>基于高校官方认证，构建精准用户群体，实现个性化服务推送</p>
-                </div>
-              </div>
-              <div class="advantage-item">
-                <div class="advantage-icon"><i class="fas fa-user"></i></div>
-                <div class="advantage-content">
-                  <h4>一人一身份</h4>
-                  <p>多重身份认证机制，确保用户身份真实可靠，保障平台安全</p>
-                </div>
-              </div>
-              <div class="advantage-item">
-                <div class="advantage-icon"><i class="fas fa-tools"></i></div>
-                <div class="advantage-content">
-                  <h4>一站全服务</h4>
-                  <p>整合校园各类服务，提供一站式校园生活解决方案</p>
-                </div>
-              </div>
-              <div class="advantage-item">
-                <div class="advantage-icon"><i class="fas fa-lock"></i></div>
-                <div class="advantage-content">
-                  <h4>一策保安全</h4>
-                  <p>建立健全安全机制，采用加密传输和权限分级，保护用户信息安全</p>
-                </div>
-              </div>
-            </div>
+          <div class="features-grid">
+            <article v-for="(feature, index) in featureList" :key="index" class="feature-card">
+              <div class="feature-icon"><i :class="['fas', getFeatureIcon(feature)]"></i></div>
+              <div class="feature-title">{{ feature }}</div>
+            </article>
           </div>
+        </section>
 
-          <!-- 联系我们 -->
-          <div class="contact-section">
+        <!-- 联系我们 -->
+        <section class="section">
+          <div class="section-header">
             <h2 class="section-title">联系我们</h2>
-            <div class="contact-info" v-if="contactInfo">
-              <div class="contact-item">
-                <span class="contact-label">服务热线：</span>
-                <span class="contact-value">{{ contactInfo.serviceHotline }}</span>
-              </div>
-              <div class="contact-item">
-                <span class="contact-label">技术支持：</span>
-                <span class="contact-value">{{ contactInfo.techSupport }}</span>
-              </div>
-              <div class="contact-item">
-                <span class="contact-label">商务合作：</span>
-                <span class="contact-value">{{ contactInfo.businessCooperation }}</span>
-              </div>
-              <div class="contact-item">
-                <span class="contact-label">高校接入：</span>
-                <span class="contact-value">{{ contactInfo.universityAccess }}</span>
-              </div>
-              <div class="contact-item">
-                <span class="contact-label">工作时间：</span>
-                <span class="contact-value">{{ contactInfo.workingHours }}</span>
-              </div>
-            </div>
+            <p class="section-subtitle">合作接入、技术支持与问题反馈，欢迎随时联系。</p>
           </div>
-        </div>
 
-        <!-- 加载状态 -->
-        <div v-else class="loading-state">
+          <div class="contact-grid">
+            <article class="contact-card">
+              <div class="contact-head">
+                <i class="fas fa-phone"></i>
+                <div class="contact-title">服务热线</div>
+              </div>
+              <div class="contact-value">{{ contactInfo?.serviceHotline || '400-123-4567' }}</div>
+              <div class="contact-tip">工作日 9:00-18:00</div>
+            </article>
+            <article class="contact-card">
+              <div class="contact-head">
+                <i class="fas fa-wrench"></i>
+                <div class="contact-title">技术支持</div>
+              </div>
+              <div class="contact-value">{{ contactInfo?.techSupport || 'support@shangdaxue.com' }}</div>
+              <div class="contact-tip">问题排查 / 接口对接</div>
+            </article>
+            <article class="contact-card">
+              <div class="contact-head">
+                <i class="fas fa-handshake"></i>
+                <div class="contact-title">商务合作</div>
+              </div>
+              <div class="contact-value">{{ contactInfo?.businessCooperation || 'bd@shangdaxue.com' }}</div>
+              <div class="contact-tip">生态共建 / 合作洽谈</div>
+            </article>
+            <article class="contact-card">
+              <div class="contact-head">
+                <i class="fas fa-university"></i>
+                <div class="contact-title">高校接入</div>
+              </div>
+              <div class="contact-value">{{ contactInfo?.universityAccess || 'campus@shangdaxue.com' }}</div>
+              <div class="contact-tip">{{ contactInfo?.workingHours || '工作日 9:00-18:00' }}</div>
+            </article>
+          </div>
+
+          <div class="links-row">
+            <a class="link-chip" href="/help">帮助中心</a>
+            <a class="link-chip" href="/security">安全保障</a>
+            <a class="link-chip" href="/privacy">隐私政策</a>
+            <a class="link-chip" href="/terms">服务协议</a>
+          </div>
+        </section>
+
+        <div v-if="isLoading" class="loading">
           <div class="loading-spinner"></div>
           <p>加载中...</p>
         </div>
       </div>
-    </div>
+    </main>
 
-    <!-- 页脚 -->
     <AppFooter />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import NavBar from '@/components/common/NavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
+import Carousel, { type CarouselSlide } from '@/components/common/Carousel.vue'
 import { getAboutInfo, getContactInfo, type AboutInfo, type ContactInfo } from '@campus/common'
 
 // 平台介绍信息
 const aboutInfo = ref<AboutInfo | null>(null)
 // 联系方式
 const contactInfo = ref<ContactInfo | null>(null)
+const isLoading = ref(true)
 
 // 获取特性图标
 const getFeatureIcon = (feature: string): string => {
@@ -140,6 +190,43 @@ const getFeatureIcon = (feature: string): string => {
   if (feature.includes('定位')) return 'fa-map-marker-alt'
   return 'fa-star'
 }
+
+const carouselSlides = ref<CarouselSlide[]>([
+  {
+    title: '上大学Online',
+    text: '连接校园生活每一刻，提供安全、便捷、个性化的一站式服务。',
+    image: 'https://source.unsplash.com/random/1200x400/?campus,university,building',
+    buttonText: '了解功能',
+    buttonLink: '/help'
+  },
+  {
+    title: '一校一集合，一人一身份',
+    text: '基于高校官方接入与身份体系，构建可信校园服务网络。',
+    image: 'https://source.unsplash.com/random/1200x400/?student,study,library'
+  },
+  {
+    title: '一站全服务，一策保安全',
+    text: '整合多类校园能力，配套加密传输与权限分级机制。',
+    image: 'https://source.unsplash.com/random/1200x400/?security,technology,network'
+  }
+])
+
+const timeline = ref([
+  { time: '2024.03', title: '项目立项', desc: '面向高校场景，启动一站式校园服务平台建设。' },
+  { time: '2024.06', title: '核心模块上线', desc: '校园卡、二手、兼职、行程等基础能力完成第一轮落地。' },
+  { time: '2024.09', title: '安全体系升级', desc: '完善加密传输、权限分级与风控策略，提升整体安全性。' },
+  { time: '2024.12', title: '体验迭代', desc: '围绕高频场景优化交互与性能，持续提升使用效率。' }
+])
+
+const featureList = computed(() => {
+  const list = aboutInfo.value?.features?.length ? aboutInfo.value.features : [
+    '一校一集合',
+    '一人一身份',
+    '一站全服务',
+    '一策保安全'
+  ]
+  return list
+})
 
 // 加载平台介绍信息
 const loadAboutInfo = async () => {
@@ -161,8 +248,9 @@ const loadContactInfo = async () => {
 
 // 组件挂载时加载数据
 onMounted(() => {
-  loadAboutInfo()
-  loadContactInfo()
+  Promise.allSettled([loadAboutInfo(), loadContactInfo()]).finally(() => {
+    isLoading.value = false
+  })
 })
 </script>
 
@@ -171,221 +259,352 @@ onMounted(() => {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: linear-gradient(135deg, #fdfbff 0%, #f7f0ff 25%, #fdf3f7 60%, #ffffff 100%);
 }
 
-.page-content {
+.about-main {
   flex: 1;
-  padding: 2rem 0;
-  background: #f8f9fa;
+  padding: 30px 0 60px;
 }
 
-.content-container {
+.container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0 24px;
 }
 
-/* 页面标题区域 */
-.page-header {
-  text-align: center;
-  margin-bottom: 3rem;
-  padding-top: 2rem;
+.hero {
+  margin-bottom: 26px;
 }
 
-.page-title {
-  font-size: 3rem;
-  font-weight: bold;
-  color: #e91e63;
-  margin-bottom: 1rem;
+.hero-head {
+  margin-top: 14px;
+  padding: 0 2px;
 }
 
-.page-subtitle {
-  font-size: 1.3rem;
-  color: #666;
+.breadcrumb {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #9e9eaa;
 }
 
-/* 愿景展示区域 */
-.vision-section {
-  margin-bottom: 4rem;
+.title {
+  margin: 0 0 6px;
+  font-size: 32px;
+  font-weight: 800;
+  color: #233145;
 }
 
-.vision-card {
-  background: linear-gradient(135deg, #e91e63 0%, #c2185b 100%);
-  border-radius: 16px;
-  padding: 3rem;
-  text-align: center;
-  color: #fff;
-  box-shadow: 0 4px 20px rgba(233, 30, 99, 0.3);
+.subtitle {
+  margin: 0;
+  font-size: 15px;
+  color: #5f6473;
 }
 
-.vision-title {
-  font-size: 2rem;
-  font-weight: bold;
-  margin-bottom: 1.5rem;
+.section {
+  margin-top: 26px;
 }
 
-.vision-text {
-  font-size: 1.3rem;
-  line-height: 1.8;
-  opacity: 0.95;
-}
-
-/* 平台描述区域 */
-.description-section {
-  margin-bottom: 4rem;
-  background: #fff;
-  border-radius: 12px;
-  padding: 2.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.section-header {
+  margin-bottom: 16px;
 }
 
 .section-title {
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 1.5rem;
-  text-align: center;
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 800;
+  color: #222a3a;
 }
 
-.description-text {
-  font-size: 1.1rem;
-  color: #666;
+.section-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.overview-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(209, 213, 219, 0.7);
+  border-radius: 16px;
+  padding: 16px 16px 14px;
+  box-shadow: 0 10px 24px rgba(148, 163, 184, 0.22);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.overview-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 75, 139, 0.45);
+  box-shadow: 0 14px 30px rgba(148, 163, 184, 0.30);
+}
+
+.overview-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ffebf3, #ffe4ff);
+  color: #ff4b8b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.overview-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.overview-desc {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.7;
+}
+
+.timeline {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 18px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  background: rgba(255, 75, 139, 0.25);
+}
+
+.timeline-item {
+  position: relative;
+  display: flex;
+  gap: 12px;
+}
+
+.timeline-dot {
+  position: absolute;
+  left: -2px;
+  top: 14px;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ff4b8b, #ff7ab2);
+  box-shadow: 0 8px 18px rgba(255, 75, 139, 0.28);
+}
+
+.timeline-card {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(209, 213, 219, 0.7);
+  border-radius: 16px;
+  padding: 14px 14px 12px;
+  box-shadow: 0 10px 24px rgba(148, 163, 184, 0.20);
+}
+
+.timeline-time {
+  font-size: 12px;
+  color: #ff4b8b;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.timeline-title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.timeline-desc {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.7;
+}
+
+.intro-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+.intro-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(209, 213, 219, 0.7);
+  border-radius: 16px;
+  padding: 16px 16px 14px;
+  box-shadow: 0 10px 24px rgba(148, 163, 184, 0.22);
+}
+
+.intro-card-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: #111827;
+}
+
+.intro-card-head i {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: rgba(255, 75, 139, 0.10);
+  border: 1px solid rgba(255, 75, 139, 0.18);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff4b8b;
+}
+
+.intro-card-head h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.intro-text {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
   line-height: 1.8;
-  text-align: center;
-}
-
-/* 核心特性区域 */
-.features-section {
-  margin-bottom: 4rem;
 }
 
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
 }
 
 .feature-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 2rem;
-  text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.feature-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(209, 213, 219, 0.7);
+  border-radius: 16px;
+  padding: 14px 14px 12px;
+  box-shadow: 0 10px 24px rgba(148, 163, 184, 0.20);
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .feature-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
-  color: #e91e63;
-}
-
-.feature-icon i {
-  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ff4b8b;
+  border: 1px solid rgba(148, 163, 184, 0.22);
 }
 
 .feature-title {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #333;
+  font-size: 14px;
+  font-weight: 800;
+  color: #111827;
 }
 
-/* 平台优势区域 */
-.advantages-section {
-  margin-bottom: 4rem;
-  background: #fff;
-  border-radius: 12px;
-  padding: 2.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
 }
 
-.advantages-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+.contact-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(209, 213, 219, 0.7);
+  border-radius: 16px;
+  padding: 16px 16px 14px;
+  box-shadow: 0 10px 24px rgba(148, 163, 184, 0.22);
 }
 
-.advantage-item {
-  display: flex;
-  gap: 2rem;
-  align-items: flex-start;
-}
-
-.advantage-icon {
-  font-size: 3rem;
-  flex-shrink: 0;
-  color: #e91e63;
-}
-
-.advantage-icon i {
-  display: inline-block;
-}
-
-.advantage-content {
-  flex: 1;
-}
-
-.advantage-content h4 {
-  font-size: 1.3rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 0.8rem;
-}
-
-.advantage-content p {
-  font-size: 1rem;
-  color: #666;
-  line-height: 1.8;
-}
-
-/* 联系我们区域 */
-.contact-section {
-  background: #fff;
-  border-radius: 12px;
-  padding: 2.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.contact-info {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.contact-item {
+.contact-head {
   display: flex;
   align-items: center;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: #111827;
 }
 
-.contact-label {
-  font-weight: bold;
-  color: #333;
-  min-width: 120px;
+.contact-head i {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffebf3, #ffe4ff);
+  color: #ff4b8b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact-title {
+  font-size: 15px;
+  font-weight: 800;
 }
 
 .contact-value {
-  color: #666;
+  font-size: 14px;
+  font-weight: 800;
+  color: #ff4b8b;
+  margin-bottom: 6px;
 }
 
-/* 加载状态 */
-.loading-state {
+.contact-tip {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.links-row {
+  margin-top: 14px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.link-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(209, 213, 219, 0.8);
+  background: rgba(255, 255, 255, 0.85);
+  color: #374151;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 650;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.06s ease;
+}
+
+.link-chip:hover {
+  border-color: rgba(255, 75, 139, 0.45);
+  background: rgba(255, 247, 251, 0.9);
+}
+
+.link-chip:active {
+  transform: scale(0.98);
+}
+
+.loading {
   text-align: center;
-  padding: 4rem 0;
+  padding: 28px 0 0;
 }
 
 .loading-spinner {
   width: 50px;
   height: 50px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #e91e63;
+  border-top: 4px solid #ff4b8b;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto 1rem;
@@ -398,49 +617,16 @@ onMounted(() => {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .content-container {
-    padding: 0 1rem;
+  .about-main {
+    padding: 20px 0 46px;
   }
 
-  .page-title {
-    font-size: 2rem;
+  .container {
+    padding: 0 16px;
   }
 
-  .page-subtitle {
-    font-size: 1.1rem;
-  }
-
-  .vision-card {
-    padding: 2rem;
-  }
-
-  .vision-title {
-    font-size: 1.5rem;
-  }
-
-  .vision-text {
-    font-size: 1.1rem;
-  }
-
-  .features-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
-  }
-
-  .advantage-item {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-
-  .contact-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .contact-label {
-    min-width: auto;
-    margin-bottom: 0.5rem;
+  .title {
+    font-size: 24px;
   }
 }
 </style>

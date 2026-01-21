@@ -1,0 +1,50 @@
+# 依赖目录
+node_modules/
+**/node_modules/
+packages/*/node_modules/
+packages/*/dist/
+
+# 构建输出
+dist/
+build/
+*.log
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# 临时文件
+*.tmp
+*.temp
+
+# 测试覆盖率
+coverage/
+
+# 其他
+*.pid
+*.seed
+*.pid.lock
+
+# Cursor 临时目录
+.cursor/
+**/.cursor/
+
+# 过程记录/测试报告（如不需要纳入版本管理）
+**/*SUMMARY*.md
+**/*REPORT*.md
+
+# 测试目录（如你确定不保留测试）
+**/src/test/
+

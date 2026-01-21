@@ -21,7 +21,14 @@
 
       <!-- 公司与地点信息 -->
       <div class="card-sub-row">
-        <span class="company-name">{{ job.publisherName || '未填写发布方' }}</span>
+        <div class="company-info-wrapper">
+          <span class="company-name">{{ job.publisherName || '未填写发布方' }}</span>
+          <!-- 企业认证标识 - 使用柔和玫红色，增大尺寸和间距 -->
+          <span class="verified-badge" v-if="(job as any).verified">
+            <i class="fas fa-check-circle"></i>
+            <span>企业认证</span>
+          </span>
+        </div>
         <span class="location">
           <i class="fas fa-map-marker-alt"></i>
           {{ job.location }} · {{ job.campusName }}
@@ -83,7 +90,8 @@ const handleClick = () => { // handleClick：卡片点击事件处理函数
   padding: 14px; /* 统一内边距让内容更舒展 */
   border-radius: 12px; /* 圆角与全站卡片保持一致 */
   background-color: #ffffff; /* 白色背景突出卡片 */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); /* 添加轻微阴影增强层次感 */
+  box-shadow: 0 4px 12px rgba(255, 182, 193, 0.08); /* 使用柔和的玫红色阴影，增强层次感 */
+  border: 1px solid rgba(255, 182, 193, 0.15); /* 添加柔和的玫红色边框 */
   cursor: pointer; /* 鼠标移入时显示手型，提示可点击 */
   transition: transform 0.15s ease, box-shadow 0.15s ease; /* 添加悬停动效 */
 }
@@ -91,7 +99,8 @@ const handleClick = () => { // handleClick：卡片点击事件处理函数
 /* 悬停时略微上移并增强阴影 */
 .parttime-card:hover {
   transform: translateY(-2px); /* 上移 2 像素形成悬浮效果 */
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); /* 阴影加深以强化视觉 */
+  box-shadow: 0 8px 20px rgba(255, 182, 193, 0.15); /* 使用柔和的玫红色阴影，加深以强化视觉 */
+  border-color: rgba(255, 182, 193, 0.25); /* 悬停时边框颜色加深 */
 }
 
 /* 左侧图标区域样式 */
@@ -105,11 +114,11 @@ const handleClick = () => { // handleClick：卡片点击事件处理函数
   width: 46px; /* 固定宽度形成圆形 */
   height: 46px; /* 固定高度形成圆形 */
   border-radius: 50%; /* 将方形变为圆形 */
-  background: linear-gradient(135deg, #f9d0da 0%, #f5b8c9 100%); /* 使用与首页一致的粉色渐变背景 */
+  background: linear-gradient(135deg, rgba(255, 182, 193, 0.3) 0%, rgba(255, 192, 203, 0.25) 100%); /* 使用柔和的玫红色渐变背景，马卡龙风格 */
   display: flex; /* 使用 flex 居中图标 */
   align-items: center; /* 垂直居中图标 */
   justify-content: center; /* 水平居中图标 */
-  color: #d81b60; /* 图标使用主品牌色 */
+  color: #E91E63; /* 使用柔和的玫红色图标 */
   font-size: 20px; /* 图标尺寸适中 */
 }
 
@@ -148,7 +157,7 @@ const handleClick = () => { // handleClick：卡片点击事件处理函数
 .salary-value {
   font-size: 16px; /* 数值稍大更显眼 */
   font-weight: 700; /* 使用粗体强调薪资 */
-  color: #d81b60; /* 使用品牌主色表示关键薪资信息 */
+  color: #E91E63; /* 使用柔和的玫红色表示关键薪资信息 */
 }
 
 /* 薪资单位样式，例如“/小时”、“/天”等 */
@@ -163,12 +172,41 @@ const handleClick = () => { // handleClick：卡片点击事件处理函数
   justify-content: space-between; /* 公司信息在左，地点信息在右 */
   align-items: center; /* 垂直方向居中对齐 */
   gap: 8px; /* 左右两侧之间保留适当间距 */
+  flex-wrap: wrap; /* 允许换行，避免在小屏幕上拥挤 */
+}
+
+/* 公司信息包装器 - 增加间距，避免元素拥挤 */
+.company-info-wrapper {
+  display: flex; /* 使用 flex 横向排列公司名称和认证标识 */
+  align-items: center; /* 垂直居中对齐 */
+  gap: 8px; /* 公司名称与认证标识之间保留间距 */
+  flex-wrap: wrap; /* 允许换行 */
 }
 
 /* 公司名称样式 */
 .company-name {
   font-size: 13px; /* 使用中等字号显示公司名称 */
   color: #555555; /* 使用略浅的灰色 */
+}
+
+/* 企业认证标识 - 使用柔和玫红色，增大尺寸和间距，避免拥挤 */
+.verified-badge {
+  display: flex; /* 使用 flex 横向排列图标和文字 */
+  align-items: center; /* 垂直居中对齐 */
+  gap: 5px; /* 图标与文字之间保留间距 */
+  padding: 4px 12px; /* 内边距，让标识更舒展 */
+  background: linear-gradient(135deg, rgba(255, 182, 193, 0.25) 0%, rgba(255, 192, 203, 0.2) 100%); /* 使用柔和的玫红色渐变背景，马卡龙风格 */
+  border-radius: 14px; /* 圆角设计，更圆润 */
+  font-size: 11px; /* 字体大小适中 */
+  color: #E91E63; /* 使用柔和的玫红色文字，不刺眼 */
+  font-weight: 500; /* 加粗字体，突出重要性 */
+  border: 1.5px solid rgba(255, 182, 193, 0.4); /* 柔和的玫红色边框 */
+  box-shadow: 0 1px 4px rgba(255, 182, 193, 0.15); /* 柔和的阴影效果 */
+}
+
+/* 认证标识中的图标样式 */
+.verified-badge i {
+  font-size: 12px; /* 图标大小适中 */
 }
 
 /* 地点信息样式 */

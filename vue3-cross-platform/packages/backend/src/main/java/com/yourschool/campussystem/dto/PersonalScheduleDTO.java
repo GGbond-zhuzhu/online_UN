@@ -54,4 +54,12 @@ public class PersonalScheduleDTO {
 
     @Schema(description = "标签", example = "学习")
     private String tag;
+
+    // ==================== 行程系列（Route Series）扩展 ====================
+
+    @Schema(description = "是否为行程系列", example = "false")
+    private Boolean isRouteSeries = false;
+
+    @Schema(description = "行程系列数据（当 isRouteSeries=true 时传）")
+    private RouteSeriesDTO routeSeriesData;
 }

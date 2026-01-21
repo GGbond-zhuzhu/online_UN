@@ -6,7 +6,6 @@ import com.yourschool.campussystem.vo.PersonalScheduleVO;
 import com.yourschool.campussystem.vo.TeamScheduleVO;
 import com.yourschool.campussystem.vo.TeamVO;
 
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -93,6 +92,11 @@ public interface ScheduleService {
      */
     String regenerateTeamInviteCode(Long userId, Long teamId);
 
+    /**
+     * 设置团队管理员（仅创建者可操作，最多4人）
+     */
+    TeamVO setTeamAdmins(Long userId, Long teamId, TeamAdminSetDTO dto);
+
     // ==================== 团队行程管理 ====================
 
     /**
@@ -116,6 +120,17 @@ public interface ScheduleService {
      * 同步团队行程到个人
      */
     PersonalScheduleVO syncTeamToPersonal(Long userId, Long teamScheduleId);
+
+    /**
+     * 批量同步团队行程到指定成员的个人行程表（创建者/管理员）
+     */
+    Map<String, Object> syncTeamScheduleToMembers(Long userId, Long teamId, Long teamScheduleId,
+            TeamSyncMembersDTO dto);
+
+    /**
+     * 将某成员的课程表同步置入到指定成员（创建者/管理员）
+     */
+    Map<String, Object> syncCoursesToMembers(Long userId, Long teamId, TeamCourseSyncDTO dto);
 
     // ==================== 提醒与通知 ====================
 
@@ -151,7 +166,8 @@ public interface ScheduleService {
     /**
      * 导入课程表（Excel）
      */
-    Map<String, Object> importScheduleFromExcel(Long userId, org.springframework.web.multipart.MultipartFile file, String semester, Boolean overwrite);
+    Map<String, Object> importScheduleFromExcel(Long userId, org.springframework.web.multipart.MultipartFile file,
+            String semester, Boolean overwrite);
 
     /**
      * 导出课程表（Excel）

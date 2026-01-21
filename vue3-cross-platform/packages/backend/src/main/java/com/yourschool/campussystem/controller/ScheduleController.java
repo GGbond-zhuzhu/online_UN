@@ -19,8 +19,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/schedule")
@@ -148,12 +152,29 @@ public class ScheduleController {
             HttpServletRequest request,
             @Parameter(description = "团队ID", example = "1", required = true)
             @PathVariable Long teamId,
-
-            @Parameter(description = "被邀请用户ID", example = "3", required = true)
-            @RequestParam Long userId) {
+            @Parameter(description = "被邀请用户ID（兼容旧方式：单个userId）", example = "3")
+            @RequestParam(required = false) Long userId,
+            @Parameter(description = "被邀请用户ID列表（推荐：一次邀请多人）")
+            @RequestBody(required = false) TeamInviteDTO body) {
         Long currentUserId = UserContextUtils.getUserIdRequired(request);
-        scheduleService.inviteTeamMember(currentUserId, teamId, userId);
-        return ApiResponse.success("邀请已发送，等待对方确认");
+
+        List<Long> inviteIds = new ArrayList<>();
+        if (body != null && body.getUserIds() != null) {
+            inviteIds.addAll(body.getUserIds().stream().filter(Objects::nonNull).collect(Collectors.toList()));
+        }
+        if (userId != null) {
+            inviteIds.add(userId);
+        }
+
+        if (inviteIds.isEmpty()) {
+            return ApiResponse.error(400, "请提供被邀请用户ID");
+        }
+
+        // 逐个邀请（内部会做权限/同校等校验）
+        for (Long inviteUserId : inviteIds) {
+            scheduleService.inviteTeamMember(currentUserId, teamId, inviteUserId);
+        }
+        return ApiResponse.success("邀请已发送");
     }
 
     @Operation(summary = "处理团队邀请", description = "处理团队邀请（接受/拒绝）")
@@ -231,6 +252,18 @@ public class ScheduleController {
         return ApiResponse.success("邀请码已重新生成", response);
     }
 
+    @Operation(summary = "设置团队管理员", description = "创建者设置团队管理员（最多4人，默认空）")
+    @PutMapping("/team/{teamId}/admins")
+    public ApiResponse<TeamVO> setTeamAdmins(
+            HttpServletRequest request,
+            @Parameter(description = "团队ID", example = "1", required = true)
+            @PathVariable Long teamId,
+            @Valid @RequestBody TeamAdminSetDTO dto) {
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        TeamVO teamVO = scheduleService.setTeamAdmins(userId, teamId, dto);
+        return ApiResponse.success("管理员设置成功", teamVO);
+    }
+
     // ==================== 团队行程管理 ====================
 
     @Operation(summary = "创建团队行程", description = "创建团队行程，可指定参会人员")
@@ -283,6 +316,40 @@ public class ScheduleController {
         Long userId = UserContextUtils.getUserIdRequired(request);
         PersonalScheduleVO scheduleVO = scheduleService.syncTeamToPersonal(userId, teamScheduleId);
         return ApiResponse.success("团队行程已同步到个人", scheduleVO);
+    }
+
+    @Operation(summary = "同步团队行程到个人（路径参数版本）", description = "将团队行程同步到个人日历，使用路径参数")
+    @PostMapping("/team/sync/{scheduleId}")
+    public ApiResponse<PersonalScheduleVO> syncTeamScheduleToPersonal(
+            HttpServletRequest request,
+            @Parameter(description = "团队行程ID", example = "1", required = true)
+            @PathVariable Long scheduleId) {
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        PersonalScheduleVO scheduleVO = scheduleService.syncTeamToPersonal(userId, scheduleId);
+        return ApiResponse.success("团队行程已同步到个人", scheduleVO);
+    }
+
+    @Operation(summary = "同步团队行程到指定成员（批量）", description = "创建者/管理员选择成员，将团队行程写入成员个人行程表")
+    @PostMapping("/team/{teamId}/sync/team-schedule/{scheduleId}")
+    public ApiResponse<Map<String, Object>> syncTeamScheduleToMembers(
+            HttpServletRequest request,
+            @PathVariable Long teamId,
+            @PathVariable Long scheduleId,
+            @Valid @RequestBody TeamSyncMembersDTO dto) {
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        Map<String, Object> res = scheduleService.syncTeamScheduleToMembers(userId, teamId, scheduleId, dto);
+        return ApiResponse.success("同步完成", res);
+    }
+
+    @Operation(summary = "同步课程表到指定成员（批量）", description = "创建者/管理员选择成员，将某成员课程表复制置入到目标成员")
+    @PostMapping("/team/{teamId}/sync/courses")
+    public ApiResponse<Map<String, Object>> syncCoursesToMembers(
+            HttpServletRequest request,
+            @PathVariable Long teamId,
+            @Valid @RequestBody TeamCourseSyncDTO dto) {
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        Map<String, Object> res = scheduleService.syncCoursesToMembers(userId, teamId, dto);
+        return ApiResponse.success("同步完成", res);
     }
 
     // ==================== 提醒与通知 ====================

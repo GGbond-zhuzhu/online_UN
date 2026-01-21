@@ -41,8 +41,9 @@
         <h4 class="footer-title">快速链接</h4>
         <ul class="footer-links">
           <li><router-link to="/about">平台介绍</router-link></li>
-          <li><router-link to="/university/apply">高校接入申请</router-link></li>
-          <li><router-link to="/help">用户使用指南</router-link></li>
+          <li><router-link to="/auth/university-apply">高校接入申请</router-link></li>
+          <li><router-link to="/help">帮助中心</router-link></li>
+          <li><router-link to="/security">安全保障</router-link></li>
           <li><router-link to="/privacy">隐私政策</router-link></li>
           <li><router-link to="/terms">服务协议</router-link></li>
           <li><router-link to="/feedback">问题反馈</router-link></li>

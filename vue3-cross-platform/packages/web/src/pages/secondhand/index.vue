@@ -31,7 +31,8 @@
         </div>
       </section>
 
-      <!-- 筛选栏（完全对齐HTML的filter-section） -->
+
+      <!-- 快速筛选栏（完全对齐HTML的filter-section） -->
       <section class="filter-section">
         <div class="filter-row">
           <div class="filter-group">
@@ -81,6 +82,37 @@
         </div>
       </section>
 
+      <!-- 排序和价格快捷筛选栏（新增，参考app端） -->
+      <section class="sort-price-bar">
+        <div class="sort-section">
+          <span class="sort-label">排序：</span>
+          <div 
+            v-for="(item, index) in sortOptions" 
+            :key="item.value"
+            class="sort-item"
+            :class="{ active: sortType === item.value }"
+            @click="handleSort(item.value)"
+          >
+            <i :class="item.icon"></i>
+            <span>{{ item.label }}</span>
+          </div>
+        </div>
+        <div class="price-quick-section">
+          <span class="price-label">价格：</span>
+          <div class="price-quick-btns">
+            <div 
+              v-for="(item, index) in priceQuickOptions" 
+              :key="index"
+              class="price-quick-btn"
+              :class="{ active: priceQuickIndex === index }"
+              @click="handlePriceQuick(index, item.min, item.max)"
+            >
+              {{ item.label }}
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- 主要内容区域（完全对齐HTML的main-content） -->
       <div class="main-content">
         <!-- 商品列表区域 -->
@@ -92,15 +124,30 @@
             </h2>
             <!-- 搜索/筛选有结果 -->
             <div v-if="filteredProducts.length > 0" class="recommendation-grid">
-              <div class="product-card" v-for="item in filteredProducts" :key="item.id" @click="goToDetail(item.id)">
+              <div class="product-card" v-for="(item, index) in filteredProducts" :key="item.id" @click="goToDetail(item.id)">
                 <div class="product-image">
-                  <i :class="item.icon"></i>
+                  <img v-if="item.images && item.images.length > 0" :src="item.images[0]" :alt="item.title" />
+                  <i v-else :class="item.icon"></i>
                   <div class="product-tag">{{ item.tag }}</div>
+                  <!-- 新增：热门标签 -->
+                  <div v-if="index < 3" class="hot-badge">
+                    <i class="fas fa-fire"></i>
+                    <span>热门</span>
+                  </div>
+                  <!-- 新增：新上架标签 -->
+                  <div v-if="index % 5 === 0 && index > 0" class="new-badge">
+                    <i class="fas fa-sparkles"></i>
+                    <span>新上架</span>
+                  </div>
+                  <!-- 新增：收藏按钮 -->
+                  <div class="wishlist-btn" @click.stop="toggleFavorite(item.id)">
+                    <i :class="item.isFavorite ? 'fas fa-heart' : 'far fa-heart'" :style="{ color: item.isFavorite ? '#ff6b9d' : '#999' }"></i>
+                  </div>
                 </div>
                 <div class="product-info">
                   <div class="product-title">{{ item.title }}</div>
                   <div class="product-desc">{{ item.desc }}</div>
-                  <div class="product-price">¥{{ item.priceValue }}</div>
+                  <div class="product-price">¥{{ item.priceValue.toFixed(2) }}</div>
                   <div class="seller-info">
                     <div class="seller-avatar"></div>
                     <span>{{ item.seller }}</span>
@@ -135,13 +182,18 @@
             <div class="recommendation-grid">
               <div class="product-card" v-for="item in recommendedProducts" :key="item.id" @click="goToDetail(item.id)">
                 <div class="product-image">
-                  <i :class="item.icon"></i>
+                  <img v-if="item.images && item.images.length > 0" :src="item.images[0]" :alt="item.title" />
+                  <i v-else :class="item.icon"></i>
                   <div class="product-tag">{{ item.tag }}</div>
+                  <!-- 新增：收藏按钮 -->
+                  <div class="wishlist-btn" @click.stop="toggleFavorite(item.id)">
+                    <i :class="item.isFavorite ? 'fas fa-heart' : 'far fa-heart'" :style="{ color: item.isFavorite ? '#ff6b9d' : '#999' }"></i>
+                  </div>
                 </div>
                 <div class="product-info">
                   <div class="product-title">{{ item.title }}</div>
                   <div class="product-desc">{{ item.desc }}</div>
-                  <div class="product-price">¥{{ item.priceValue }}</div>
+                  <div class="product-price">¥{{ item.priceValue.toFixed(2) }}</div>
                   <div class="seller-info">
                     <div class="seller-avatar"></div>
                     <span>{{ item.seller }}</span>
@@ -160,19 +212,58 @@
           </div>
         </div>
 
-        <!-- 侧边栏（完全对齐HTML的sidebar） -->
-        <div class="sidebar">
+        <!-- 侧边栏（现代化设计，整合特色标签） -->
+        <aside class="sidebar">
+          <!-- 特色标签区域（移到侧边栏顶部） -->
+          <div class="sidebar-widget featured-tags-widget">
+            <h3 class="widget-title">
+              <i class="fas fa-tags"></i>
+              特色分类
+            </h3>
+            <div class="tags-grid">
+              <div 
+                v-for="(tag, index) in featuredTags" 
+                :key="index"
+                class="featured-tag-card"
+                :style="{ background: tag.color }"
+                @click="handleTagClick(tag.value)"
+              >
+                <div class="tag-icon">
+                  <i :class="tag.icon"></i>
+                </div>
+                <span class="tag-label">{{ tag.label }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 热门分类 -->
           <div class="sidebar-widget">
-            <h3 class="widget-title">热门分类</h3>
+            <h3 class="widget-title">
+              <i class="fas fa-fire"></i>
+              热门分类
+            </h3>
             <ul class="category-list">
-              <li class="category-item" v-for="item in hotCategories" :key="item.key" @click="filterByCategory(item.key)">{{ item.name }}</li>
+              <li 
+                class="category-item" 
+                v-for="item in hotCategories" 
+                :key="item.key" 
+                :class="{ active: filters.category === item.key }"
+                @click="filterByCategory(item.key)"
+              >
+                <i class="fas fa-chevron-right"></i>
+                {{ item.name }}
+              </li>
             </ul>
           </div>
 
+          <!-- 快捷操作 -->
           <div class="sidebar-widget">
-            <h3 class="widget-title">快捷操作</h3>
+            <h3 class="widget-title">
+              <i class="fas fa-bolt"></i>
+              快捷操作
+            </h3>
             <div class="quick-action">
-              <a href="#" @click.prevent="handleQuick('publish')" class="action-button">
+              <a href="#" @click.prevent="handleQuick('publish')" class="action-button primary">
                 <i class="fas fa-plus-circle"></i>
                 <span>发布闲置</span>
               </a>
@@ -191,15 +282,27 @@
             </div>
           </div>
 
-          <div class="sidebar-widget">
-            <h3 class="widget-title">交易提示</h3>
+          <!-- 交易提示 -->
+          <div class="sidebar-widget tips-widget">
+            <h3 class="widget-title">
+              <i class="fas fa-shield-alt"></i>
+              交易提示
+            </h3>
             <div class="safety-tips">
-              <p v-for="(item, idx) in tips" :key="idx">{{ idx + 1 }}. {{ item }}</p>
+              <div class="tip-item" v-for="(item, idx) in tips" :key="idx">
+                <i class="fas fa-check-circle"></i>
+                <span>{{ item }}</span>
+              </div>
             </div>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
+
+    <!-- 发布闲置：改为弹窗，不再跳转到独立发布页面 -->
+    <AppModal :visible="showPublishModal" title="发布闲置" @close="closePublishModal">
+      <SecondhandPublish :embedded="true" @close="closePublishModal" />
+    </AppModal>
 
     <!-- 页脚（完全对齐HTML的footer） -->
     <footer class="footer">
@@ -239,15 +342,34 @@
 
 <script setup lang="ts">
 // 引入Vue的响应式和生命周期方法
-import { reactive, ref, computed, onMounted, onBeforeUnmount } from 'vue' // 增加 onBeforeUnmount 用于移除滚动监听
-import { useRouter } from 'vue-router'
+import { reactive, ref, computed, onMounted, onBeforeUnmount, watch } from 'vue' // 增加 onBeforeUnmount 用于移除滚动监听
+import { useRouter, useRoute } from 'vue-router'
 import NavBar from '@/components/common/NavBar.vue'
 import FloatingMenu from '@/components/common/FloatingMenu.vue'
+import AppModal from '@/components/common/AppModal.vue'
+import SecondhandPublish from './publish/index.vue'
 import { getGoodsList } from '@campus/common'
 // 通过命名空间方式引入格式化工具，避免浏览器对命名导出做严格校验导致运行时 SyntaxError
 import * as formatUtils from '@campus/common/utils/format' // 其中包含 getRandomRecommendList 等工具函数
 
 const router = useRouter()
+const route = useRoute()
+
+// 发布弹窗（替代原“发布闲置页面”）
+const showPublishModal = ref(false)
+const openPublishModal = () => {
+  showPublishModal.value = true
+}
+const closePublishModal = () => {
+  showPublishModal.value = false
+  if (route.query.publish) {
+    const nextQuery: Record<string, any> = { ...route.query }
+    delete nextQuery.publish
+    delete nextQuery.id
+    router.replace({ path: route.path, query: nextQuery })
+  }
+}
+
 const loading = ref(false)
 // 当前分页页码（用于“滑到底自动加载下一页”）
 const currentPage = ref(1)
@@ -265,6 +387,35 @@ const filters = reactive({
   campus: 'all',
   search: ''
 })
+
+// 特色标签配置（参考app端）
+const featuredTags = ref([
+  { label: '教材特惠', value: 'books_sale', icon: 'fas fa-book', color: '#FFB6C1' },
+  { label: '数码精选', value: 'digital_best', icon: 'fas fa-laptop', color: '#B0E0E6' },
+  { label: '服饰清仓', value: 'clothing_clear', icon: 'fas fa-tshirt', color: '#FFF8DC' },
+  { label: '生活好物', value: 'daily_goods', icon: 'fas fa-home', color: '#98FB98' },
+  { label: '运动装备', value: 'sports_gear', icon: 'fas fa-running', color: '#DDA0DD' },
+  { label: '急出专区', value: 'urgent_sale', icon: 'fas fa-bolt', color: '#FFE4B5' }
+])
+
+// 排序选项（新增）
+const sortType = ref('default')
+const sortOptions = ref([
+  { label: '默认', value: 'default', icon: 'fas fa-list' },
+  { label: '价格', value: 'price', icon: 'fas fa-dollar-sign' },
+  { label: '最新', value: 'time', icon: 'fas fa-clock' },
+  { label: '热度', value: 'hot', icon: 'fas fa-fire' }
+])
+
+// 价格快捷筛选选项（新增）
+const priceQuickIndex = ref(-1)
+const priceQuickOptions = ref([
+  { label: '50以下', min: 0, max: 50 },
+  { label: '50-100', min: 50, max: 100 },
+  { label: '100-200', min: 100, max: 200 },
+  { label: '200-500', min: 200, max: 500 },
+  { label: '500以上', min: 500, max: 999999 }
+])
 
 // 所有商品数据（列表，用于后续筛选与随机推荐，初始为空，真正的数据全部来自后端接口）
 const allProducts = ref<any[]>([])
@@ -301,6 +452,7 @@ const hasSearchOrFilter = computed(() => {
 })
 
 // 搜索/筛选结果（根据筛选条件从全部商品中筛选出匹配的结果）
+// 注意：排序现在由后端处理，这里只做前端筛选
 const filteredProducts = computed(() => {
   return allProducts.value.filter(product => {
     // 品类筛选
@@ -452,6 +604,21 @@ const loadGoods = async (reset = false) => {
       params.maxPrice = Number(filters.priceMax)
     }
     
+    // 添加排序参数（新增）
+    if (sortType.value === 'price') {
+      params.sortBy = 'price'
+      params.sortOrder = 'ASC' // 价格从低到高
+    } else if (sortType.value === 'time') {
+      params.sortBy = 'publishTime'
+      params.sortOrder = 'DESC' // 最新发布
+    } else if (sortType.value === 'hot') {
+      params.sortBy = 'hot'
+      params.sortOrder = 'DESC' // 热度从高到低
+    } else {
+      params.sortBy = 'publishTime'
+      params.sortOrder = 'DESC' // 默认按发布时间倒序
+    }
+    
     const result = await getGoodsList(params) // 调用公共包中的接口获取分页结果
     
     // 兼容 records 和 list 两种字段，防止为 undefined
@@ -496,7 +663,8 @@ const loadGoods = async (reset = false) => {
         condition: '90', // 默认成色
         campus: 'main', // 默认校区
         // 后端字段是 imageUrls，这里做兼容
-        images: item.imageUrls || item.images || []
+        images: item.imageUrls || item.images || [],
+        isFavorite: false // 收藏状态（新增字段）
       }
     })
 
@@ -586,12 +754,54 @@ const handleReset = () => {
   filters.priceMax = ''
   filters.campus = 'all'
   filters.search = ''
+  sortType.value = 'default'
+  priceQuickIndex.value = -1
   loadGoods(true)
 }
 
 // 按分类筛选
 const filterByCategory = (categoryKey: string) => {
   filters.category = categoryKey
+  handleFilter()
+}
+
+// 特色标签点击处理（新增）
+const handleTagClick = (tagValue: string) => {
+  const tagMap: Record<string, string> = {
+    'books_sale': 'books',
+    'digital_best': 'digital',
+    'clothing_clear': 'clothing',
+    'daily_goods': 'daily',
+    'sports_gear': 'sports',
+    'urgent_sale': 'all'
+  }
+  const category = tagMap[tagValue] || 'all'
+  filters.category = category
+  handleFilter()
+}
+
+// 处理排序（新增）
+const handleSort = (value: string) => {
+  sortType.value = value
+  // 排序由后端处理，需要重新加载数据
+  loadGoods(true)
+}
+
+// 处理价格快捷筛选（新增）
+const handlePriceQuick = (index: number, min: number, max: number) => {
+  if (priceQuickIndex.value === index) {
+    // 如果点击的是已选中的，则取消筛选
+    priceQuickIndex.value = -1
+    filters.priceMin = ''
+    filters.priceMax = ''
+  } else {
+    // 设置新的价格区间
+    priceQuickIndex.value = index
+    filters.priceMin = min.toString()
+    filters.priceMax = max === 999999 ? '' : max.toString()
+  }
+  // 触发筛选
+  handleFilter()
 }
 
 // 跳转到商品详情页
@@ -615,10 +825,10 @@ onBeforeUnmount(() => {
 const handleQuick = (type: string) => {
   switch (type) {
     case 'publish':
-      router.push('/secondhand/publish')
+      openPublishModal()
       break
     case 'message':
-      router.push('/secondhand/messages')
+      router.push('/messages')
       break
     case 'history':
       router.push('/secondhand/history')
@@ -631,18 +841,50 @@ const handleQuick = (type: string) => {
       break
   }
 }
+
+// 兼容旧路由：/secondhand/publish -> /secondhand?publish=1（由路由表 redirect 触发）
+watch(
+  () => route.query.publish,
+  (val) => {
+    const v = Array.isArray(val) ? val[0] : val
+    if (v === '1') {
+      openPublishModal()
+    }
+  },
+  { immediate: true }
+)
+
+// 切换收藏状态（新增功能）
+const toggleFavorite = async (id: number) => {
+  const item = allProducts.value.find(p => p.id === id)
+  if (item) {
+    try {
+      // 这里应该调用API保存收藏状态，暂时先本地更新
+      item.isFavorite = !item.isFavorite
+      // TODO: 调用收藏API
+      // if (item.isFavorite) {
+      //   await collectGoods(id)
+      // } else {
+      //   await uncollectGoods(id)
+      // }
+    } catch (error) {
+      console.error('收藏操作失败:', error)
+      item.isFavorite = !item.isFavorite // 回滚状态
+    }
+  }
+}
 </script>
 
 <!-- 完全复用HTML的样式，解决scoped变量问题 -->
 <style scoped>
-/* 基础布局 - 完全对齐HTML的全局样式 */
+/* 基础布局 - 使用柔和的马卡龙渐变背景 */
 .secondhand-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
-  color: #333;
+  background: linear-gradient(135deg, #FFF0F5 0%, #F0F8FF 100%); /* 柔和的粉色到淡蓝色渐变，参考闲鱼等平台 */
+  color: #333333; /* 深色文字，确保清晰可读 */
   line-height: 1.6;
   /* 在页面根容器上设置默认字体，避免使用 * 选择器覆盖 Font Awesome 图标的字体 */
-  font-family: 'Arial', 'Microsoft YaHei', sans-serif;
+  font-family: 'Arial', 'Microsoft YaHei', 'PingFang SC', sans-serif; /* 添加中文字体 */
 }
 
 * {
@@ -671,13 +913,13 @@ li {
   padding: 0 15px;
 }
 
-/* 搜索栏样式 - 适配全局#d81b60主色 */
+/* 搜索栏样式 - 使用柔和的玫红色主色 */
 .search-bar-section {
   background: white;
   border-radius: 12px;
   padding: 15px 20px;
   margin: 20px 0;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 15px rgba(255, 107, 157, 0.12); /* 使用柔和的玫红色阴影 */
 }
 
 .search-container {
@@ -696,16 +938,17 @@ li {
 .search-input {
   width: 100%;
   padding: 12px 15px 12px 20px;
-  border: 2px solid #d81b60 !important;
+  border: 2px solid #FF6B9D !important; /* 使用柔和的玫红色边框 */
   border-radius: 25px;
   font-size: 16px;
   outline: none;
-  box-shadow: 0 2px 5px rgba(216, 27, 96, 0.2);
-  color: #333;
+  box-shadow: 0 2px 5px rgba(255, 107, 157, 0.15); /* 使用柔和的玫红色阴影 */
+  color: #333333; /* 深色文字，确保清晰可读 */
+  font-weight: 400; /* 常规字重 */
 }
 
 .search-input::placeholder {
-  color: #666;
+  color: #666666; /* 中等灰色，确保对比度 */
   opacity: 0.8;
 }
 
@@ -714,7 +957,7 @@ li {
   right: 15px;
   top: 50%;
   transform: translateY(-50%);
-  color: #d81b60 !important;
+  color: #FF6B9D !important; /* 使用柔和的玫红色 */
   font-size: 18px;
   cursor: pointer;
 }
@@ -739,12 +982,146 @@ li {
 }
 
 .action-btn:hover {
-  background: #f9f0ff;
-  color: #d81b60 !important;
+  background: rgba(255, 107, 157, 0.1); /* 使用柔和的玫红色背景 */
+  color: #FF6B9D !important; /* 使用柔和的玫红色 */
 }
 
 .action-btn i {
   margin-right: 5px;
+}
+
+/* 特色标签区域（移到侧边栏中） */
+.featured-tags-widget {
+  margin-bottom: 24px;
+}
+
+.tags-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.featured-tag-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px 12px;
+  border-radius: 12px;
+  color: white;
+  font-size: 13px;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s;
+  cursor: pointer;
+  text-align: center;
+  min-height: 90px;
+}
+
+.featured-tag-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.tag-icon {
+  font-size: 24px;
+  margin-bottom: 4px;
+}
+
+.tag-label {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* 排序和价格快捷筛选栏（新增） */
+.sort-price-bar {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.sort-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.sort-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.sort-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #F5F5F5;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #666;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.sort-item:hover {
+  background: #e0e0e0;
+}
+
+.sort-item.active {
+  background: linear-gradient(135deg, #FF6B9D 0%, #FF8FB3 100%); /* 使用柔和的玫红色渐变 */
+  color: #FFFFFF; /* 白色文字，确保对比度 */
+  font-weight: 600; /* 加粗字体，提升可读性 */
+}
+
+.sort-item i {
+  font-size: 12px;
+}
+
+.price-quick-section {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.price-label {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.price-quick-btns {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.price-quick-btn {
+  padding: 8px 16px;
+  background: #F5F5F5;
+  border-radius: 20px;
+  font-size: 14px;
+  color: #666;
+  transition: all 0.3s;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.price-quick-btn:hover {
+  background: #e0e0e0;
+}
+
+.price-quick-btn.active {
+  background: linear-gradient(135deg, #FF6B9D 0%, #FF8FB3 100%); /* 使用柔和的玫红色渐变 */
+  color: #FFFFFF; /* 白色文字，确保对比度 */
+  font-weight: 600; /* 加粗字体，提升可读性 */
 }
 
 /* 筛选栏 - 100%复用HTML样式 */
@@ -802,20 +1179,21 @@ li {
 }
 
 .confirm-btn {
-  background: #d81b60 !important;
-  color: white !important;
+  background: linear-gradient(135deg, #FF6B9D 0%, #FF8FB3 100%) !important; /* 使用柔和的玫红色渐变 */
+  color: #FFFFFF !important; /* 白色文字，确保对比度 */
   border: none;
   padding: 10px 20px;
   border-radius: 6px;
   font-size: 14px;
+  font-weight: 600; /* 加粗字体，提升可读性 */
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .confirm-btn:hover {
-  background: #c2185b !important;
+  background: linear-gradient(135deg, #E91E63 0%, #FF6B9D 100%) !important; /* 悬停时稍深一点 */
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(216, 27, 96, 0.3);
+  box-shadow: 0 4px 10px rgba(255, 107, 157, 0.3); /* 使用柔和的玫红色阴影 */
 }
 
 .reset-btn {
@@ -872,7 +1250,7 @@ li {
 }
 
 .section-title i {
-  color: #d81b60 !important;
+  color: #FF6B9D !important; /* 使用柔和的玫红色 */
   margin-right: 8px;
 }
 
@@ -882,15 +1260,16 @@ li {
   padding: 4px 10px;
   font-size: 12px;
   border-radius: 12px;
-  border: 1px solid #d81b60;
+  border: 1px solid #FF6B9D; /* 使用柔和的玫红色边框 */
   background: #fff;
-  color: #d81b60;
+  color: #FF6B9D; /* 使用柔和的玫红色 */
   cursor: pointer;
   transition: all 0.2s;
+  font-weight: 500; /* 中等字重 */
 }
 
 .refresh-btn:hover {
-  background: #d81b60;
+  background: #FF6B9D; /* 使用柔和的玫红色背景 */
   color: #fff;
 }
 
@@ -912,7 +1291,7 @@ li {
 
 .product-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(216, 27, 96, 0.2);
+  box-shadow: 0 5px 15px rgba(255, 107, 157, 0.2); /* 使用柔和的玫红色阴影 */
 }
 
 .product-image {
@@ -922,11 +1301,100 @@ li {
   align-items: center;
   justify-content: center;
   position: relative;
+  overflow: hidden;
+}
+
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .product-image i {
   font-size: 50px;
-  color: #d81b60 !important;
+  color: #FF6B9D !important; /* 使用柔和的玫红色 */
+}
+
+/* 新增：热门标签样式 */
+.hot-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: #FFE4B5;
+  color: #FF8C00;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(255, 140, 0, 0.3);
+}
+
+.hot-badge i {
+  font-size: 10px;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* 新增：新上架标签样式 */
+.new-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: #DDA0DD;
+  color: #8B008B;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 2;
+  box-shadow: 0 2px 6px rgba(221, 160, 221, 0.4);
+}
+
+.new-badge i {
+  font-size: 10px;
+  animation: sparkle 1.5s infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.2) rotate(180deg); }
+}
+
+/* 新增：收藏按钮样式 */
+.wishlist-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FF6B9D; /* 使用柔和的玫红色 */
+  font-size: 16px;
+  box-shadow: 0 2px 8px rgba(255, 107, 157, 0.25); /* 使用柔和的玫红色阴影 */
+  transition: all 0.3s;
+  z-index: 3;
+  cursor: pointer;
+}
+
+.wishlist-btn:hover {
+  background: #FF6B9D; /* 使用柔和的玫红色背景 */
+  color: white;
+  transform: scale(1.1);
 }
 
 .product-info {
@@ -951,18 +1419,20 @@ li {
 .product-price {
   font-size: 16px;
   font-weight: bold;
-  color: #d81b60 !important;
+  color: #E91E63 !important; /* 使用深一点的玫红色，确保价格清晰可见 */
+  letter-spacing: 0.3px; /* 增加字间距，提升可读性 */
 }
 
 .product-tag {
   position: absolute;
   top: 5px;
   right: 5px;
-  background: #d81b60 !important;
+  background: #FF6B9D !important; /* 使用柔和的玫红色 */
   color: white !important;
   padding: 2px 8px;
   border-radius: 10px;
   font-size: 12px;
+  font-weight: 600; /* 加粗字体，提升可读性 */
 }
 
 .seller-info {
@@ -1004,7 +1474,7 @@ li {
 
 .no-results i {
   font-size: 60px;
-  color: #d81b60 !important;
+  color: #FF6B9D !important; /* 使用柔和的玫红色 */
   margin-bottom: 20px;
 }
 
@@ -1019,47 +1489,108 @@ li {
   margin-bottom: 20px;
 }
 
-/* 侧边栏 - 100%复用HTML样式 */
+/* 侧边栏 - 现代化设计 */
 .sidebar {
-  width: 300px;
+  width: 280px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 20px;
+  align-self: flex-start;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #FF6B9D; /* 使用柔和的玫红色 */
+  border-radius: 3px;
 }
 
 .sidebar-widget {
   background: white;
-  border-radius: 10px;
+  border-radius: 16px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  transition: box-shadow 0.3s;
+}
+
+.sidebar-widget:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 .widget-title {
   font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
-  color: #d81b60 !important;
+  font-weight: 600;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #f1f5f9;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
+.widget-title i {
+  color: #FF6B9D; /* 使用柔和的玫红色 */
+  font-size: 18px;
+}
+
+/* 分类列表 */
 .category-list {
   list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .category-item {
-  padding: 8px 0;
-  border-bottom: 1px solid #f5f5f5;
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  margin-bottom: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: color 0.3s;
+  transition: all 0.2s;
+  color: #64748b;
+  font-size: 14px;
+  position: relative;
+}
+
+.category-item i {
+  font-size: 10px;
+  margin-right: 8px;
+  color: #94a3b8;
+  transition: all 0.2s;
 }
 
 .category-item:hover {
-  color: #d81b60 !important;
+  background: rgba(255, 107, 157, 0.1); /* 使用柔和的玫红色背景 */
+  color: #FF6B9D; /* 使用柔和的玫红色 */
+  transform: translateX(4px);
+}
+
+.category-item:hover i {
+  color: #FF6B9D; /* 使用柔和的玫红色 */
+}
+
+.category-item.active {
+  background: linear-gradient(135deg, #FFE5F1 0%, #FFB3D1 100%); /* 使用柔和的玫红色渐变 */
+  color: #E91E63; /* 使用深一点的玫红色，确保对比度 */
+  font-weight: 600;
+}
+
+.category-item.active i {
+  color: #E91E63; /* 使用深一点的玫红色 */
 }
 
 .category-item:last-child {
-  border-bottom: none;
+  margin-bottom: 0;
 }
 
+/* 快捷操作 */
 .quick-action {
   display: flex;
   flex-direction: column;
@@ -1069,28 +1600,79 @@ li {
 .action-button {
   display: flex;
   align-items: center;
-  padding: 12px 15px;
-  background: #f5f5f5 !important;
-  border-radius: 8px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s;
-  color: #444 !important;
+  color: #475569;
+  font-size: 14px;
+  font-weight: 500;
+  border: 2px solid transparent;
 }
 
-.action-button:hover {
-  background: #f9f0ff !important;
-  color: #d81b60 !important;
+.action-button.primary {
+  background: linear-gradient(135deg, #FF6B9D 0%, #FF8FB3 100%); /* 使用柔和的玫红色渐变 */
+  color: white;
+  box-shadow: 0 2px 8px rgba(255, 107, 157, 0.25); /* 使用柔和的玫红色阴影 */
+  font-weight: 600; /* 加粗字体，提升可读性 */
+}
+
+.action-button.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.35); /* 使用柔和的玫红色阴影 */
+}
+
+.action-button:not(.primary):hover {
+  background: rgba(255, 107, 157, 0.1); /* 使用柔和的玫红色背景 */
+  border-color: #FFB3D1; /* 使用柔和的玫红色边框 */
+  color: #FF6B9D; /* 使用柔和的玫红色 */
+  transform: translateX(4px);
 }
 
 .action-button i {
   margin-right: 10px;
-  font-size: 18px;
+  font-size: 16px;
+  width: 20px;
+  text-align: center;
 }
 
-.safety-tips p {
-  color: #666;
-  line-height: 1.6;
-  margin-bottom: 8px;
+/* 交易提示 */
+.tips-widget {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-left: 4px solid #f59e0b;
+}
+
+.tips-widget .widget-title {
+  color: #92400e;
+  border-bottom-color: rgba(245, 158, 11, 0.2);
+}
+
+.tips-widget .widget-title i {
+  color: #f59e0b;
+}
+
+.safety-tips {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  color: #78350f;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.tip-item i {
+  color: #f59e0b;
+  margin-top: 2px;
+  flex-shrink: 0;
+  font-size: 14px;
 }
 
 /* 页脚 - 100%复用HTML样式 */
@@ -1117,7 +1699,7 @@ li {
 .footer-logo {
   font-size: 24px;
   font-weight: bold;
-  color: #d81b60 !important;
+  color: #FF6B9D !important; /* 使用柔和的玫红色 */
   margin-bottom: 15px;
 }
 
@@ -1129,7 +1711,7 @@ li {
 }
 
 .footer-links a:hover {
-  color: #d81b60 !important;
+  color: #FF6B9D !important; /* 使用柔和的玫红色 */
 }
 
 .contact-info {
@@ -1169,6 +1751,12 @@ li {
 
   .sidebar {
     width: 100%;
+    position: static;
+    max-height: none;
+  }
+
+  .tags-grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 
   .recommendation-grid {

@@ -2,26 +2,36 @@
 
 ## 📋 接口总览
 
-根据参考网页设计和业务需求，系统共包含 **11个Controller**，**136个API接口**。
+根据参考网页设计和业务需求，系统共包含 **15个Controller**，**155个API接口**。
+
+### 在线接口文档（Knife4j / OpenAPI）
+
+- Knife4j 文档首页：`http://localhost:8080/doc.html`
+- OpenAPI JSON：`http://localhost:8080/v3/api-docs`
 
 ### 接口统计
 
 | Controller | 接口数量 | 说明 |
 |-----------|---------|------|
 | UserController | 6个 | 用户注册、登录、信息管理 |
-| AuthController | 9个 | 身份认证（学生/教师/游客/高校/邮箱登录） |
+| AuthController | 11个 | 身份认证（学生/教师/游客/高校/邮箱登录/密码重置） |
 | EcardController | 12个 | 校园卡管理、消费、人脸支付 |
 | SecondhandController | 16个 | 二手交易平台（含浏览记录） |
 | ParttimeController | 20个 | 兼职管理（含收藏和浏览记录） |
 | ScheduleController | 23个 | 行程管理、团队协作、课程表导入、提醒管理 |
 | CommonController | 15个 | 通用功能（帮助、公告、反馈等） |
 | AdminController | 11个 | 管理员功能 |
-| MerchantController | 8个 | 商户管理 |
-| UniversityController | 10个 | 高校管理（高校角色专用） |
-| MessageController | 3个 | 消息中心管理 |
-| ChatController | 3个 | 聊天功能 |
+| MerchantController | 9个 | 商户管理 |
+| UniversityController | 24个 | 高校管理（高校角色专用，包含学生/教师信息管理） |
+| MessageController | 4个 | 消息中心管理 |
+| ChatController | 4个 | 聊天功能 |
+| AccountBookController | 7个 | 记账本管理（E卡通扩展功能） |
+| DietRecordController | 7个 | 饮食记录管理（E卡通扩展功能） |
+| MapController | 3个 | 地图服务（高德地图API集成） |
 
-**总计：136个API接口**
+**总计：155个API接口**
+
+> **注意**: 接口数量统计基于实际Controller代码，如有新增接口，请同步更新本文档。
 
 ---
 
@@ -48,6 +58,7 @@
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
+| POST | `/student/face-detect` | 学生刷脸活体检测 |
 | POST | `/student/apply` | 学生身份认证申请（学号+验证码） |
 | POST | `/teacher/apply` | 教师身份认证申请 |
 | POST | `/visitor/face-detect` | 游客刷脸活体检测 |
@@ -57,6 +68,8 @@
 | GET | `/apply/records` | 获取认证申请记录 |
 | POST | `/email/send-code` | 发送邮箱验证码（用于邮箱登录） |
 | POST | `/email/login` | 邮箱登录（使用邮箱和验证码） |
+| POST | `/password/reset/send-code` | 发送重置密码邮箱验证码 |
+| POST | `/password/reset/confirm` | 通过邮箱验证码重置密码 |
 
 ---
 
@@ -64,21 +77,290 @@
 
 **基础路径**: `/api/ecard`
 
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/info` | 获取校园卡信息 |
-| POST | `/consume` | 校园卡消费 |
-| GET | `/consume-records` | 查询消费记录（分页） |
-| POST | `/visitor-card/apply` | 申请游客临时卡 |
-| POST | `/report-loss` | 校园卡挂失 |
-| POST | `/cancel-loss` | 校园卡解挂 |
-| GET | `/check-location` | 校验定位是否在校内 |
-| GET | `/today-statistics` | 获取今日消费统计 |
-| POST | `/recharge` | 充值校园卡 |
-| POST | `/face-pay` | 人脸支付（新功能） |
-| GET | `/dynamic-code` | 生成动态学生码 |
-| POST | `/access-control` | 门禁系统对接 |
-| POST | `/library` | 图书馆系统对接 |
+#### 3.1 获取校园卡信息
+**接口**: `GET /api/ecard/info`
+
+**描述**: 获取当前用户的校园卡基本信息、余额、状态等
+
+**请求参数**: 无（从请求头获取用户身份）
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "查询成功",
+  "data": {
+    "cardNo": "2024001234",
+    "userId": 123,
+    "userName": "张同学",
+    "balance": 150.50,
+    "status": "NORMAL",
+    "isVisitorCard": false,
+    "visitorExpireTime": null,
+    "todayConsumeCount": 3,
+    "todayConsumeAmount": 45.50,
+    "lastConsumeTime": "2024-01-15 12:30:00",
+    "createTime": "2024-01-01 00:00:00"
+  }
+}
+```
+
+#### 3.2 校园卡消费
+**接口**: `POST /api/ecard/consume`
+
+**描述**: 使用校园卡进行消费扣款，需要验证定位是否在校内
+
+**请求体**:
+```json
+{
+  "amount": 15.50,
+  "merchantId": "M001",
+  "merchantName": "第一食堂",
+  "consumeType": "CANTEEN",
+  "description": "午餐",
+  "longitude": 116.397128,
+  "latitude": 39.916527
+}
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "消费成功",
+  "data": {
+    "id": 1001,
+    "cardNo": "2024001234",
+    "amount": 15.50,
+    "balanceAfter": 135.00,
+    "merchantId": "M001",
+    "merchantName": "第一食堂",
+    "consumeType": "CANTEEN",
+    "description": "午餐",
+    "isInCampus": true,
+    "consumeTime": "2024-01-15 12:30:00"
+  }
+}
+```
+
+#### 3.3 查询消费记录
+**接口**: `GET /api/ecard/consume-records`
+
+**描述**: 分页查询校园卡消费记录，支持时间范围筛选
+
+**查询参数**:
+- `startDate` (String, 可选) - 开始时间（yyyy-MM-dd），例如: "2024-01-01"
+- `endDate` (String, 可选) - 结束时间（yyyy-MM-dd），例如: "2024-12-31"
+- `consumeType` (String, 可选) - 消费类型筛选，例如: "CANTEEN"
+- `page` (Integer, 默认1) - 页码
+- `size` (Integer, 默认10) - 每页大小
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "查询成功",
+  "data": {
+    "records": [
+      {
+        "id": 1001,
+        "cardNo": "2024001234",
+        "amount": 15.50,
+        "balanceAfter": 135.00,
+        "merchantName": "第一食堂",
+        "consumeType": "CANTEEN",
+        "consumeTime": "2024-01-15 12:30:00"
+      }
+    ],
+    "page": 1,
+    "size": 10,
+    "total": 50,
+    "totalAmount": 450.00
+  }
+}
+```
+
+#### 3.4 申请游客临时卡
+**接口**: `POST /api/ecard/visitor-card/apply`
+
+**描述**: 游客在校外申请临时校园卡，需提供身份信息和定位
+
+**请求体**:
+```json
+{
+  "name": "李游客",
+  "idCard": "110101199001011234",
+  "phone": "13800138000",
+  "purpose": "参观校园",
+  "expectedLeaveDate": "2024-01-20",
+  "longitude": 116.397128,
+  "latitude": 39.916527
+}
+```
+
+**响应**: 返回游客卡信息，有效期7天
+
+#### 3.5 校园卡挂失
+**接口**: `POST /api/ecard/report-loss`
+
+**描述**: 挂失校园卡，挂失后卡片将无法使用
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "校园卡挂失成功，请及时到卡务中心办理补卡",
+  "data": null
+}
+```
+
+#### 3.6 校园卡解挂
+**接口**: `POST /api/ecard/cancel-loss`
+
+**描述**: 解挂已挂失的校园卡，恢复使用
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "校园卡解挂成功，卡片已恢复正常使用",
+  "data": null
+}
+```
+
+#### 3.7 校验定位是否在校内
+**接口**: `GET /api/ecard/check-location`
+
+**描述**: 根据经纬度判断是否在校内范围
+
+**查询参数**:
+- `longitude` (Double, 必填) - 经度，例如: 116.397128
+- `latitude` (Double, 必填) - 纬度，例如: 39.916527
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "定位校验完成",
+  "data": {
+    "longitude": 116.397128,
+    "latitude": 39.916527,
+    "isInCampus": true,
+    "message": "当前位置在校内范围内，可正常使用校园卡"
+  }
+}
+```
+
+#### 3.8 获取今日消费统计
+**接口**: `GET /api/ecard/today-statistics`
+
+**描述**: 获取今日消费次数和总额统计
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "查询成功",
+  "data": {
+    "consumeCount": 3,
+    "consumeAmount": 45.50,
+    "averageConsume": 15.17,
+    "mostFrequentType": "CANTEEN",
+    "mostFrequentCount": 2
+  }
+}
+```
+
+#### 3.9 充值校园卡
+**接口**: `POST /api/ecard/recharge`
+
+**描述**: 为校园卡充值（模拟充值，开发测试用）
+
+**查询参数**:
+- `amount` (BigDecimal, 必填) - 充值金额（元），例如: 100.00
+
+**响应**: 返回充值后的校园卡信息
+
+#### 3.10 人脸支付
+**接口**: `POST /api/ecard/face-pay`
+
+**描述**: 使用人脸识别进行校园卡支付
+
+**请求参数**:
+- `faceImage` (String, 必填) - 人脸照片（Base64编码）
+- `amount` (BigDecimal, 必填) - 消费金额
+- `merchantId` (String, 必填) - 商户ID
+- `merchantName` (String, 必填) - 商户名称
+- `consumeType` (ConsumeTypeEnum, 必填) - 消费类型
+- `longitude` (Double, 可选) - 经度
+- `latitude` (Double, 可选) - 纬度
+
+**响应**: 返回消费记录，payMethod字段为"FACE"
+
+#### 3.11 生成动态学生码
+**接口**: `GET /api/ecard/dynamic-code`
+
+**描述**: 生成用于门禁、图书馆等系统的动态学生码（二维码）
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "动态码生成成功",
+  "data": {
+    "code": "ABC123XYZ789",
+    "qrCodeUrl": "https://example.com/qrcode/ABC123XYZ789",
+    "expireTime": 300,
+    "message": "动态码5分钟内有效"
+  }
+}
+```
+
+#### 3.12 门禁系统对接
+**接口**: `POST /api/ecard/access-control`
+
+**描述**: 使用动态学生码通过门禁系统
+
+**请求参数**:
+- `dynamicCode` (String, 必填) - 动态码
+- `location` (String, 必填) - 门禁位置
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "门禁验证成功",
+  "data": {
+    "success": true,
+    "location": "教学楼A座",
+    "accessTime": "2024-01-15T12:30:00",
+    "message": "门禁验证成功，已开门"
+  }
+}
+```
+
+#### 3.13 图书馆系统对接
+**接口**: `POST /api/ecard/library`
+
+**描述**: 使用动态学生码在图书馆系统进行操作
+
+**请求参数**:
+- `dynamicCode` (String, 必填) - 动态码
+- `operationType` (String, 必填) - 操作类型（BORROW/RETURN/QUERY）
+- `isbn` (String, 可选) - 图书ISBN（借还书时必填）
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "msg": "操作成功",
+  "data": {
+    "success": true,
+    "operationType": "BORROW",
+    "message": "图书馆操作成功"
+  }
+}
+```
 
 ---
 
@@ -162,6 +444,7 @@
 | POST | `/team/join-by-code` | 通过邀请码加入团队 |
 | GET | `/team/invitations` | 获取团队邀请列表 |
 | POST | `/team/invitation/{id}/process` | 处理团队邀请（接受/拒绝） |
+| POST | `/team/{teamId}/regenerate-invite-code` | 重新生成团队邀请码 |
 
 #### 团队行程
 | 方法 | 路径 | 说明 |
@@ -299,17 +582,19 @@
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| POST | `/apply` | 商户入驻申请 |
-| POST | `/verify-company` | 公司资格智能校验 |
+| POST | `/apply` | 商户入驻申请（需上传资质文件和缴纳保证金） |
+| POST | `/verify-company` | 公司资格智能校验（校验统一社会信用代码和公司名称） |
 | GET | `/info` | 获取商户信息 |
-| POST | `/deposit/pay` | 缴纳保证金 |
-| GET | `/deposit/records` | 查询保证金记录 |
-| GET | `/jobs` | 获取商户发布的兼职列表 |
-| GET | `/statistics` | 获取商户统计数据 |
+| POST | `/deposit/pay` | 缴纳保证金（返回支付二维码） |
+| POST | `/deposit/pay/{orderId}/refresh` | 刷新支付二维码 |
+| GET | `/deposit/pay/{orderId}/status` | 查询支付状态 |
+| GET | `/deposit/records` | 查询保证金记录（分页） |
+| GET | `/jobs` | 获取商户发布的兼职列表（分页） |
+| GET | `/statistics` | 获取商户统计数据（发布数、报名数等） |
 
 ---
 
-### 10. 高校管理 (UniversityController) - 新增
+### 10. 高校管理 (UniversityController)
 
 **基础路径**: `/api/university`
 
@@ -326,6 +611,26 @@
 | PUT | `/users/auth-applies/{applyId}/review` | 审核本校用户认证申请 |
 | POST | `/users/import` | 批量导入用户（Excel） |
 | GET | `/users/export` | 导出用户列表（Excel） |
+
+#### 学生信息管理
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/students` | 获取学生信息列表（支持筛选和搜索） |
+| POST | `/students` | 添加学生信息 |
+| POST | `/students/import` | 批量导入学生信息（Excel） |
+| GET | `/students/export` | 导出学生信息列表（Excel） |
+| PUT | `/students/{studentInfoId}` | 更新学生信息 |
+| DELETE | `/students/{studentInfoId}` | 删除学生信息 |
+
+#### 教师信息管理
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/teachers` | 获取教师信息列表（支持筛选和搜索） |
+| POST | `/teachers` | 添加教师信息 |
+| POST | `/teachers/import` | 批量导入教师信息（Excel） |
+| GET | `/teachers/export` | 导出教师信息列表（Excel） |
+| PUT | `/teachers/{teacherInfoId}` | 更新教师信息 |
+| DELETE | `/teachers/{teacherInfoId}` | 删除教师信息 |
 
 #### 功能配置
 | 方法 | 路径 | 说明 |
@@ -353,7 +658,7 @@
 
 ---
 
-### 11. 消息和聊天模块 (MessageController & ChatController) - 新增
+### 11. 消息和聊天模块 (MessageController & ChatController)
 
 **基础路径**: `/api/messages` 和 `/api/chat`
 
@@ -363,6 +668,7 @@
 | GET | `/api/messages/list` | 获取消息列表（支持分类筛选） |
 | PUT | `/api/messages/{id}/read` | 标记单条消息为已读 |
 | PUT | `/api/messages/batch-read` | 批量标记消息为已读 |
+| GET | `/api/messages/unread-count` | 获取未读消息数量 |
 
 #### 聊天功能
 | 方法 | 路径 | 说明 |
@@ -370,6 +676,51 @@
 | GET | `/api/chat/conversations` | 获取聊天会话列表 |
 | GET | `/api/chat/messages` | 获取指定会话的聊天消息列表（分页） |
 | POST | `/api/chat/send` | 发送聊天消息 |
+| PUT | `/api/chat/conversations/{conversationId}/read` | 标记会话消息为已读 |
+
+---
+
+### 12. 记账本管理 (AccountBookController)
+
+**基础路径**: `/api/account-book`
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/add` | 添加记账记录 |
+| DELETE | `/{id}` | 删除记账记录 |
+| PUT | `/{id}` | 更新记账记录 |
+| GET | `/list` | 查询记账记录（分页，支持时间范围和分类筛选） |
+| GET | `/weekly-report` | 获取周报（指定周的消费报表） |
+| POST | `/auto-import` | 自动导入E卡通消费记录到记账本 |
+| GET | `/statistics` | 获取统计信息（指定时间范围内的消费统计） |
+
+---
+
+### 13. 饮食记录管理 (DietRecordController)
+
+**基础路径**: `/api/diet-record`
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/add` | 添加饮食记录 |
+| DELETE | `/{id}` | 删除饮食记录 |
+| PUT | `/{id}` | 更新饮食记录 |
+| GET | `/list` | 查询饮食记录（分页，支持时间范围和餐次筛选） |
+| GET | `/by-date` | 获取某天的饮食记录（指定日期的所有饮食记录） |
+| POST | `/auto-import` | 自动导入E卡通食堂消费记录到饮食表 |
+| GET | `/statistics` | 获取饮食统计（指定时间范围内的饮食统计） |
+
+---
+
+### 14. 地图服务 (MapController)
+
+**基础路径**: `/api/map`
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| POST | `/search` | POI搜索（搜索地点，支持关键词搜索） |
+| POST | `/route/plan` | 路径规划（规划多个地点之间的最优路线） |
+| GET | `/reverse-geocode` | 逆地理编码（根据经纬度获取地址信息） |
 
 ---
 
@@ -437,13 +788,25 @@
 - ✅ `POST /api/common/surveys/{surveyId}/submit` - 提交问卷
 - ✅ `GET /api/common/about` - 平台介绍
 
-### 10. 高校管理功能（UniversityController）- 全新Controller
+### 10. 高校管理功能（UniversityController）
 - ✅ `GET /api/university/info` - 获取高校信息
 - ✅ `PUT /api/university/info` - 更新高校信息
 - ✅ `GET /api/university/users` - 获取本校用户列表
 - ✅ `PUT /api/university/users/auth-applies/{applyId}/review` - 审核用户认证
 - ✅ `POST /api/university/users/import` - 批量导入用户
 - ✅ `GET /api/university/users/export` - 导出用户列表
+- ✅ `GET /api/university/students` - 获取学生信息列表
+- ✅ `POST /api/university/students` - 添加学生信息
+- ✅ `POST /api/university/students/import` - 批量导入学生信息
+- ✅ `GET /api/university/students/export` - 导出学生信息列表
+- ✅ `PUT /api/university/students/{studentInfoId}` - 更新学生信息
+- ✅ `DELETE /api/university/students/{studentInfoId}` - 删除学生信息
+- ✅ `GET /api/university/teachers` - 获取教师信息列表
+- ✅ `POST /api/university/teachers` - 添加教师信息
+- ✅ `POST /api/university/teachers/import` - 批量导入教师信息
+- ✅ `GET /api/university/teachers/export` - 导出教师信息列表
+- ✅ `PUT /api/university/teachers/{teacherInfoId}` - 更新教师信息
+- ✅ `DELETE /api/university/teachers/{teacherInfoId}` - 删除教师信息
 - ✅ `GET /api/university/config` - 获取功能配置
 - ✅ `PUT /api/university/config` - 更新功能配置
 - ✅ `GET /api/university/statistics` - 高校数据统计
@@ -452,6 +815,33 @@
 - ✅ `PUT /api/university/content/{contentId}/review` - 审核内容
 - ✅ `POST /api/university/notifications/send` - 发送通知
 - ✅ `GET /api/university/notifications/history` - 通知历史
+
+### 11. 记账本管理（AccountBookController）- 新增Controller
+- ✅ `POST /api/account-book/add` - 添加记账记录
+- ✅ `DELETE /api/account-book/{id}` - 删除记账记录
+- ✅ `PUT /api/account-book/{id}` - 更新记账记录
+- ✅ `GET /api/account-book/list` - 查询记账记录（分页）
+- ✅ `GET /api/account-book/weekly-report` - 获取周报
+- ✅ `POST /api/account-book/auto-import` - 自动导入E卡通消费记录
+- ✅ `GET /api/account-book/statistics` - 获取统计信息
+
+### 12. 饮食记录管理（DietRecordController）- 新增Controller
+- ✅ `POST /api/diet-record/add` - 添加饮食记录
+- ✅ `DELETE /api/diet-record/{id}` - 删除饮食记录
+- ✅ `PUT /api/diet-record/{id}` - 更新饮食记录
+- ✅ `GET /api/diet-record/list` - 查询饮食记录（分页）
+- ✅ `GET /api/diet-record/by-date` - 获取某天的饮食记录
+- ✅ `POST /api/diet-record/auto-import` - 自动导入E卡通食堂消费记录
+- ✅ `GET /api/diet-record/statistics` - 获取饮食统计
+
+### 13. 地图服务（MapController）- 新增Controller
+- ✅ `POST /api/map/search` - POI搜索
+- ✅ `POST /api/map/route/plan` - 路径规划
+- ✅ `GET /api/map/reverse-geocode` - 逆地理编码
+
+### 14. 认证模块密码重置功能（AuthController）
+- ✅ `POST /api/auth/password/reset/send-code` - 发送重置密码邮箱验证码
+- ✅ `POST /api/auth/password/reset/confirm` - 通过邮箱验证码重置密码
 
 ---
 
@@ -925,4 +1315,14 @@
 - ✅ 新增行程提醒管理功能（更新提醒状态、删除提醒）
 - ✅ 新增课程表导入增强功能（手动录入、链接导入）
 - ✅ 更新API文档，补全所有缺失接口说明
+
+**2024-01-XX**（最新更新）
+- ✅ 新增记账本管理Controller（AccountBookController）- 7个接口
+- ✅ 新增饮食记录管理Controller（DietRecordController）- 7个接口
+- ✅ 新增地图服务Controller（MapController）- 3个接口
+- ✅ 新增密码重置功能（发送验证码、重置密码）
+- ✅ 完善高校管理功能（学生信息管理、教师信息管理）
+- ✅ 为EcardController添加详细的接口说明文档（包含请求参数、响应示例）
+- ✅ 更新接口总数统计：从136个接口增加到155个接口
+- ✅ 更新Controller总数：从11个增加到14个
 

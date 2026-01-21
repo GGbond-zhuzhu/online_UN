@@ -146,8 +146,8 @@
           >
             行程管理
           </router-link>
-          <router-link to="/security" class="nav-link" data-role="all">安全保障</router-link>
-          <router-link to="/help" class="nav-link" data-role="all">帮助中心</router-link>
+          <router-link to="/profile" class="nav-link" data-role="all">个人中心</router-link>
+          <router-link to="/messages" class="nav-link" data-role="all">信息</router-link>
           <router-link
             to="/admin"
             class="nav-link"
@@ -223,7 +223,8 @@ const canAccess = (feature: string): boolean => { // canAccess：根据当前角
     secondhand: ['student', 'teacher', 'merchant', 'visitor', 'tourist'], // 二手交易：学生 / 教师 / 商家 / 游客
     parttime: ['student', 'merchant', 'admin', 'visitor', 'tourist'], // 兼职服务：学生 / 商家 / 管理员 / 游客
     schedule: ['student', 'teacher', 'visitor', 'tourist'], // 行程管理：学生 / 教师 / 游客
-    admin: ['admin', 'university'] // 管理中心：仅管理员与高校管理员可见
+    // 演示需求：默认学生可查看全部权限；切换身份后再按各身份权限展示
+    admin: ['student', 'admin', 'university'] // 管理中心：演示下学生也可见
   }
   const allowedRoles = featureRoles[feature] || [] // 根据功能名称取出允许访问的角色数组
   return allowedRoles.includes(role) // 当前角色出现在允许列表中时返回 true，否则返回 false
@@ -274,7 +275,8 @@ const goToHome = () => {
 // 从后端获取当前用户的未读消息数量，用于初始化右上角小红点
 const fetchUnreadCount = async () => {
   // 如果当前用户未登录，则直接将未读数量重置为0
-  if (!userStore.isLoggedIn || !userStore.userId) { // 判断用户是否已登录并且拥有有效的用户ID
+  // 演示登录（demo-token）不具备后端鉴权能力：不请求后端，避免控制台刷屏
+  if (!userStore.isApiReady || !userStore.userId) { // 判断用户是否具备调用后端条件并且拥有有效的用户ID
     unreadCount.value = 0 // 未登录时未读数量恒为0
     return // 不再继续请求后端接口
   }
@@ -353,8 +355,8 @@ onMounted(() => {
   timeInterval = window.setInterval(updateTime, 1000) // 每隔1秒更新时间文本
   getLocation() // 初始化定位信息（当前为模拟实现）
 
-  // 如果当前用户已登录，则初始化未读消息数量并建立消息中心 WebSocket 连接
-  if (userStore.isLoggedIn && userStore.userId) { // 确保存在有效用户ID后再建立WebSocket连接
+  // 仅在“真实登录”时初始化未读消息数量并建立消息中心 WebSocket 连接
+  if (userStore.isApiReady && userStore.userId) { // 确保存在有效用户ID后再建立WebSocket连接
     fetchUnreadCount() // 先调用一次接口获取当前未读消息数量
     connectMessageWebSocket(userStore.userId, handleMessageWsEvent) // 建立WebSocket连接并订阅未读状态变化事件
   }

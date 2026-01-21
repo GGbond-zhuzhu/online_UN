@@ -530,11 +530,11 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-/* 页面整体背景样式：使用与登录/身份认证相同的渐变色，保持统一视觉风格 */
+/* 页面整体背景样式 - 保持不变 */
 .student-auth-page {
-  min-height: 100vh; /* 页面最小高度占满整个视口 */
-  background: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%); /* 粉色 + 浅蓝渐变背景 */
-  padding-bottom: 40px; /* 底部预留空间避免内容紧贴边缘 */
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
+  padding-bottom: 40px;
 }
 
 /* 主体内容容器：限制最大宽度并水平居中 */
@@ -570,32 +570,34 @@ const handleSubmit = async () => {
   color: #666; /* 中灰色文字 */
 }
 
-/* 表单卡片整体样式 */
+/* 表单卡片整体样式 - 马卡龙配色 */
 .form-card {
-  background: #fff; /* 白色卡片背景 */
-  border-radius: 16px; /* 圆角卡片 */
-  padding: 24px 24px 28px; /* 内边距 */
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06); /* 轻微阴影提升层级感 */
-  border: 1px solid #f0f0f0; /* 浅色边框 */
-  margin-bottom: 20px; /* 与下方提示卡片间距 */
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 32px 32px 36px;
+  box-shadow: 0 4px 20px rgba(225, 190, 231, 0.15);
+  border: 2px solid #F3E5F5;
+  margin-bottom: 24px;
 }
 
-/* 错误提示区域样式 */
+/* 错误提示区域样式 - 马卡龙配色 */
 .error-alert {
-  display: flex; /* 横向排列图标与文字 */
+  display: flex;
   align-items: center;
-  gap: 8px; /* 图标与文字的间距 */
-  padding: 10px 12px; /* 内边距 */
-  margin-bottom: 16px; /* 与表单之间的间距 */
-  border-radius: 8px; /* 圆角 */
-  background: #fff1f0; /* 淡红色背景 */
-  border-left: 3px solid #ff4d4f; /* 左侧高亮边框 */
-  color: #a8071a; /* 深红色文字 */
-  font-size: 13px; /* 字号 */
+  gap: 12px;
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  border-radius: 12px;
+  background: #FFF5F5;
+  border: 2px solid #FFB3BA;
+  border-left: 4px solid #EF5350;
+  color: #C62828;
+  font-size: 14px;
 }
 
 .error-alert i {
-  color: #ff4d4f; /* 图标颜色 */
+  color: #EF5350;
+  font-size: 20px;
 }
 
 /* 表单整体样式 */
@@ -608,67 +610,75 @@ const handleSubmit = async () => {
   margin-bottom: 18px; /* 表单项之间的垂直间距 */
 }
 
-/* 表单标签样式 */
+/* 表单标签样式 - 马卡龙配色 */
 .form-label {
-  display: flex; /* 横向排列图标与文字 */
+  display: flex;
   align-items: center;
-  gap: 6px; /* 图标与文字的距离 */
-  font-size: 14px; /* 标签字号 */
-  font-weight: 600; /* 加粗 */
-  color: #333; /* 深灰色文字 */
-  margin-bottom: 6px; /* 标签与输入框之间的间距 */
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #5a4f7a;
+  margin-bottom: 10px;
 }
 
 .form-label i {
-  color: #d81b60; /* 标签前图标使用主色 */
+  color: #CE93D8;
+  font-size: 16px;
 }
 
 /* 必填标记样式 */
 .required {
-  color: #d81b60; /* 使用主色标记必填 */
-  margin-left: 2px; /* 与文字保持微小间距 */
+  color: #EF5350;
+  margin-left: 4px;
 }
 
 /* 选填标记样式 */
 .optional {
-  font-size: 12px; /* 字号略小 */
-  color: #999; /* 浅灰文字 */
-  margin-left: 4px; /* 与标题之间留出间距 */
+  font-size: 13px;
+  color: #8b7fa8;
+  margin-left: 6px;
 }
 
-/* 文本输入框与下拉框统一样式 */
+/* 文本输入框与下拉框统一样式 - 马卡龙配色 */
 .form-input {
-  width: 100%; /* 占满整行 */
-  padding: 10px 12px; /* 内边距 */
-  font-size: 14px; /* 字号 */
-  border-radius: 8px; /* 圆角 */
-  border: 1px solid #d9d9d9; /* 默认边框颜色 */
-  box-sizing: border-box; /* 包含内边距与边框 */
-  transition: all 0.2s ease; /* 焦点动画过渡 */
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  border-radius: 12px;
+  background: #F5F0FF;
+  border: 2px solid #E8D5F2;
+  color: #5a4f7a;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
 }
 
 .form-input:focus {
-  outline: none; /* 移除默认外轮廓 */
-  border-color: #d81b60; /* 获得焦点时使用主色 */
-  box-shadow: 0 0 0 2px rgba(216, 27, 96, 0.15); /* 外发光效果 */
+  outline: none;
+  border-color: #CE93D8;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 4px rgba(206, 147, 216, 0.15);
 }
 
-/* 文本域样式 */
+/* 文本域样式 - 马卡龙配色 */
 .form-textarea {
-  width: 100%; /* 占满整行 */
-  padding: 10px 12px; /* 内边距 */
-  font-size: 14px; /* 字号 */
-  border-radius: 8px; /* 圆角 */
-  border: 1px solid #d9d9d9; /* 边框颜色 */
-  resize: vertical; /* 允许竖直方向拉伸 */
-  box-sizing: border-box; /* 统一盒模型 */
-  line-height: 1.5; /* 行高提升可读性 */
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  border-radius: 12px;
+  background: #F5F0FF;
+  border: 2px solid #E8D5F2;
+  color: #5a4f7a;
+  resize: vertical;
+  box-sizing: border-box;
+  line-height: 1.6;
+  transition: all 0.3s ease;
 }
 
 .form-textarea:focus {
-  outline: none; /* 移除默认外轮廓 */
-  border-color: #d81b60; /* 焦点使用主色 */
-  box-shadow: 0 0 0 2px rgba(216, 27, 96, 0.15); /* 外发光效果 */
+  outline: none;
+  border-color: #CE93D8;
+  background: #FFFFFF;
+  box-shadow: 0 0 0 4px rgba(206, 147, 216, 0.15);
 }
 
 /* 表单提示文字样式 */
@@ -683,30 +693,31 @@ const handleSubmit = async () => {
   margin-top: 6px; /* 与标签之间的间距 */
 }
 
-/* 上传占位区域样式：未选择图片时显示 */
+/* 上传占位区域样式 - 马卡龙配色 */
 .upload-placeholder {
-  width: 100%; /* 占满一行 */
-  min-height: 140px; /* 最小高度，保证有明显区域 */
-  border-radius: 10px; /* 圆角 */
-  border: 1px dashed #d9d9d9; /* 虚线边框 */
-  background: #fafafa; /* 淡灰背景 */
-  display: flex; /* 使用 flex 垂直布局图标和文字 */
+  width: 100%;
+  min-height: 160px;
+  border-radius: 16px;
+  border: 2px dashed #E8D5F2;
+  background: #F5F0FF;
+  display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px; /* 图标与文字的垂直间距 */
-  cursor: pointer; /* 鼠标样式为可点击 */
-  transition: all 0.2s ease; /* 悬停动画 */
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 }
 
 .upload-placeholder:hover {
-  border-color: #d81b60; /* 悬停时使用主色边框 */
-  background: #fff5f9; /* 悬停时背景略带粉色 */
+  border-color: #CE93D8;
+  background: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(206, 147, 216, 0.2);
 }
 
 .upload-placeholder i {
-  font-size: 32px; /* 上传图标字号 */
-  color: #d81b60; /* 使用主色 */
+  font-size: 40px;
+  color: #CE93D8;
 }
 
 .upload-placeholder span {
@@ -757,39 +768,42 @@ const handleSubmit = async () => {
 }
 
 .btn-submit {
-  width: 100%; /* 按钮宽度占满容器 */
-  padding: 13px 16px; /* 内边距 */
-  border-radius: 999px; /* 胶囊按钮 */
-  border: none; /* 去掉边框 */
-  background: linear-gradient(135deg, #d81b60 0%, #c2185b 100%); /* 渐变主色背景 */
-  color: #fff; /* 白色文字 */
-  font-size: 15px; /* 字号 */
-  font-weight: 600; /* 字重略粗 */
-  display: flex; /* 使用 flex 居中内容 */
+  width: 100%;
+  padding: 16px 24px;
+  border-radius: 24px;
+  border: none;
+  background: linear-gradient(135deg, #E8D5F2 0%, #CE93D8 100%);
+  color: #FFFFFF;
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px; /* 图标与文字的间距 */
-  cursor: pointer; /* 鼠标为可点击样式 */
-  transition: all 0.2s ease; /* 悬停动画 */
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(206, 147, 216, 0.4);
 }
 
 .btn-submit:hover:not(:disabled) {
-  transform: translateY(-1px); /* 悬停时略微上移 */
-  box-shadow: 0 6px 18px rgba(216, 27, 96, 0.35); /* 悬停阴影 */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(206, 147, 216, 0.5);
 }
 
 .btn-submit:disabled {
-  opacity: 0.7; /* 禁用时降低透明度 */
-  cursor: not-allowed; /* 鼠标样式为禁止 */
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: #E8D5F2;
 }
 
-/* 下方提示卡片样式 */
+/* 下方提示卡片样式 - 马卡龙配色 */
 .tips-card {
-  margin-top: 10px; /* 与表单卡片之间的距离 */
-  padding: 18px 18px 20px; /* 内边距 */
-  background: rgba(255, 255, 255, 0.9); /* 淡白背景 */
-  border-radius: 14px; /* 圆角 */
-  border: 1px dashed #f0c4d8; /* 虚线边框，与主色系保持协调 */
+  margin-top: 16px;
+  padding: 24px 24px 28px;
+  background: #FFFFFF;
+  border-radius: 20px;
+  border: 2px dashed #E8D5F2;
+  box-shadow: 0 4px 20px rgba(225, 190, 231, 0.1);
 }
 
 .tips-title {
@@ -803,7 +817,7 @@ const handleSubmit = async () => {
 }
 
 .tips-title i {
-  color: #faad14; /* 黄色图标，强调安全提示 */
+  color: #CE93D8;
 }
 
 .tips-list {
@@ -822,11 +836,12 @@ const handleSubmit = async () => {
 }
 
 .tips-list li::before {
-  content: '•'; /* 自定义圆点 */
+  content: '•';
   position: absolute;
   left: 0;
   top: 0;
-  color: #d81b60; /* 使用主色系圆点 */
+  color: #CE93D8;
+  font-size: 16px;
 }
 
 /* 响应式适配：小屏幕下适当调整内边距和字号 */
@@ -939,23 +954,25 @@ const handleSubmit = async () => {
 .btn-face-capture,
 .btn-face-choose {
   flex: 1;
-  padding: 12px 16px;
-  border-radius: 8px;
-  border: 1px solid #d81b60;
-  background-color: #fff;
-  color: #d81b60;
-  font-size: 14px;
+  padding: 14px 20px;
+  border-radius: 12px;
+  border: 2px solid #CE93D8;
+  background-color: #FFFFFF;
+  color: #9C27B0;
+  font-size: 15px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .btn-face-capture:hover,
 .btn-face-choose:hover {
-  background-color: #fff5f9;
+  background-color: #F5F0FF;
+  border-color: #9C27B0;
 }
 
 .btn-face-capture:disabled,
@@ -971,24 +988,25 @@ const handleSubmit = async () => {
 
 .btn-face-detect {
   width: 100%;
-  padding: 12px 16px;
-  border-radius: 8px;
+  padding: 14px 20px;
+  border-radius: 12px;
   border: none;
-  background-color: #d81b60;
-  color: #fff;
-  font-size: 14px;
+  background: linear-gradient(135deg, #E8D5F2 0%, #CE93D8 100%);
+  color: #FFFFFF;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(206, 147, 216, 0.3);
 }
 
 .btn-face-detect:hover:not(:disabled) {
-  background-color: #c2185b;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(206, 147, 216, 0.4);
 }
 
 .btn-face-detect:disabled {

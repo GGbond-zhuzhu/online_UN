@@ -81,36 +81,112 @@
         </div>
       </section>
 
-      <!-- 公司信息 -->
-      <section class="company-card">
-        <h2 class="card-title">公司信息</h2>
-        <div class="company-details">
-          <div class="company-header">
-            <div class="company-logo">
-              <i class="fas fa-building"></i>
+      <!-- 公司/发布者信息卡片（参考app端） -->
+      <section class="company-card" v-if="companyName">
+        <div class="company-header">
+          <div class="company-avatar-wrapper">
+            <div class="company-avatar" :style="{ background: getAvatarColor(companyId || 0) }"></div>
+          </div>
+          <div class="company-main-info">
+            <div class="company-name-large">{{ companyName }}</div>
+            <div class="company-rating-row">
+              <div class="rating-stars">
+                <i 
+                  v-for="(star, index) in 5" 
+                  :key="index"
+                  :class="index < Math.floor(companyRating) ? 'fas fa-star' : 'far fa-star'"
+                  class="star-icon"
+                ></i>
+              </div>
+              <span class="rating-score">{{ companyRating.toFixed(1) }}</span>
+              <span class="rating-count">({{ companyRatingCount }}条评价)</span>
             </div>
-            <div class="company-info">
-              <div class="company-name-large">{{ job.company }}</div>
-              <div class="company-type">{{ job.companyType }}</div>
+            <div class="company-stats">
+              <div class="stat-item">
+                <span class="stat-value">{{ companyJobCount }}</span>
+                <span class="stat-label">在招岗位</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-item">
+                <span class="stat-value">{{ companyGoodRate }}%</span>
+                <span class="stat-label">好评率</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-item">
+                <span class="stat-value">{{ companyResponseTime }}</span>
+                <span class="stat-label">平均响应</span>
+              </div>
             </div>
           </div>
-          <div class="company-desc">
-            <p>{{ job.companyDescription }}</p>
+        </div>
+      </section>
+
+      <!-- 申请通过的评价区域（参考app端） -->
+      <section class="reviews-section" v-if="reviews.length > 0">
+        <div class="section-header-reviews">
+          <div class="section-title-row">
+            <h2 class="card-title">申请通过评价</h2>
+            <span class="review-count-text">({{ reviews.length }})</span>
           </div>
-          <div class="company-stats">
-            <div class="stat-item">
-              <span class="stat-label">规模</span>
-              <span class="stat-value">{{ job.companySize }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">行业</span>
-              <span class="stat-value">{{ job.industry }}</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-label">成立时间</span>
-              <span class="stat-value">{{ job.established }}</span>
+          <div class="filter-tabs">
+            <div 
+              v-for="(tab, index) in reviewTabs" 
+              :key="index"
+              class="filter-tab"
+              :class="{ active: currentReviewTab === tab.value }"
+              @click="currentReviewTab = tab.value"
+            >
+              {{ tab.label }}
             </div>
           </div>
+        </div>
+
+        <!-- 评价列表 -->
+        <div v-if="filteredReviews.length > 0" class="reviews-list">
+          <div 
+            v-for="(review, index) in filteredReviews" 
+            :key="index"
+            class="review-item"
+          >
+            <div class="review-header">
+              <div class="reviewer-info">
+                <div class="reviewer-avatar" :style="{ background: getAvatarColor(index) }"></div>
+                <div class="reviewer-details">
+                  <span class="reviewer-name">{{ review.applicantName }}</span>
+                  <div class="review-rating">
+                    <i 
+                      v-for="(star, starIndex) in 5" 
+                      :key="starIndex"
+                      :class="starIndex < review.rating ? 'fas fa-star' : 'far fa-star'"
+                      class="review-star"
+                    ></i>
+                  </div>
+                </div>
+              </div>
+              <div class="review-meta">
+                <span class="review-status" :class="review.status">{{ review.statusText }}</span>
+                <span class="review-time">{{ review.time }}</span>
+              </div>
+            </div>
+            <p class="review-content">{{ review.content }}</p>
+            <div v-if="review.tags && review.tags.length > 0" class="review-tags">
+              <span 
+                v-for="(tag, tagIndex) in review.tags" 
+                :key="tagIndex"
+                class="review-tag"
+              >
+                {{ tag }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 无评价提示 -->
+        <div v-else class="empty-reviews">
+          <div class="empty-icon">
+            <i class="far fa-comment"></i>
+          </div>
+          <span class="empty-text">暂无评价</span>
         </div>
       </section>
 
@@ -212,6 +288,81 @@ const parttimeStore = useParttimeStore() // 获取兼职 Store，用于统一管
 const isFavorite = ref(false) // 是否已收藏当前岗位的本地标记，用于控制按钮状态与文案
 const currentJobId = ref<number | null>(null) // 当前正在查看的岗位ID，后续收藏/浏览记录都依赖该ID
 
+// 公司/发布者信息（参考app端）
+const companyName = ref('') // 公司名称
+const companyId = ref<number | null>(null) // 公司ID
+const companyRating = ref(4.7) // 公司评分（1-5分）
+const companyRatingCount = ref(89) // 评价总数
+const companyJobCount = ref(12) // 在招岗位数
+const companyGoodRate = ref(96) // 好评率
+const companyResponseTime = ref('1小时') // 平均响应时间
+
+// 申请通过的评价数据（参考app端）
+const reviews = ref([
+  {
+    id: 1,
+    applicantName: '张**',
+    rating: 5,
+    content: '工作环境很好，公司很正规，按时发工资，推荐！',
+    time: '2024-01-10',
+    status: 'approved',
+    statusText: '已通过',
+    tags: ['按时发薪', '工作环境好', '推荐']
+  },
+  {
+    id: 2,
+    applicantName: '李**',
+    rating: 5,
+    content: '工作内容简单，上手快，老板人很好，很照顾学生。',
+    time: '2024-01-05',
+    status: 'approved',
+    statusText: '已通过',
+    tags: ['上手快', '老板好']
+  },
+  {
+    id: 3,
+    applicantName: '王**',
+    rating: 4,
+    content: '整体不错，就是工作时间有点长，但薪资还可以。',
+    time: '2023-12-28',
+    status: 'approved',
+    statusText: '已通过',
+    tags: ['薪资合理']
+  }
+])
+
+// 评价筛选标签
+const reviewTabs = ref([
+  { label: '全部', value: 'all' },
+  { label: '好评', value: 'good' },
+  { label: '中评', value: 'medium' },
+  { label: '差评', value: 'bad' }
+])
+
+const currentReviewTab = ref('all')
+
+// 过滤后的评价列表
+const filteredReviews = computed(() => {
+  if (currentReviewTab.value === 'all') {
+    return reviews.value
+  } else if (currentReviewTab.value === 'good') {
+    return reviews.value.filter(r => r.rating >= 4)
+  } else if (currentReviewTab.value === 'medium') {
+    return reviews.value.filter(r => r.rating === 3)
+  } else {
+    return reviews.value.filter(r => r.rating <= 2)
+  }
+})
+
+// 获取头像颜色（参考app端）
+const getAvatarColor = (id: number): string => {
+  const colors = [
+    '#FFE5E5', '#E6F3FF', '#FFF4E6', '#F0E6FF', '#E6FFE6',
+    '#FFE6F0', '#E6F7FF', '#FFF9E5', '#F0E6FF', '#E6FFE6'
+  ]
+  return colors[id % colors.length]
+}
+
 // 岗位数据（先给出一份默认示例数据，便于在接口未返回时页面也能正常展示）
 const job = ref({
   id: 1,
@@ -221,8 +372,9 @@ const job = ref({
   companySize: '1000-5000人',
   industry: '教育/培训',
   established: '2003年',
-  companyDescription: '学而思教育是一家专注于中小学课外辅导的教育机构，致力于为学生提供优质的教育服务。',
-  verified: true,
+    companyDescription: '学而思教育是一家专注于中小学课外辅导的教育机构，致力于为学生提供优质的教育服务。',
+    verified: true,
+    publisherId: 1,
   type: '家教',
   location: '学校周边',
   time: '周末',
@@ -412,8 +564,13 @@ onMounted(() => {
       .loadJobDetail(id)
       .then((detail) => {
         mapJobDetailToViewModel(detail) // 将接口返回的详情数据映射到页面使用的 job 结构
-        // 如果后端将“是否已收藏”一并返回（例如 detail.isFavorited），可以在这里初始化收藏状态
-        const anyDetail = detail as any // 使用 any 做一次宽松的字段访问，兼容后端尚未在类型中声明的属性
+        
+        // 初始化公司信息（参考app端）
+        const anyDetail = detail as any
+        companyName.value = detail.publisherName || job.value.company
+        companyId.value = detail.publisherId || anyDetail.publisherId || null
+        
+        // 如果后端将"是否已收藏"一并返回（例如 detail.isFavorited），可以在这里初始化收藏状态
         if (typeof anyDetail.isFavorited === 'boolean') {
           isFavorite.value = anyDetail.isFavorited // 使用后端返回的收藏状态初始化本地状态
         }
@@ -654,6 +811,249 @@ onMounted(() => {
   display: flex;
   gap: 15px;
   margin-bottom: 20px;
+}
+
+.company-avatar-wrapper {
+  flex-shrink: 0;
+}
+
+.company-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.company-main-info {
+  flex: 1;
+}
+
+.company-rating-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.star-icon {
+  font-size: 14px;
+  color: #FFA500;
+}
+
+.rating-score {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.rating-count {
+  font-size: 13px;
+  color: #999;
+}
+
+.company-stats {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.company-stats .stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.company-stats .stat-value {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+}
+
+.company-stats .stat-label {
+  font-size: 12px;
+  color: #999;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 30px;
+  background: #eee;
+}
+
+/* 评价区域样式 */
+.reviews-section {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  border: 1px solid #eee;
+  max-width: calc(100% - 30px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.section-header-reviews {
+  margin-bottom: 20px;
+}
+
+.section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.review-count-text {
+  font-size: 14px;
+  color: #999;
+}
+
+.filter-tabs {
+  display: flex;
+  gap: 10px;
+}
+
+.filter-tab {
+  padding: 6px 16px;
+  background: #f5f5f5;
+  border-radius: 15px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.filter-tab:hover {
+  background: #e0e0e0;
+}
+
+.filter-tab.active {
+  background: linear-gradient(135deg, #FFE5E5 0%, #FFD1D1 100%);
+  color: #FF6B9D;
+  font-weight: bold;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.review-item {
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 10px;
+  border: 1px solid #eee;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.reviewer-info {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.reviewer-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.reviewer-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.reviewer-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.review-rating {
+  display: flex;
+  gap: 2px;
+}
+
+.review-star {
+  font-size: 12px;
+  color: #FFA500;
+}
+
+.review-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.review-status {
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.review-status.approved {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.review-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.review-content {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.review-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.review-tag {
+  padding: 4px 10px;
+  background: #f0f0f0;
+  border-radius: 12px;
+  font-size: 11px;
+  color: #666;
+}
+
+.empty-reviews {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.empty-icon {
+  font-size: 48px;
+  color: #ccc;
+  margin-bottom: 10px;
+}
+
+.empty-text {
+  font-size: 14px;
+  color: #999;
 }
 
 .company-logo {

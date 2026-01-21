@@ -373,58 +373,123 @@ const handleTeacherAuth = async () => {
 :root {
   --primary: #d81b60;
   --primary-dark: #c2185b;
+  --primary-light: #ffb6c1;
   --text: #333;
   --muted: #666;
   --bg: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
+  --card-shadow: 0 8px 30px rgba(216, 27, 96, 0.12);
+  --card-shadow-hover: 0 12px 40px rgba(216, 27, 96, 0.18);
 }
 
 .auth-page {
   min-height: 100vh;
   background: var(--bg);
   padding-bottom: 40px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* 添加背景装饰 */
+.auth-page::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(255, 182, 193, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.auth-page::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(230, 247, 255, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
 }
 
 .page-container {
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 60px 20px;
+  position: relative;
+  z-index: 1;
 }
 
-/* 页面标题 */
+/* 页面标题 - 添加渐变横幅效果 */
 .page-header {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 50px;
+  position: relative;
+}
+
+.page-header::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+  border-radius: 2px;
 }
 
 .page-title {
-  font-size: 36px;
-  font-weight: bold;
-  color: var(--text);
-  margin-bottom: 10px;
+  font-size: 42px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 16px;
+  letter-spacing: -0.5px;
 }
 
 .page-title i {
   color: var(--primary);
+  font-size: 38px;
+  -webkit-text-fill-color: var(--primary);
 }
 
 .page-subtitle {
-  font-size: 16px;
+  font-size: 17px;
   color: var(--muted);
+  line-height: 1.6;
 }
 
-/* 认证状态卡片 */
+/* 认证状态卡片 - 现代化设计 */
 .auth-status-card {
   background: white;
-  border-radius: 16px;
-  padding: 40px;
+  border-radius: 20px;
+  padding: 50px 40px;
   margin-bottom: 30px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  border: 1px solid #eee;
+  box-shadow: var(--card-shadow);
+  border: 1px solid rgba(216, 27, 96, 0.1);
   text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.auth-status-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
 }
 
 .status-icon {
@@ -480,26 +545,46 @@ const handleTeacherAuth = async () => {
   font-weight: 600;
 }
 
-/* 认证表单卡片 */
+/* 认证表单卡片 - 现代化设计 */
 .auth-form-card {
   background: white;
-  border-radius: 16px;
-  padding: 30px;
+  border-radius: 20px;
+  padding: 40px;
   margin-bottom: 30px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  border: 1px solid #eee;
+  box-shadow: var(--card-shadow);
+  border: 1px solid rgba(216, 27, 96, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-form-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+}
+
+.auth-form-card:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-2px);
 }
 
 .form-tabs {
   display: flex;
-  gap: 10px;
-  margin-bottom: 30px;
+  gap: 12px;
+  margin-bottom: 35px;
+  padding-bottom: 20px;
   border-bottom: 2px solid #f0f0f0;
+  position: relative;
 }
 
 .tab-btn {
   flex: 1;
-  padding: 12px 20px;
+  padding: 14px 24px;
   background: transparent;
   border: none;
   border-bottom: 3px solid transparent;
@@ -511,16 +596,31 @@ const handleTeacherAuth = async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
+  border-radius: 8px 8px 0 0;
+  position: relative;
 }
 
 .tab-btn:hover {
   color: var(--primary);
+  background: rgba(216, 27, 96, 0.05);
 }
 
 .tab-btn.active {
   color: var(--primary);
   border-bottom-color: var(--primary);
+  background: rgba(216, 27, 96, 0.08);
+}
+
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-light) 100%);
+  border-radius: 2px 2px 0 0;
 }
 
 .auth-form {
@@ -553,17 +653,30 @@ const handleTeacherAuth = async () => {
 
 .form-input {
   width: 100%;
-  padding: 12px 15px;
+  padding: 14px 18px;
   border: 2px solid rgba(240, 240, 240, 0.9);
-  border-radius: 8px;
-  font-size: 14px;
-  transition: all 0.3s;
+  border-radius: 12px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  background: #fafafa;
+  color: var(--text);
+}
+
+.form-input:hover {
+  border-color: rgba(216, 27, 96, 0.3);
+  background: white;
 }
 
 .form-input:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(216, 27, 96, 0.1);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(216, 27, 96, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-input::placeholder {
+  color: #bbb;
 }
 
 /* 图片上传 */
@@ -573,22 +686,41 @@ const handleTeacherAuth = async () => {
 
 .upload-placeholder {
   width: 100%;
-  height: 200px;
+  height: 220px;
   border: 2px dashed #ddd;
-  border-radius: 8px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   cursor: pointer;
-  transition: all 0.3s;
-  background: #fafafa;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-placeholder::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  transition: left 0.5s;
 }
 
 .upload-placeholder:hover {
   border-color: var(--primary);
-  background: #fff5f9;
+  background: linear-gradient(135deg, #fff5f9 0%, #ffeef5 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(216, 27, 96, 0.15);
+}
+
+.upload-placeholder:hover::before {
+  left: 100%;
 }
 
 .upload-placeholder i {
@@ -642,42 +774,81 @@ const handleTeacherAuth = async () => {
 
 .btn-submit {
   width: 100%;
-  padding: 16px;
+  padding: 18px;
   background: linear-gradient(135deg, #d81b60 0%, #c2185b 100%);
   color: white;
   border: none;
   border-radius: 12px;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 10px;
+  box-shadow: 0 4px 15px rgba(216, 27, 96, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-submit::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
 }
 
 .btn-submit:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(216, 27, 96, 0.3);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(216, 27, 96, 0.4);
+}
+
+.btn-submit:hover:not(:disabled)::before {
+  width: 300px;
+  height: 300px;
+}
+
+.btn-submit:active:not(:disabled) {
+  transform: translateY(-1px);
 }
 
 .btn-submit:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.15);
 }
 
-/* 提示卡片 */
+/* 提示卡片 - 现代化设计 */
 .tips-section {
   max-width: 100%;
 }
 
 .tips-card {
-  background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  border: 1px solid #eee;
+  background: linear-gradient(135deg, #fff9e6 0%, #fff5f0 100%);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: var(--card-shadow);
+  border: 1px solid rgba(255, 193, 7, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.tips-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #ffc107 0%, #ff9800 100%);
 }
 
 .tips-title {

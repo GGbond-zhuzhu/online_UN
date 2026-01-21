@@ -3,10 +3,16 @@ package com.yourschool.campussystem.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yourschool.campussystem.common.ErrorCode;
+import com.yourschool.campussystem.entity.ChatGroup;
+import com.yourschool.campussystem.entity.ChatGroupMember;
+import com.yourschool.campussystem.entity.ChatGroupMessage;
 import com.yourschool.campussystem.entity.ChatConversation; // 引入聊天会话实体类，用于操作会话表记录
 import com.yourschool.campussystem.entity.ChatMessage;
 import com.yourschool.campussystem.entity.User;
 import com.yourschool.campussystem.exception.BusinessException;
+import com.yourschool.campussystem.mapper.ChatGroupMapper;
+import com.yourschool.campussystem.mapper.ChatGroupMemberMapper;
+import com.yourschool.campussystem.mapper.ChatGroupMessageMapper;
 import com.yourschool.campussystem.mapper.ChatConversationMapper;
 import com.yourschool.campussystem.mapper.ChatMessageMapper; // 引入聊天消息Mapper，用于对消息表进行CRUD操作
 import com.yourschool.campussystem.mapper.UserMapper;
@@ -35,28 +41,31 @@ public class ChatServiceImpl implements ChatService {
     private final ChatMessageMapper messageMapper; // 注入聊天消息Mapper，用于存储和查询聊天消息
     private final UserMapper userMapper; // 注入用户Mapper，用于查询用户基础信息
     private final SimpMessagingTemplate messagingTemplate; // 注入消息发送模板，用于通过WebSocket将新消息推送给前端
+    private final ChatGroupMapper chatGroupMapper;
+    private final ChatGroupMemberMapper chatGroupMemberMapper;
+    private final ChatGroupMessageMapper chatGroupMessageMapper;
 
     @Override
     public List<Map<String, Object>> getConversations(Long userId) {
         // 查询用户参与的所有会话（user1_id或user2_id等于userId）
         LambdaQueryWrapper<ChatConversation> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.and(wrapper -> wrapper.eq(ChatConversation::getUser1Id, userId)
-                        .or()
-                        .eq(ChatConversation::getUser2Id, userId))
+                .or()
+                .eq(ChatConversation::getUser2Id, userId))
                 .orderByDesc(ChatConversation::getLastMessageTime);
 
         List<ChatConversation> conversations = conversationMapper.selectList(queryWrapper);
 
         // 转换为VO
-        return conversations.stream()
+        List<Map<String, Object>> privateList = conversations.stream()
                 .map(conversation -> {
                     Map<String, Object> item = new HashMap<>();
-                    
+
                     // 确定目标用户ID
-                    Long targetUserId = conversation.getUser1Id().equals(userId) 
-                            ? conversation.getUser2Id() 
+                    Long targetUserId = conversation.getUser1Id().equals(userId)
+                            ? conversation.getUser2Id()
                             : conversation.getUser1Id();
-                    
+
                     // 查询目标用户信息
                     User targetUser = userMapper.selectById(targetUserId);
                     if (targetUser == null) {
@@ -65,7 +74,7 @@ public class ChatServiceImpl implements ChatService {
                     }
 
                     // 获取未读消息数
-                    int unreadCount = conversation.getUser1Id().equals(userId) 
+                    int unreadCount = conversation.getUser1Id().equals(userId)
                             ? (conversation.getUser1UnreadCount() != null ? conversation.getUser1UnreadCount() : 0)
                             : (conversation.getUser2UnreadCount() != null ? conversation.getUser2UnreadCount() : 0);
 
@@ -78,22 +87,127 @@ public class ChatServiceImpl implements ChatService {
                         }
                     }
 
+                    // Web端messages页面使用id作为唯一标识
+                    item.put("id", conversation.getId());
                     item.put("conversationId", conversation.getId());
                     item.put("targetUserId", targetUserId);
-                    item.put("targetUserName", targetUser.getNickname() != null ? targetUser.getNickname() : targetUser.getUsername());
+                    item.put("targetUserName",
+                            targetUser.getNickname() != null ? targetUser.getNickname() : targetUser.getUsername());
                     item.put("targetUserAvatar", targetUser.getAvatarUrl());
                     item.put("lastMessage", lastMessage);
                     item.put("lastMessageTime", conversation.getLastMessageTime());
                     item.put("unreadCount", unreadCount);
+                    item.put("type", "private");
 
                     return item;
                 })
                 .filter(item -> item != null)
                 .collect(Collectors.toList());
+
+        // 查询用户加入的群聊（团队群等）
+        LambdaQueryWrapper<ChatGroupMember> gmQ = new LambdaQueryWrapper<>();
+        gmQ.eq(ChatGroupMember::getUserId, userId);
+        List<ChatGroupMember> groups = chatGroupMemberMapper.selectList(gmQ);
+
+        List<Map<String, Object>> groupList = groups.stream().map(gm -> {
+            ChatGroup group = chatGroupMapper.selectById(gm.getGroupId());
+            if (group == null || (group.getIsDeleted() != null && group.getIsDeleted() == 1)) {
+                return null;
+            }
+
+            // 最近一条群消息
+            ChatGroupMessage last = chatGroupMessageMapper.selectOne(
+                    new LambdaQueryWrapper<ChatGroupMessage>()
+                            .eq(ChatGroupMessage::getGroupId, group.getId())
+                            .orderByDesc(ChatGroupMessage::getCreateTime)
+                            .last("LIMIT 1"));
+
+            // 群成员数
+            Long memberCount = chatGroupMemberMapper.selectCount(
+                    new LambdaQueryWrapper<ChatGroupMember>()
+                            .eq(ChatGroupMember::getGroupId, group.getId()));
+
+            Map<String, Object> item = new HashMap<>();
+            // 用负数id避免与私聊会话id冲突；前端会把该id当conversationId传回
+            item.put("id", -group.getId());
+            item.put("type", "group");
+            item.put("groupId", group.getId());
+            item.put("groupMemberCount", memberCount != null ? memberCount.intValue() : 0);
+            item.put("chatType", "team");
+            item.put("targetUserName", group.getName());
+            item.put("lastMessage", last != null ? last.getContent() : "暂无消息");
+            item.put("lastMessageTime", last != null ? last.getCreateTime()
+                    : (group.getUpdateTime() != null ? group.getUpdateTime() : group.getCreateTime()));
+            item.put("unreadCount", 0);
+            item.put("isPinned", false);
+            item.put("isMuted", false);
+            return item;
+        }).filter(x -> x != null).collect(Collectors.toList());
+
+        // 合并：按时间倒序（null时间放最后）
+        List<Map<String, Object>> all = new java.util.ArrayList<>();
+        all.addAll(groupList);
+        all.addAll(privateList);
+        all.sort((a, b) -> {
+            Object ta = a.get("lastMessageTime");
+            Object tb = b.get("lastMessageTime");
+            long ma = toMillis(ta);
+            long mb = toMillis(tb);
+            return Long.compare(mb, ma);
+        });
+
+        return all;
     }
 
     @Override
-    public Map<String, Object> getMessages(Long userId, Long conversationId, Long targetUserId, Integer page, Integer size) {
+    public Map<String, Object> getMessages(Long userId, Long conversationId, Long targetUserId, Integer page,
+            Integer size) {
+        // 群聊：前端用负数conversationId表示群ID
+        if (conversationId != null && conversationId < 0) {
+            Long groupId = -conversationId;
+
+            // 校验是否在群内
+            ChatGroupMember gm = chatGroupMemberMapper.selectOne(
+                    new LambdaQueryWrapper<ChatGroupMember>()
+                            .eq(ChatGroupMember::getGroupId, groupId)
+                            .eq(ChatGroupMember::getUserId, userId));
+            if (gm == null) {
+                throw new BusinessException(ErrorCode.FORBIDDEN, "无权访问此群聊");
+            }
+
+            Page<ChatGroupMessage> pageParam = new Page<>(page, size);
+            Page<ChatGroupMessage> result = chatGroupMessageMapper.selectPage(
+                    pageParam,
+                    new LambdaQueryWrapper<ChatGroupMessage>()
+                            .eq(ChatGroupMessage::getGroupId, groupId)
+                            .orderByDesc(ChatGroupMessage::getCreateTime));
+
+            List<Map<String, Object>> list = result.getRecords().stream().map(msg -> {
+                User sender = userMapper.selectById(msg.getSenderId());
+                Map<String, Object> item = new HashMap<>();
+                item.put("id", msg.getId());
+                item.put("senderId", msg.getSenderId());
+                item.put("senderName",
+                        sender != null ? (sender.getNickname() != null ? sender.getNickname() : sender.getUsername())
+                                : "未知用户");
+                item.put("content", msg.getContent());
+                item.put("type", msg.getType());
+                item.put("imageUrl", msg.getImageUrl());
+                item.put("fileUrl", msg.getFileUrl());
+                item.put("createTime", msg.getCreateTime());
+                return item;
+            }).collect(Collectors.toList());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("records", list);
+            response.put("total", result.getTotal());
+            response.put("page", page);
+            response.put("size", size);
+            response.put("conversationId", conversationId);
+            response.put("groupId", groupId);
+            return response;
+        }
+
         // 如果没有会话ID，需要先查找或创建会话
         if (conversationId == null) {
             if (targetUserId == null) {
@@ -124,11 +238,14 @@ public class ChatServiceImpl implements ChatService {
                 .map(message -> {
                     // 查询发送者信息
                     User sender = userMapper.selectById(message.getSenderId());
-                    
+
                     Map<String, Object> item = new HashMap<>();
                     item.put("id", message.getId());
                     item.put("senderId", message.getSenderId());
-                    item.put("senderName", sender != null ? (sender.getNickname() != null ? sender.getNickname() : sender.getUsername()) : "未知用户");
+                    item.put("senderName",
+                            sender != null
+                                    ? (sender.getNickname() != null ? sender.getNickname() : sender.getUsername())
+                                    : "未知用户");
                     item.put("content", message.getContent());
                     item.put("type", message.getType());
                     item.put("imageUrl", message.getImageUrl());
@@ -150,7 +267,8 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional
-    public Map<String, Object> sendMessage(Long senderId, Long receiverId, String content, String type, String imageUrl, String fileUrl) {
+    public Map<String, Object> sendMessage(Long senderId, Long receiverId, String content, String type, String imageUrl,
+            String fileUrl) {
         // 验证参数
         if (content == null || content.isEmpty()) {
             throw new BusinessException(ErrorCode.BAD_REQUEST, "消息内容不能为空");
@@ -180,14 +298,16 @@ public class ChatServiceImpl implements ChatService {
         // 更新会话的最后消息信息
         conversation.setLastMessageId(message.getId()); // 记录该会话最后一条消息的ID
         conversation.setLastMessageTime(LocalDateTime.now()); // 更新会话最后消息时间为当前时间
-        
+
         // 更新未读消息数（接收者的未读消息数+1）
         if (conversation.getUser1Id().equals(receiverId)) { // 如果接收者是会话中的user1
-            conversation.setUser1UnreadCount((conversation.getUser1UnreadCount() != null ? conversation.getUser1UnreadCount() : 0) + 1); // user1未读数加1（为空时按0处理）
+            conversation.setUser1UnreadCount(
+                    (conversation.getUser1UnreadCount() != null ? conversation.getUser1UnreadCount() : 0) + 1); // user1未读数加1（为空时按0处理）
         } else { // 否则接收者是user2
-            conversation.setUser2UnreadCount((conversation.getUser2UnreadCount() != null ? conversation.getUser2UnreadCount() : 0) + 1); // user2未读数加1（为空时按0处理）
+            conversation.setUser2UnreadCount(
+                    (conversation.getUser2UnreadCount() != null ? conversation.getUser2UnreadCount() : 0) + 1); // user2未读数加1（为空时按0处理）
         }
-        
+
         conversation.setUpdateTime(LocalDateTime.now()); // 更新会话更新时间为当前时间
         conversationMapper.updateById(conversation); // 将更新后的会话信息写回数据库
 
@@ -207,7 +327,8 @@ public class ChatServiceImpl implements ChatService {
             String destination = "/topic/chat/" + receiverId; // 构造接收者专属订阅目的地路径（/topic/chat/{userId}）
             messagingTemplate.convertAndSend(destination, wsPayload); // 通过SimpMessagingTemplate向对应目的地推送消息
         } catch (Exception e) { // 捕获推送过程中可能出现的异常
-            log.warn("通过WebSocket推送聊天消息失败: senderId={}, receiverId={}, conversationId={}", senderId, receiverId, conversationId, e); // 打印警告日志但不中断主流程
+            log.warn("通过WebSocket推送聊天消息失败: senderId={}, receiverId={}, conversationId={}", senderId, receiverId,
+                    conversationId, e); // 打印警告日志但不中断主流程
         }
 
         // 返回消息信息
@@ -221,7 +342,63 @@ public class ChatServiceImpl implements ChatService {
 
     @Override
     @Transactional
+    public Map<String, Object> sendGroupMessage(Long senderId, Long groupId, String content, String type,
+            String imageUrl, String fileUrl) {
+        if (content == null || content.isEmpty()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "消息内容不能为空");
+        }
+        if (type == null) {
+            type = "TEXT";
+        }
+
+        // 校验群成员
+        ChatGroupMember gm = chatGroupMemberMapper.selectOne(
+                new LambdaQueryWrapper<ChatGroupMember>()
+                        .eq(ChatGroupMember::getGroupId, groupId)
+                        .eq(ChatGroupMember::getUserId, senderId));
+        if (gm == null) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "无权在此群聊发送消息");
+        }
+
+        ChatGroupMessage message = new ChatGroupMessage();
+        message.setGroupId(groupId);
+        message.setSenderId(senderId);
+        message.setContent(content);
+        message.setType(type);
+        message.setImageUrl(imageUrl);
+        message.setFileUrl(fileUrl);
+        message.setCreateTime(LocalDateTime.now());
+        chatGroupMessageMapper.insert(message);
+
+        // 预留：WebSocket推送到群聊订阅地址（按需扩展）
+        try {
+            Map<String, Object> wsPayload = new HashMap<>();
+            wsPayload.put("messageId", message.getId());
+            wsPayload.put("groupId", groupId);
+            wsPayload.put("senderId", senderId);
+            wsPayload.put("content", content);
+            wsPayload.put("type", type);
+            wsPayload.put("createTime", message.getCreateTime());
+            messagingTemplate.convertAndSend("/topic/chat-group/" + groupId, wsPayload);
+        } catch (Exception e) {
+            log.warn("通过WebSocket推送群聊消息失败: groupId={}, senderId={}", groupId, senderId, e);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("messageId", message.getId());
+        response.put("groupId", groupId);
+        response.put("createTime", message.getCreateTime());
+        return response;
+    }
+
+    @Override
+    @Transactional
     public void markConversationAsRead(Long userId, Long conversationId) {
+        // 群聊：暂不维护未读数，直接返回成功（兼容前端调用）
+        if (conversationId != null && conversationId < 0) {
+            return;
+        }
+
         // 查询会话
         ChatConversation conversation = conversationMapper.selectById(conversationId);
         if (conversation == null) {
@@ -290,5 +467,25 @@ public class ChatServiceImpl implements ChatService {
         }
 
         return conversation.getId();
+    }
+
+    private long toMillis(Object value) {
+        if (value == null)
+            return 0L;
+        try {
+            if (value instanceof java.time.LocalDateTime) {
+                return ((java.time.LocalDateTime) value).atZone(java.time.ZoneId.systemDefault()).toInstant()
+                        .toEpochMilli();
+            }
+            if (value instanceof java.util.Date) {
+                return ((java.util.Date) value).getTime();
+            }
+            if (value instanceof String) {
+                return java.time.Instant.parse((String) value).toEpochMilli();
+            }
+        } catch (Exception ignore) {
+            // ignore
+        }
+        return 0L;
     }
 }

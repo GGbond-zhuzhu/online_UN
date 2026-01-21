@@ -11,6 +11,7 @@ import '@campus/common/styles/index.scss' // 使用 common 中的全局样式入
 
 // 引入 Font Awesome 图标样式（通过 npm 包统一管理，避免各页面重复 @import）
 import '@fortawesome/fontawesome-free/css/all.min.css'
+// 说明：项目目前主要使用 fas/far/fab（FA5+）写法；FA7 已不再提供 v4-shims，避免引入不存在文件导致启动失败
 
 const app = createApp(App) // 创建 Vue 应用实例
 const pinia = createPinia() // 创建 Pinia 实例用于状态管理

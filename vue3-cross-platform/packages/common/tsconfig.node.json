@@ -3,11 +3,7 @@
     "composite": true,
     "module": "ESNext",
     "moduleResolution": "Node",
-    "allowSyntheticDefaultImports": true,
-    // 强制文件名大小写一致，避免在不同操作系统上出现路径大小写问题
-    "forceConsistentCasingInFileNames": true,
-    // 启用严格模式，提高代码质量
-    "strict": true
+    "allowSyntheticDefaultImports": true
   },
   "include": ["vite.config.ts"]
 }

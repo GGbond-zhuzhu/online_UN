@@ -71,6 +71,55 @@ export const useParttimeStore = defineStore('parttime', () => {
   const myParttimeList = ref<ParttimeJob[]>([]) // 我发布的兼职岗位列表
   const myApplicationList = ref<any[]>([]) // 我报名的兼职记录列表（具体类型可根据后端 VO 补充）
 
+  // ========== 演示模式辅助：未登录时提供可演示数据 ==========
+  const isAuthError = (error: any): boolean => {
+    const msg = String(error?.message || '')
+    return (
+      msg.includes('未授权') ||
+      msg.includes('未登录') ||
+      msg.includes('请重新登录') ||
+      msg.includes('token') ||
+      msg.includes('401')
+    )
+  }
+
+  const getDemoApplications = () => {
+    const now = new Date()
+    const fmt = (d: Date) => d.toLocaleString('zh-CN', { hour12: false })
+    return [
+      {
+        id: 10001,
+        jobId: 20001,
+        jobTitle: '图书馆助理（演示）',
+        companyName: '校内勤工助学中心',
+        status: 'pending',
+        applyTime: fmt(new Date(now.getTime() - 2 * 60 * 60 * 1000)),
+        reviewTime: '',
+        reviewComment: ''
+      },
+      {
+        id: 10002,
+        jobId: 20002,
+        jobTitle: '食堂收银（演示）',
+        companyName: '第一食堂',
+        status: 'approved',
+        applyTime: fmt(new Date(now.getTime() - 26 * 60 * 60 * 1000)),
+        reviewTime: fmt(new Date(now.getTime() - 20 * 60 * 60 * 1000)),
+        reviewComment: '请携带学生证到岗培训'
+      },
+      {
+        id: 10003,
+        jobId: 20003,
+        jobTitle: '活动执行（演示）',
+        companyName: '校园活动组委会',
+        status: 'rejected',
+        applyTime: fmt(new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)),
+        reviewTime: fmt(new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000)),
+        reviewComment: '本次岗位已满员'
+      }
+    ]
+  }
+
   // ========== 列表与详情加载方法 ==========
 
   // 加载兼职列表
@@ -142,6 +191,11 @@ export const useParttimeStore = defineStore('parttime', () => {
       return res // 返回完整响应给调用方
     } catch (error: any) {
       console.error('加载我的兼职报名记录失败:', error) // 打印错误日志
+      // 演示模式：未登录时用模拟数据填充，方便演示“取消申请”等交互
+      if (isAuthError(error)) {
+        myApplicationList.value = getDemoApplications()
+        return { list: myApplicationList.value, total: myApplicationList.value.length, page, size }
+      }
       errorMessage.value = error?.message || '加载我的报名记录失败，请稍后重试' // 写入错误提示
       throw error // 抛出错误
     } finally {
@@ -232,6 +286,11 @@ export const useParttimeStore = defineStore('parttime', () => {
       myApplicationList.value = myApplicationList.value.filter((item: any) => item.id !== applicationId) // 过滤掉被取消的申请
     } catch (error: any) {
       console.error('取消兼职报名失败:', error) // 打印错误日志
+      // 演示模式：未登录也允许“本地取消”，让演示流程可走通
+      if (isAuthError(error)) {
+        myApplicationList.value = myApplicationList.value.filter((item: any) => item.id !== applicationId)
+        return
+      }
       errorMessage.value = error?.message || '取消报名失败，请稍后重试' // 写入错误提示
       throw error // 抛出错误交由调用方处理
     } finally {

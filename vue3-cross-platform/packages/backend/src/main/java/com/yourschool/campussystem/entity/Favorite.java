@@ -25,4 +25,8 @@ public class Favorite {
 
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
+
+    @TableField("is_deleted")
+    @TableLogic
+    private Integer isDeleted;  // 0-未删除，1-已删除
 }

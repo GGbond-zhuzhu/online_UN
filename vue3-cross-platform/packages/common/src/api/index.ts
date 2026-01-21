@@ -21,3 +21,9 @@ export * from './schedule'
 // 通用功能相关API
 export * from './common'
 
+// 记账本相关API
+export * from './account-book'
+
+// 饮食记录相关API
+export * from './diet-record'
+

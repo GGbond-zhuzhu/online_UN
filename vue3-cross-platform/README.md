@@ -8,6 +8,25 @@
 - packages/common：双端公共核心（组件/API/状态/权限）
 - packages/web：Vue3+Vite 网页端子包（PC 端）
 
+## ⚠️ 演示模式说明
+**当前项目已启用演示模式，所有登录权限检查已禁用，方便演示使用。**
+
+### 已禁用的功能
+1. **路由权限检查**：所有页面都可以直接访问，无需登录
+   - UniApp端：`packages/app/src/router/index.ts`
+   - Web端：`packages/web/src/router/index.ts`
+2. **API请求401自动跳转**：收到401错误时不会自动跳转到登录页
+   - 位置：`packages/common/src/utils/request.ts`
+
+### 如何恢复权限检查
+如需恢复正常的权限检查功能，请：
+1. 打开对应的路由守卫文件
+2. 删除演示模式的 `return` 语句
+3. 取消注释被禁用的权限检查代码
+4. 在API请求拦截器中恢复401自动跳转逻辑
+
+详细说明请查看各文件中的注释。
+
 ## 脚本说明
 - pnpm dev:app：启动 App 端开发模式
 - pnpm dev:web：启动 Web 端开发模式

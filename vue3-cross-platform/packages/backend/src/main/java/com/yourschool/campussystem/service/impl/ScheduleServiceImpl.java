@@ -6,11 +6,14 @@ import com.alibaba.excel.event.AnalysisEventListener;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yourschool.campussystem.dto.*;
 import com.yourschool.campussystem.entity.*;
 import com.yourschool.campussystem.enums.RemindTypeEnum;
 import com.yourschool.campussystem.enums.ScheduleStatusEnum;
 import com.yourschool.campussystem.enums.ScheduleTypeEnum;
+import com.yourschool.campussystem.enums.ChatGroupRoleEnum;
 import com.yourschool.campussystem.enums.TeamRoleEnum;
 import com.yourschool.campussystem.common.ErrorCode;
 import com.yourschool.campussystem.exception.BusinessException;
@@ -41,15 +44,23 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, PersonalSchedule> implements ScheduleService {
+public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, PersonalSchedule>
+        implements ScheduleService {
 
     private final PersonalScheduleMapper personalScheduleMapper;
     private final TeamMapper teamMapper;
     private final TeamMemberMapper teamMemberMapper;
+    private final TeamInviteMapper teamInviteMapper;
     private final TeamScheduleMapper teamScheduleMapper;
     private final TeamScheduleAttendeeMapper attendeeMapper;
     private final UserMapper userMapper;
     private final UniversityMapper universityMapper;
+    private final ChatGroupMapper chatGroupMapper;
+    private final ChatGroupMemberMapper chatGroupMemberMapper;
+    private final CourseTableMapper courseTableMapper;
+    private final RouteSeriesLocationMapper routeSeriesLocationMapper;
+    private final RouteSeriesRouteMapper routeSeriesRouteMapper;
+    private final ObjectMapper objectMapper;
 
     // ==================== 个人行程管理 ====================
 
@@ -62,7 +73,7 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         schedule.setStartTime(scheduleDTO.getStartTime());
         schedule.setEndTime(scheduleDTO.getEndTime());
         schedule.setType(scheduleDTO.getType() != null ? scheduleDTO.getType() : ScheduleTypeEnum.OTHER);
-        schedule.setStatus(scheduleDTO.getStatus() != null ? scheduleDTO.getStatus() : ScheduleStatusEnum.PENDING);
+        schedule.setStatus(ScheduleStatusEnum.PENDING);
         schedule.setLocation(scheduleDTO.getLocation());
         schedule.setIsAllDay(scheduleDTO.getIsAllDay() != null ? scheduleDTO.getIsAllDay() : false);
         schedule.setRemindType(scheduleDTO.getRemindType());
@@ -70,9 +81,19 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         schedule.setIsRepeat(scheduleDTO.getIsRepeat() != null ? scheduleDTO.getIsRepeat() : false);
         schedule.setRepeatRule(scheduleDTO.getRepeatRule());
         schedule.setTag(scheduleDTO.getTag());
+        boolean isRouteSeries = Boolean.TRUE.equals(scheduleDTO.getIsRouteSeries());
+        schedule.setIsRouteSeries(isRouteSeries);
+        schedule.setRouteSeriesTheme(isRouteSeries && scheduleDTO.getRouteSeriesData() != null
+                ? scheduleDTO.getRouteSeriesData().getTheme()
+                : null);
         schedule.setCreatorId(userId);
 
         personalScheduleMapper.insert(schedule);
+
+        // 保存行程系列数据
+        if (isRouteSeries && scheduleDTO.getRouteSeriesData() != null) {
+            upsertRouteSeries(schedule.getId(), scheduleDTO.getRouteSeriesData());
+        }
 
         User creator = userMapper.selectById(userId);
         return convertToPersonalVO(schedule, creator);
@@ -107,13 +128,15 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
             queryWrapper.and(wrapper -> wrapper
                     .like(PersonalSchedule::getTitle, queryDTO.getKeyword())
                     .or()
-                    .like(PersonalSchedule::getDescription, queryDTO.getKeyword())
-            );
+                    .like(PersonalSchedule::getDescription, queryDTO.getKeyword()));
         }
 
         queryWrapper.orderByDesc(PersonalSchedule::getStartTime);
 
-        Page<PersonalSchedule> pageObj = new Page<>(queryDTO.getPage(), queryDTO.getSize());
+        int pageSize = (queryDTO.getPageSize() != null && queryDTO.getPageSize() > 0)
+                ? queryDTO.getPageSize()
+                : queryDTO.getSize();
+        Page<PersonalSchedule> pageObj = new Page<>(queryDTO.getPage(), pageSize);
         Page<PersonalSchedule> result = personalScheduleMapper.selectPage(pageObj, queryWrapper);
 
         List<PersonalScheduleVO> voList = result.getRecords().stream()
@@ -139,9 +162,12 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         int pendingCount = personalScheduleMapper.selectCount(pendingQuery).intValue();
 
         Map<String, Object> response = new HashMap<>();
+        // 兼容两套字段：旧字段(list/page/size) + 新字段(records/current/size)
         response.put("list", voList);
+        response.put("records", voList);
         response.put("page", queryDTO.getPage());
-        response.put("size", queryDTO.getSize());
+        response.put("current", queryDTO.getPage());
+        response.put("size", pageSize);
         response.put("total", result.getTotal());
         response.put("todayCount", todayCount);
         response.put("pendingCount", pendingCount);
@@ -189,8 +215,20 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         schedule.setIsRepeat(updateDTO.getIsRepeat());
         schedule.setRepeatRule(updateDTO.getRepeatRule());
         schedule.setTag(updateDTO.getTag());
+        boolean isRouteSeries = Boolean.TRUE.equals(updateDTO.getIsRouteSeries());
+        schedule.setIsRouteSeries(isRouteSeries);
+        schedule.setRouteSeriesTheme(isRouteSeries && updateDTO.getRouteSeriesData() != null
+                ? updateDTO.getRouteSeriesData().getTheme()
+                : null);
 
         personalScheduleMapper.updateById(schedule);
+
+        // 更新/清理行程系列数据
+        if (isRouteSeries && updateDTO.getRouteSeriesData() != null) {
+            upsertRouteSeries(schedule.getId(), updateDTO.getRouteSeriesData());
+        } else {
+            clearRouteSeries(schedule.getId());
+        }
 
         User creator = userMapper.selectById(userId);
         return convertToPersonalVO(schedule, creator);
@@ -255,6 +293,22 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
 
         teamMapper.insert(team);
 
+        // 创建团队消息群（对齐App端：创建团队=自动创建群聊；创建者=群主；管理员初始为空）
+        ChatGroup chatGroup = new ChatGroup();
+        chatGroup.setTeamId(team.getId());
+        chatGroup.setName(team.getName());
+        chatGroup.setOwnerId(userId);
+        chatGroup.setMaxAdmins(4);
+        chatGroupMapper.insert(chatGroup);
+
+        // 添加创建者为群成员（OWNER）
+        ChatGroupMember groupOwner = new ChatGroupMember();
+        groupOwner.setGroupId(chatGroup.getId());
+        groupOwner.setUserId(userId);
+        groupOwner.setRole(ChatGroupRoleEnum.OWNER);
+        groupOwner.setJoinTime(LocalDateTime.now());
+        chatGroupMemberMapper.insert(groupOwner);
+
         // 添加创建者为成员
         TeamMember creatorMember = new TeamMember();
         creatorMember.setTeamId(team.getId());
@@ -267,13 +321,22 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
             for (Long memberId : teamDTO.getMemberIds()) {
                 if (!memberId.equals(userId)) {
                     User member = userMapper.selectById(memberId);
-                    if (member != null && member.getSchoolId() != null && 
-                        member.getSchoolId().equals(creator.getSchoolId())) {
+                    if (member != null && member.getSchoolId() != null &&
+                            member.getSchoolId().equals(creator.getSchoolId())) {
                         TeamMember teamMember = new TeamMember();
                         teamMember.setTeamId(team.getId());
                         teamMember.setUserId(memberId);
                         teamMember.setRole(TeamRoleEnum.MEMBER);
                         teamMemberMapper.insert(teamMember);
+
+                        // 同步加入团队消息群
+                        ChatGroupMember groupMember = new ChatGroupMember();
+                        groupMember.setGroupId(chatGroup.getId());
+                        groupMember.setUserId(memberId);
+                        groupMember.setRole(ChatGroupRoleEnum.MEMBER);
+                        groupMember.setJoinTime(LocalDateTime.now());
+                        chatGroupMemberMapper.insert(groupMember);
+
                         team.setMemberCount(team.getMemberCount() + 1);
                     }
                 }
@@ -310,12 +373,13 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         List<TeamVO> voList = result.getRecords().stream()
                 .map(team -> {
                     User creator = userMapper.selectById(team.getCreatorId());
+                    // 兼容历史数据：如果团队没有群聊，则自动补齐（避免“创建团队但没群聊”）
+                    ensureTeamChatGroup(team);
                     // 查询用户在团队中的角色
                     TeamMember member = teamMemberMapper.selectOne(
                             new LambdaQueryWrapper<TeamMember>()
                                     .eq(TeamMember::getTeamId, team.getId())
-                                    .eq(TeamMember::getUserId, userId)
-                    );
+                                    .eq(TeamMember::getUserId, userId));
                     TeamRoleEnum userRole = member != null ? member.getRole() : null;
                     return convertToTeamVO(team, creator, userId, userRole);
                 })
@@ -344,6 +408,9 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
             throw new BusinessException(ErrorCode.TEAM_MEMBER_NOT_EXIST);
         }
 
+        // 兼容历史数据：确保团队群聊存在
+        ensureTeamChatGroup(team);
+
         User creator = userMapper.selectById(team.getCreatorId());
         TeamVO teamVO = convertToTeamVO(team, creator, userId, member.getRole());
 
@@ -356,8 +423,9 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
                     User user = userMapper.selectById(m.getUserId());
                     TeamMemberVO memberVO = new TeamMemberVO();
                     memberVO.setUserId(m.getUserId());
-                    memberVO.setUserName(user != null ? 
-                            (user.getNickname() != null ? user.getNickname() : user.getUsername()) : null);
+                    memberVO.setUserName(
+                            user != null ? (user.getNickname() != null ? user.getNickname() : user.getUsername())
+                                    : null);
                     memberVO.setAvatar(user != null ? user.getAvatarUrl() : null);
                     memberVO.setRole(m.getRole());
                     memberVO.setJoinTime(m.getJoinTime());
@@ -382,6 +450,74 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         return teamVO;
     }
 
+    /**
+     * 兼容历史数据：确保团队消息群存在，并同步成员到群成员表
+     */
+    private void ensureTeamChatGroup(Team team) {
+        if (team == null || team.getId() == null)
+            return;
+
+        ChatGroup group = chatGroupMapper.selectOne(
+                new LambdaQueryWrapper<ChatGroup>()
+                        .eq(ChatGroup::getTeamId, team.getId())
+                        .eq(ChatGroup::getIsDeleted, 0)
+                        .last("LIMIT 1"));
+
+        if (group == null) {
+            group = new ChatGroup();
+            group.setTeamId(team.getId());
+            group.setName(team.getName());
+            group.setOwnerId(team.getCreatorId());
+            group.setMaxAdmins(4);
+            chatGroupMapper.insert(group);
+        }
+
+        // 同步团队成员 -> 群成员
+        List<TeamMember> members = teamMemberMapper.selectList(
+                new LambdaQueryWrapper<TeamMember>().eq(TeamMember::getTeamId, team.getId()));
+        if (members == null || members.isEmpty())
+            return;
+
+        // 已存在的群成员
+        List<ChatGroupMember> existing = chatGroupMemberMapper.selectList(
+                new LambdaQueryWrapper<ChatGroupMember>().eq(ChatGroupMember::getGroupId, group.getId()));
+        List<ChatGroupMember> existingList = existing != null ? existing : java.util.Collections.emptyList();
+        Set<Long> existingUserIds = existingList.stream()
+                .map(ChatGroupMember::getUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        for (TeamMember tm : members) {
+            if (tm.getUserId() == null)
+                continue;
+
+            ChatGroupRoleEnum role = tm.getRole() == TeamRoleEnum.CREATOR
+                    ? ChatGroupRoleEnum.OWNER
+                    : tm.getRole() == TeamRoleEnum.ADMIN
+                            ? ChatGroupRoleEnum.ADMIN
+                            : ChatGroupRoleEnum.MEMBER;
+
+            if (!existingUserIds.contains(tm.getUserId())) {
+                ChatGroupMember gm = new ChatGroupMember();
+                gm.setGroupId(group.getId());
+                gm.setUserId(tm.getUserId());
+                gm.setRole(role);
+                gm.setJoinTime(LocalDateTime.now());
+                chatGroupMemberMapper.insert(gm);
+            } else {
+                // 已存在：若角色不一致则更新
+                ChatGroupMember gm = existingList.stream()
+                        .filter(x -> tm.getUserId().equals(x.getUserId()))
+                        .findFirst()
+                        .orElse(null);
+                if (gm != null && gm.getRole() != role) {
+                    gm.setRole(role);
+                    chatGroupMemberMapper.updateById(gm);
+                }
+            }
+        }
+    }
+
     @Override
     @Transactional
     public void inviteTeamMember(Long userId, Long teamId, Long inviteUserId) {
@@ -394,17 +530,16 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         TeamMember inviter = teamMemberMapper.selectOne(
                 new LambdaQueryWrapper<TeamMember>()
                         .eq(TeamMember::getTeamId, teamId)
-                        .eq(TeamMember::getUserId, userId)
-        );
-        if (inviter == null || 
-            (inviter.getRole() != TeamRoleEnum.CREATOR && inviter.getRole() != TeamRoleEnum.ADMIN)) {
+                        .eq(TeamMember::getUserId, userId));
+        if (inviter == null ||
+                (inviter.getRole() != TeamRoleEnum.CREATOR && inviter.getRole() != TeamRoleEnum.ADMIN)) {
             throw new BusinessException(ErrorCode.TEAM_ROLE_DENIED);
         }
 
         // 检查被邀请用户是否同校
         User inviteUser = userMapper.selectById(inviteUserId);
-        if (inviteUser == null || inviteUser.getSchoolId() == null || 
-            !inviteUser.getSchoolId().equals(team.getSchoolId())) {
+        if (inviteUser == null || inviteUser.getSchoolId() == null ||
+                !inviteUser.getSchoolId().equals(team.getSchoolId())) {
             throw new BusinessException(ErrorCode.PARTTIME_NOT_SAME_SCHOOL);
         }
 
@@ -421,27 +556,111 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
 
-        // 添加成员
-        TeamMember newMember = new TeamMember();
-        newMember.setTeamId(teamId);
-        newMember.setUserId(inviteUserId);
-        newMember.setRole(TeamRoleEnum.MEMBER);
-        teamMemberMapper.insert(newMember);
+        // 检查是否已存在待处理邀请（避免重复邀请同一人）
+        Long pending = teamInviteMapper.selectCount(new LambdaQueryWrapper<TeamInvite>()
+                .eq(TeamInvite::getTeamId, teamId)
+                .eq(TeamInvite::getInviteeId, inviteUserId)
+                .eq(TeamInvite::getStatus, "PENDING"));
+        if (pending != null && pending > 0) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "已发送邀请，请勿重复邀请");
+        }
 
-        team.setMemberCount(team.getMemberCount() + 1);
-        teamMapper.updateById(team);
+        // 创建邀请记录（邀请-接受/拒绝）
+        TeamInvite invite = new TeamInvite();
+        invite.setTeamId(teamId);
+        invite.setInviterId(userId);
+        invite.setInviteeId(inviteUserId);
+        invite.setStatus("PENDING");
+        invite.setInviteTime(LocalDateTime.now());
+        teamInviteMapper.insert(invite);
     }
 
     @Override
     @Transactional
     public void processTeamInvite(Long userId, Long inviteId, String action) {
-        // 这里简化处理，实际应该有邀请表
-        // 暂时直接添加成员
-        if ("accept".equals(action)) {
-            // 接受邀请的逻辑
-        } else {
-            // 拒绝邀请的逻辑
+        if (!StringUtils.hasText(action)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "action 不能为空");
         }
+        String act = action.trim().toLowerCase();
+        if (!"accept".equals(act) && !"reject".equals(act)) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "action 只能为 accept/reject");
+        }
+
+        TeamInvite invite = teamInviteMapper.selectById(inviteId);
+        if (invite == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "邀请不存在");
+        }
+        if (invite.getInviteeId() == null || !invite.getInviteeId().equals(userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "无权处理该邀请");
+        }
+        if (!"PENDING".equalsIgnoreCase(invite.getStatus())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "邀请已处理");
+        }
+
+        Team team = teamMapper.selectById(invite.getTeamId());
+        if (team == null || team.getIsDeleted() == 1) {
+            throw new BusinessException(ErrorCode.TEAM_NOT_EXIST);
+        }
+
+        if ("reject".equals(act)) {
+            invite.setStatus("REJECTED");
+            invite.setProcessTime(LocalDateTime.now());
+            teamInviteMapper.updateById(invite);
+            return;
+        }
+
+        // accept：加入团队 + 同步加入群聊
+        TeamMember existMember = teamMemberMapper.selectOne(new LambdaQueryWrapper<TeamMember>()
+                .eq(TeamMember::getTeamId, team.getId())
+                .eq(TeamMember::getUserId, userId));
+        if (existMember != null) {
+            // 已在团队：标记邀请为已接受，避免重复处理
+            invite.setStatus("ACCEPTED");
+            invite.setProcessTime(LocalDateTime.now());
+            teamInviteMapper.updateById(invite);
+            return;
+        }
+
+        if (team.getMemberCount() >= team.getMaxMembers()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "团队人数已满，无法加入");
+        }
+
+        // 新增团队成员
+        TeamMember newMember = new TeamMember();
+        newMember.setTeamId(team.getId());
+        newMember.setUserId(userId);
+        newMember.setRole(TeamRoleEnum.MEMBER);
+        newMember.setJoinTime(LocalDateTime.now());
+        teamMemberMapper.insert(newMember);
+
+        // 更新团队人数
+        team.setMemberCount(team.getMemberCount() + 1);
+        teamMapper.updateById(team);
+
+        // 确保群存在，并同步加入群成员
+        ensureTeamChatGroup(team);
+        ChatGroup group = chatGroupMapper.selectOne(new LambdaQueryWrapper<ChatGroup>()
+                .eq(ChatGroup::getTeamId, team.getId())
+                .eq(ChatGroup::getIsDeleted, 0)
+                .last("LIMIT 1"));
+        if (group != null) {
+            Long gmExists = chatGroupMemberMapper.selectCount(new LambdaQueryWrapper<ChatGroupMember>()
+                    .eq(ChatGroupMember::getGroupId, group.getId())
+                    .eq(ChatGroupMember::getUserId, userId));
+            if (gmExists == null || gmExists == 0) {
+                ChatGroupMember gm = new ChatGroupMember();
+                gm.setGroupId(group.getId());
+                gm.setUserId(userId);
+                gm.setRole(ChatGroupRoleEnum.MEMBER);
+                gm.setJoinTime(LocalDateTime.now());
+                chatGroupMemberMapper.insert(gm);
+            }
+        }
+
+        // 标记邀请已接受
+        invite.setStatus("ACCEPTED");
+        invite.setProcessTime(LocalDateTime.now());
+        teamInviteMapper.updateById(invite);
     }
 
     @Override
@@ -456,10 +675,9 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         TeamMember operator = teamMemberMapper.selectOne(
                 new LambdaQueryWrapper<TeamMember>()
                         .eq(TeamMember::getTeamId, teamId)
-                        .eq(TeamMember::getUserId, userId)
-        );
-        if (operator == null || 
-            (operator.getRole() != TeamRoleEnum.CREATOR && operator.getRole() != TeamRoleEnum.ADMIN)) {
+                        .eq(TeamMember::getUserId, userId));
+        if (operator == null ||
+                (operator.getRole() != TeamRoleEnum.CREATOR && operator.getRole() != TeamRoleEnum.ADMIN)) {
             throw new BusinessException(ErrorCode.TEAM_ROLE_DENIED);
         }
 
@@ -474,6 +692,19 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
                 .eq(TeamMember::getUserId, memberUserId);
         teamMemberMapper.delete(deleteQuery);
 
+        // 同步移除群聊成员（若存在群）
+        ChatGroup group = chatGroupMapper.selectOne(
+                new LambdaQueryWrapper<ChatGroup>()
+                        .eq(ChatGroup::getTeamId, teamId)
+                        .eq(ChatGroup::getIsDeleted, 0)
+                        .last("LIMIT 1"));
+        if (group != null) {
+            LambdaQueryWrapper<ChatGroupMember> gmDel = new LambdaQueryWrapper<>();
+            gmDel.eq(ChatGroupMember::getGroupId, group.getId())
+                    .eq(ChatGroupMember::getUserId, memberUserId);
+            chatGroupMemberMapper.delete(gmDel);
+        }
+
         team.setMemberCount(team.getMemberCount() - 1);
         teamMapper.updateById(team);
     }
@@ -487,10 +718,14 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         TeamMember member = teamMemberMapper.selectOne(
                 new LambdaQueryWrapper<TeamMember>()
                         .eq(TeamMember::getTeamId, scheduleDTO.getTeamId())
-                        .eq(TeamMember::getUserId, userId)
-        );
+                        .eq(TeamMember::getUserId, userId));
         if (member == null) {
             throw new BusinessException(ErrorCode.TEAM_MEMBER_NOT_EXIST);
+        }
+
+        // 权限：仅创建者/管理员可创建团队行程（对齐App端）
+        if (member.getRole() != TeamRoleEnum.CREATOR && member.getRole() != TeamRoleEnum.ADMIN) {
+            throw new BusinessException(ErrorCode.TEAM_ROLE_DENIED);
         }
 
         Team team = teamMapper.selectById(scheduleDTO.getTeamId());
@@ -518,9 +753,15 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         List<Long> memberUserIds = allMembers.stream()
                 .map(TeamMember::getUserId)
                 .collect(Collectors.toList());
+        Set<Long> memberUserIdSet = new HashSet<>(memberUserIds);
 
         // 添加参会人员
         if (scheduleDTO.getAttendeeIds() != null && !scheduleDTO.getAttendeeIds().isEmpty()) {
+            for (Long attendeeId : scheduleDTO.getAttendeeIds()) {
+                if (attendeeId == null || !memberUserIdSet.contains(attendeeId)) {
+                    throw new BusinessException(ErrorCode.BAD_REQUEST, "参会人员必须为团队成员");
+                }
+            }
             for (Long attendeeId : scheduleDTO.getAttendeeIds()) {
                 TeamScheduleAttendee attendee = new TeamScheduleAttendee();
                 attendee.setScheduleId(schedule.getId());
@@ -539,10 +780,36 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
             }
         }
 
-        // 自动为所有团队成员创建个人行程
+        // 同步置入：写入成员个人行程表（可选成员；默认：syncInUserIds > attendeeIds > 全员(兼容旧行为)）
+        List<Long> syncTargets;
+        if (scheduleDTO.getSyncInUserIds() != null && !scheduleDTO.getSyncInUserIds().isEmpty()) {
+            syncTargets = scheduleDTO.getSyncInUserIds();
+        } else if (scheduleDTO.getAttendeeIds() != null && !scheduleDTO.getAttendeeIds().isEmpty()) {
+            syncTargets = scheduleDTO.getAttendeeIds();
+        } else {
+            syncTargets = memberUserIds; // 兼容历史调用：未传参会/同步列表时默认全员
+        }
+
+        for (Long uid : syncTargets) {
+            if (uid == null || !memberUserIdSet.contains(uid)) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "同步置入成员必须为团队成员");
+            }
+        }
+
         int syncedCount = 0;
-        for (Long memberUserId : memberUserIds) {
+        int skippedCount = 0;
+        for (Long memberUserId : syncTargets) {
             try {
+                // 去重：同一团队行程不要重复同步到同一成员
+                Long exists = personalScheduleMapper.selectCount(new LambdaQueryWrapper<PersonalSchedule>()
+                        .eq(PersonalSchedule::getCreatorId, memberUserId)
+                        .eq(PersonalSchedule::getSyncedTeamScheduleId, schedule.getId())
+                        .eq(PersonalSchedule::getIsDeleted, 0));
+                if (exists != null && exists > 0) {
+                    skippedCount++;
+                    continue;
+                }
+
                 PersonalSchedule personalSchedule = new PersonalSchedule();
                 personalSchedule.setTitle(schedule.getTitle());
                 personalSchedule.setDescription(schedule.getDescription());
@@ -562,7 +829,7 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
                 // 继续处理其他成员，不中断整个流程
             }
         }
-        log.info("团队行程 {} 已创建，并同步到 {} 个成员的个人行程表", schedule.getId(), syncedCount);
+        log.info("团队行程 {} 已创建，并同步到 {} 个成员的个人行程表，跳过 {} 个重复", schedule.getId(), syncedCount, skippedCount);
 
         return convertToTeamScheduleVO(schedule, team);
     }
@@ -573,8 +840,7 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         TeamMember member = teamMemberMapper.selectOne(
                 new LambdaQueryWrapper<TeamMember>()
                         .eq(TeamMember::getTeamId, teamId)
-                        .eq(TeamMember::getUserId, userId)
-        );
+                        .eq(TeamMember::getUserId, userId));
         if (member == null) {
             throw new BusinessException(ErrorCode.TEAM_MEMBER_NOT_EXIST);
         }
@@ -655,8 +921,7 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         TeamMember member = teamMemberMapper.selectOne(
                 new LambdaQueryWrapper<TeamMember>()
                         .eq(TeamMember::getTeamId, teamSchedule.getTeamId())
-                        .eq(TeamMember::getUserId, userId)
-        );
+                        .eq(TeamMember::getUserId, userId));
         if (member == null) {
             throw new BusinessException(ErrorCode.TEAM_MEMBER_NOT_EXIST);
         }
@@ -677,6 +942,182 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
 
         User creator = userMapper.selectById(userId);
         return convertToPersonalVO(personalSchedule, creator);
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Object> syncTeamScheduleToMembers(Long userId, Long teamId, Long teamScheduleId,
+            TeamSyncMembersDTO dto) {
+        Team team = teamMapper.selectById(teamId);
+        if (team == null || team.getIsDeleted() == 1) {
+            throw new BusinessException(ErrorCode.TEAM_NOT_EXIST);
+        }
+
+        TeamMember operator = teamMemberMapper.selectOne(
+                new LambdaQueryWrapper<TeamMember>()
+                        .eq(TeamMember::getTeamId, teamId)
+                        .eq(TeamMember::getUserId, userId));
+        if (operator == null
+                || (operator.getRole() != TeamRoleEnum.CREATOR && operator.getRole() != TeamRoleEnum.ADMIN)) {
+            throw new BusinessException(ErrorCode.TEAM_ROLE_DENIED);
+        }
+
+        TeamSchedule teamSchedule = teamScheduleMapper.selectById(teamScheduleId);
+        if (teamSchedule == null || teamSchedule.getIsDeleted() == 1) {
+            throw new BusinessException(ErrorCode.SCHEDULE_NOT_EXIST);
+        }
+        if (!teamId.equals(teamSchedule.getTeamId())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "团队行程不属于该团队");
+        }
+
+        // 校验目标成员必须在团队内
+        List<TeamMember> members = teamMemberMapper
+                .selectList(new LambdaQueryWrapper<TeamMember>().eq(TeamMember::getTeamId, teamId));
+        Set<Long> memberSet = members.stream().map(TeamMember::getUserId).collect(Collectors.toSet());
+        List<Long> targets = dto != null ? dto.getUserIds() : null;
+        if (targets == null || targets.isEmpty()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "请至少选择一个成员");
+        }
+        for (Long uid : targets) {
+            if (uid == null || !memberSet.contains(uid)) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "同步置入成员必须为团队成员");
+            }
+        }
+
+        int synced = 0;
+        int skipped = 0;
+        for (Long targetUserId : targets) {
+            Long exists = personalScheduleMapper.selectCount(new LambdaQueryWrapper<PersonalSchedule>()
+                    .eq(PersonalSchedule::getCreatorId, targetUserId)
+                    .eq(PersonalSchedule::getSyncedTeamScheduleId, teamScheduleId)
+                    .eq(PersonalSchedule::getIsDeleted, 0));
+            if (exists != null && exists > 0) {
+                skipped++;
+                continue;
+            }
+
+            PersonalSchedule personalSchedule = new PersonalSchedule();
+            personalSchedule.setTitle(teamSchedule.getTitle());
+            personalSchedule.setDescription(teamSchedule.getDescription());
+            personalSchedule.setStartTime(teamSchedule.getStartTime());
+            personalSchedule.setEndTime(teamSchedule.getEndTime());
+            personalSchedule.setType(ScheduleTypeEnum.TEAM);
+            personalSchedule.setStatus(teamSchedule.getStatus());
+            personalSchedule.setLocation(teamSchedule.getLocation());
+            personalSchedule.setIsAllDay(false);
+            personalSchedule.setCreatorId(targetUserId);
+            personalSchedule.setSyncedTeamScheduleId(teamScheduleId);
+            personalScheduleMapper.insert(personalSchedule);
+            synced++;
+        }
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("teamId", teamId);
+        res.put("teamScheduleId", teamScheduleId);
+        res.put("syncedCount", synced);
+        res.put("skippedCount", skipped);
+        return res;
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Object> syncCoursesToMembers(Long userId, Long teamId, TeamCourseSyncDTO dto) {
+        Team team = teamMapper.selectById(teamId);
+        if (team == null || team.getIsDeleted() == 1) {
+            throw new BusinessException(ErrorCode.TEAM_NOT_EXIST);
+        }
+
+        TeamMember operator = teamMemberMapper.selectOne(
+                new LambdaQueryWrapper<TeamMember>()
+                        .eq(TeamMember::getTeamId, teamId)
+                        .eq(TeamMember::getUserId, userId));
+        if (operator == null
+                || (operator.getRole() != TeamRoleEnum.CREATOR && operator.getRole() != TeamRoleEnum.ADMIN)) {
+            throw new BusinessException(ErrorCode.TEAM_ROLE_DENIED);
+        }
+
+        if (dto == null || dto.getSourceUserId() == null || dto.getTargetUserIds() == null
+                || dto.getTargetUserIds().isEmpty()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "参数不能为空");
+        }
+
+        List<TeamMember> members = teamMemberMapper
+                .selectList(new LambdaQueryWrapper<TeamMember>().eq(TeamMember::getTeamId, teamId));
+        Set<Long> memberSet = members.stream().map(TeamMember::getUserId).collect(Collectors.toSet());
+        if (!memberSet.contains(dto.getSourceUserId())) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "来源用户必须为团队成员");
+        }
+        for (Long uid : dto.getTargetUserIds()) {
+            if (uid == null || !memberSet.contains(uid)) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "目标成员必须为团队成员");
+            }
+        }
+
+        // 读取来源课程
+        List<CourseTable> sourceCourses = courseTableMapper.selectList(new LambdaQueryWrapper<CourseTable>()
+                .eq(CourseTable::getUserId, dto.getSourceUserId())
+                .eq(CourseTable::getIsDeleted, 0));
+
+        int deleted = 0;
+        boolean overwrite = Boolean.TRUE.equals(dto.getOverwrite());
+        if (overwrite) {
+            for (Long targetId : dto.getTargetUserIds()) {
+                List<CourseTable> existing = courseTableMapper.selectList(new LambdaQueryWrapper<CourseTable>()
+                        .eq(CourseTable::getUserId, targetId)
+                        .eq(CourseTable::getIsDeleted, 0));
+                for (CourseTable c : existing) {
+                    c.setIsDeleted(1);
+                    courseTableMapper.updateById(c);
+                    deleted++;
+                }
+            }
+        }
+
+        int inserted = 0;
+        int skipped = 0;
+        for (Long targetId : dto.getTargetUserIds()) {
+            for (CourseTable src : sourceCourses) {
+                Long exists = courseTableMapper.selectCount(new LambdaQueryWrapper<CourseTable>()
+                        .eq(CourseTable::getUserId, targetId)
+                        .eq(CourseTable::getIsDeleted, 0)
+                        .eq(CourseTable::getCourseName, src.getCourseName())
+                        .eq(CourseTable::getDayOfWeek, src.getDayOfWeek())
+                        .eq(CourseTable::getStartTime, src.getStartTime())
+                        .eq(CourseTable::getEndTime, src.getEndTime())
+                        .eq(CourseTable::getLocation, src.getLocation())
+                        .eq(CourseTable::getTeacher, src.getTeacher())
+                        .eq(CourseTable::getWeekRange, src.getWeekRange()));
+                if (!overwrite && exists != null && exists > 0) {
+                    skipped++;
+                    continue;
+                }
+
+                CourseTable copy = new CourseTable();
+                copy.setUserId(targetId);
+                copy.setCourseName(src.getCourseName());
+                copy.setDayOfWeek(src.getDayOfWeek());
+                copy.setStartTime(src.getStartTime());
+                copy.setEndTime(src.getEndTime());
+                copy.setLocation(src.getLocation());
+                copy.setTeacher(src.getTeacher());
+                copy.setWeekRange(src.getWeekRange());
+                copy.setBackgroundColor(src.getBackgroundColor());
+                copy.setSource(src.getSource() != null ? src.getSource() : "MANUAL");
+                courseTableMapper.insert(copy);
+                inserted++;
+            }
+        }
+
+        Map<String, Object> res = new HashMap<>();
+        res.put("teamId", teamId);
+        res.put("sourceUserId", dto.getSourceUserId());
+        res.put("targetCount", dto.getTargetUserIds().size());
+        res.put("sourceCourseCount", sourceCourses.size());
+        res.put("overwrite", overwrite);
+        res.put("deletedCount", deleted);
+        res.put("insertedCount", inserted);
+        res.put("skippedCount", skipped);
+        return res;
     }
 
     // ==================== 提醒与通知 ====================
@@ -784,21 +1225,74 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         vo.setIsRepeat(schedule.getIsRepeat());
         vo.setRepeatRule(schedule.getRepeatRule());
         vo.setTag(schedule.getTag());
+        vo.setIsRouteSeries(schedule.getIsRouteSeries());
+        vo.setRouteSeriesTheme(schedule.getRouteSeriesTheme());
         vo.setCreatorId(schedule.getCreatorId());
-        vo.setCreatorName(creator != null ? 
-                (creator.getNickname() != null ? creator.getNickname() : creator.getUsername()) : null);
+        vo.setCreatorName(
+                creator != null ? (creator.getNickname() != null ? creator.getNickname() : creator.getUsername())
+                        : null);
         vo.setSyncedTeamScheduleId(schedule.getSyncedTeamScheduleId());
         vo.setCreateTime(schedule.getCreateTime());
         vo.setUpdateTime(schedule.getUpdateTime());
         return vo;
     }
 
+    /**
+     * 清理行程系列数据（地点/路线结果）
+     */
+    private void clearRouteSeries(Long scheduleId) {
+        routeSeriesLocationMapper.delete(new LambdaQueryWrapper<RouteSeriesLocation>()
+                .eq(RouteSeriesLocation::getScheduleId, scheduleId));
+        routeSeriesRouteMapper.delete(new LambdaQueryWrapper<RouteSeriesRoute>()
+                .eq(RouteSeriesRoute::getScheduleId, scheduleId));
+    }
+
+    /**
+     * 保存或更新行程系列数据
+     *
+     * 说明：
+     * - route_series_location：按前端传入顺序写入 sort_order
+     * - route_series_route：保存路线结果（JSON）
+     */
+    private void upsertRouteSeries(Long scheduleId, RouteSeriesDTO routeSeriesDTO) {
+        // 简化：先清理再写入，避免部分更新导致排序/数据残留
+        clearRouteSeries(scheduleId);
+
+        if (routeSeriesDTO.getLocations() != null) {
+            int sort = 0;
+            for (RouteSeriesDTO.LocationDTO loc : routeSeriesDTO.getLocations()) {
+                if (loc == null)
+                    continue;
+                RouteSeriesLocation entity = new RouteSeriesLocation();
+                entity.setScheduleId(scheduleId);
+                entity.setName(loc.getName());
+                entity.setAddress(loc.getAddress());
+                entity.setLongitude(loc.getLongitude());
+                entity.setLatitude(loc.getLatitude());
+                entity.setSortOrder(sort++);
+                routeSeriesLocationMapper.insert(entity);
+            }
+        }
+
+        if (routeSeriesDTO.getRouteResult() != null) {
+            RouteSeriesRoute route = new RouteSeriesRoute();
+            route.setScheduleId(scheduleId);
+            route.setTotalDistance(routeSeriesDTO.getRouteResult().getTotalDistance());
+            route.setTotalDuration(routeSeriesDTO.getRouteResult().getTotalDuration());
+            try {
+                route.setRouteData(objectMapper.writeValueAsString(routeSeriesDTO.getRouteResult()));
+            } catch (JsonProcessingException e) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "路线结果序列化失败");
+            }
+            routeSeriesRouteMapper.insert(route);
+        }
+    }
+
     private TeamVO convertToTeamVO(Team team, User creator, Long currentUserId) {
         TeamMember member = teamMemberMapper.selectOne(
                 new LambdaQueryWrapper<TeamMember>()
                         .eq(TeamMember::getTeamId, team.getId())
-                        .eq(TeamMember::getUserId, currentUserId)
-        );
+                        .eq(TeamMember::getUserId, currentUserId));
         TeamRoleEnum userRole = member != null ? member.getRole() : null;
         return convertToTeamVO(team, creator, currentUserId, userRole);
     }
@@ -810,11 +1304,11 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         vo.setDescription(team.getDescription());
         vo.setAvatar(team.getAvatar());
         vo.setCreatorId(team.getCreatorId());
-        vo.setCreatorName(creator != null ? 
-                (creator.getNickname() != null ? creator.getNickname() : creator.getUsername()) : null);
+        vo.setCreatorName(
+                creator != null ? (creator.getNickname() != null ? creator.getNickname() : creator.getUsername())
+                        : null);
         vo.setSchoolId(team.getSchoolId());
-        University university = team.getSchoolId() != null ? 
-                universityMapper.selectById(team.getSchoolId()) : null;
+        University university = team.getSchoolId() != null ? universityMapper.selectById(team.getSchoolId()) : null;
         vo.setSchoolName(university != null ? university.getName() : null);
         vo.setNeedApprove(team.getNeedApprove());
         vo.setMaxMembers(team.getMaxMembers());
@@ -822,6 +1316,18 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         vo.setUserRole(userRole);
         vo.setInviteCode(team.getInviteCode());
         vo.setCreateTime(team.getCreateTime());
+
+        // 填充团队群聊信息（若存在）
+        ChatGroup group = chatGroupMapper.selectOne(
+                new LambdaQueryWrapper<ChatGroup>()
+                        .eq(ChatGroup::getTeamId, team.getId())
+                        .eq(ChatGroup::getIsDeleted, 0)
+                        .last("LIMIT 1"));
+        if (group != null) {
+            vo.setChatGroupId(group.getId());
+            vo.setMaxAdmins(group.getMaxAdmins() != null ? group.getMaxAdmins() : 4);
+        }
+
         return vo;
     }
 
@@ -839,8 +1345,9 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         vo.setNeedConfirm(schedule.getNeedConfirm());
         vo.setCreatorId(schedule.getCreatorId());
         User creator = userMapper.selectById(schedule.getCreatorId());
-        vo.setCreatorName(creator != null ? 
-                (creator.getNickname() != null ? creator.getNickname() : creator.getUsername()) : null);
+        vo.setCreatorName(
+                creator != null ? (creator.getNickname() != null ? creator.getNickname() : creator.getUsername())
+                        : null);
         vo.setCreateTime(schedule.getCreateTime());
 
         // 查询参会人员
@@ -852,8 +1359,9 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
                     User user = userMapper.selectById(a.getUserId());
                     TeamScheduleAttendeeVO attendeeVO = new TeamScheduleAttendeeVO();
                     attendeeVO.setUserId(a.getUserId());
-                    attendeeVO.setUserName(user != null ? 
-                            (user.getNickname() != null ? user.getNickname() : user.getUsername()) : null);
+                    attendeeVO.setUserName(
+                            user != null ? (user.getNickname() != null ? user.getNickname() : user.getUsername())
+                                    : null);
                     attendeeVO.setAvatar(user != null ? user.getAvatarUrl() : null);
                     attendeeVO.setConfirmStatus(a.getStatus());
                     attendeeVO.setIsCreator(a.getUserId().equals(schedule.getCreatorId()));
@@ -870,12 +1378,13 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
 
     @Override
     @Transactional
-    public Map<String, Object> importScheduleFromExcel(Long userId, org.springframework.web.multipart.MultipartFile file, String semester, Boolean overwrite) {
+    public Map<String, Object> importScheduleFromExcel(Long userId,
+            org.springframework.web.multipart.MultipartFile file, String semester, Boolean overwrite) {
         // 验证文件
         if (file == null || file.isEmpty()) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
         }
-        
+
         String originalFilename = file.getOriginalFilename();
         if (originalFilename == null || (!originalFilename.endsWith(".xlsx") && !originalFilename.endsWith(".xls"))) {
             throw new BusinessException(ErrorCode.BAD_REQUEST);
@@ -890,9 +1399,11 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         // 使用EasyExcel读取Excel文件
         List<ScheduleExcelDTO> excelDataList = new ArrayList<>();
         List<String> errorMessages = new ArrayList<>();
-        
+
         try {
-            EasyExcel.read(file.getInputStream(), ScheduleExcelDTO.class, new ScheduleExcelListener(excelDataList, errorMessages))
+            EasyExcel
+                    .read(file.getInputStream(), ScheduleExcelDTO.class,
+                            new ScheduleExcelListener(excelDataList, errorMessages))
                     .sheet()
                     .headRowNumber(1) // 跳过表头
                     .doRead();
@@ -917,18 +1428,20 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
                 PersonalSchedule schedule = new PersonalSchedule();
                 schedule.setTitle(excelData.getTitle().trim());
                 schedule.setDescription(excelData.getDescription() != null ? excelData.getDescription().trim() : "");
-                
+
                 // 解析时间
                 try {
                     if (excelData.getStartTime() != null && !excelData.getStartTime().trim().isEmpty()) {
-                        LocalDateTime startTime = parseDateTime(excelData.getStartTime().trim(), formatter, dateTimeFormatter);
+                        LocalDateTime startTime = parseDateTime(excelData.getStartTime().trim(), formatter,
+                                dateTimeFormatter);
                         schedule.setStartTime(startTime);
                     } else {
                         throw new IllegalArgumentException("开始时间不能为空");
                     }
-                    
+
                     if (excelData.getEndTime() != null && !excelData.getEndTime().trim().isEmpty()) {
-                        LocalDateTime endTime = parseDateTime(excelData.getEndTime().trim(), formatter, dateTimeFormatter);
+                        LocalDateTime endTime = parseDateTime(excelData.getEndTime().trim(), formatter,
+                                dateTimeFormatter);
                         schedule.setEndTime(endTime);
                     } else {
                         // 如果没有结束时间，默认设置为开始时间后1小时
@@ -944,19 +1457,19 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
                 schedule.setType(parseScheduleType(excelData.getType()));
                 schedule.setStatus(ScheduleStatusEnum.PENDING);
                 schedule.setLocation(excelData.getLocation() != null ? excelData.getLocation().trim() : "");
-                
+
                 // 解析是否全天
                 schedule.setIsAllDay(parseBoolean(excelData.getIsAllDay(), false));
-                
+
                 // 解析提醒类型
                 schedule.setRemindType(parseRemindType(excelData.getRemindType()));
                 schedule.setCustomRemindMinutes(excelData.getCustomRemindMinutes());
-                
+
                 // 解析是否重复
                 schedule.setIsRepeat(parseBoolean(excelData.getIsRepeat(), false));
                 schedule.setRepeatRule(excelData.getRepeatRule() != null ? excelData.getRepeatRule().trim() : null);
                 schedule.setTag(excelData.getTag() != null ? excelData.getTag().trim() : null);
-                
+
                 schedule.setCreatorId(userId);
 
                 personalScheduleMapper.insert(schedule);
@@ -975,7 +1488,7 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         response.put("errorMessages", errorMessages);
         response.put("message", String.format("课程表导入完成，成功导入%d条，失败%d条", importedCount, failedCount));
         response.put("importTime", LocalDateTime.now());
-        
+
         return response;
     }
 
@@ -1084,7 +1597,7 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         if (typeStr == null || typeStr.trim().isEmpty()) {
             return ScheduleTypeEnum.OTHER;
         }
-        
+
         String type = typeStr.trim();
         for (ScheduleTypeEnum typeEnum : ScheduleTypeEnum.values()) {
             if (typeEnum.getDescription().equals(type) || typeEnum.name().equals(type)) {
@@ -1101,7 +1614,7 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         if (remindTypeStr == null || remindTypeStr.trim().isEmpty()) {
             return RemindTypeEnum.NONE;
         }
-        
+
         String remindType = remindTypeStr.trim();
         for (RemindTypeEnum typeEnum : RemindTypeEnum.values()) {
             if (typeEnum.getDescription().equals(remindType) || typeEnum.name().equals(remindType)) {
@@ -1118,7 +1631,7 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         if (boolStr == null || boolStr.trim().isEmpty()) {
             return defaultValue;
         }
-        
+
         String bool = boolStr.trim().toLowerCase();
         return "是".equals(bool) || "true".equals(bool) || "1".equals(bool) || "yes".equals(bool);
     }
@@ -1130,11 +1643,11 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         ScheduleExcelDTO dto = new ScheduleExcelDTO();
         dto.setTitle(schedule.getTitle());
         dto.setDescription(schedule.getDescription());
-        
+
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         dto.setStartTime(schedule.getStartTime() != null ? schedule.getStartTime().format(formatter) : "");
         dto.setEndTime(schedule.getEndTime() != null ? schedule.getEndTime().format(formatter) : "");
-        
+
         dto.setType(schedule.getType() != null ? schedule.getType().getDescription() : "");
         dto.setLocation(schedule.getLocation());
         dto.setIsAllDay(schedule.getIsAllDay() != null && schedule.getIsAllDay() ? "是" : "否");
@@ -1144,25 +1657,111 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         dto.setRepeatRule(schedule.getRepeatRule());
         dto.setTag(schedule.getTag());
         dto.setSemester(semester);
-        
+
         return dto;
     }
 
     @Override
     public Map<String, Object> joinTeamByCode(Long userId, String inviteCode) {
-        // TODO: 实现通过邀请码加入团队的逻辑
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_EXIST);
+        }
         // 1. 根据邀请码查找团队
-        // 2. 验证邀请码是否有效
-        // 3. 将用户添加到团队
-        throw new BusinessException(ErrorCode.BAD_REQUEST, "功能待实现");
+        Team team = teamMapper.selectOne(new LambdaQueryWrapper<Team>()
+                .eq(Team::getInviteCode, inviteCode)
+                .eq(Team::getIsDeleted, 0));
+        if (team == null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "邀请码无效或团队不存在");
+        }
+
+        // 同校校验
+        if (user.getSchoolId() == null || team.getSchoolId() == null
+                || !user.getSchoolId().equals(team.getSchoolId())) {
+            throw new BusinessException(ErrorCode.PARTTIME_NOT_SAME_SCHOOL);
+        }
+
+        // 2. 验证邀请码是否有效（团队存在且未删除即视为有效）
+        // 如需更严格的有效性校验（如过期时间），可在此处扩展
+
+        // 3. 检查用户是否已在团队中
+        TeamMember existMember = teamMemberMapper.selectOne(
+                new LambdaQueryWrapper<TeamMember>()
+                        .eq(TeamMember::getTeamId, team.getId())
+                        .eq(TeamMember::getUserId, userId));
+        if (existMember != null) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "您已在该团队中，无需重复加入");
+        }
+
+        // 4. 检查团队人数是否已达上限
+        if (team.getMemberCount() >= team.getMaxMembers()) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "团队人数已满，无法加入");
+        }
+
+        // 5. 将用户添加到团队
+        TeamMember newMember = new TeamMember();
+        newMember.setTeamId(team.getId());
+        newMember.setUserId(userId);
+        newMember.setRole(TeamRoleEnum.MEMBER);
+        newMember.setJoinTime(LocalDateTime.now());
+        teamMemberMapper.insert(newMember);
+
+        // 同步加入团队消息群（若存在）
+        ChatGroup group = chatGroupMapper.selectOne(
+                new LambdaQueryWrapper<ChatGroup>()
+                        .eq(ChatGroup::getTeamId, team.getId())
+                        .eq(ChatGroup::getIsDeleted, 0)
+                        .last("LIMIT 1"));
+        if (group != null) {
+            ChatGroupMember groupMember = new ChatGroupMember();
+            groupMember.setGroupId(group.getId());
+            groupMember.setUserId(userId);
+            groupMember.setRole(ChatGroupRoleEnum.MEMBER);
+            groupMember.setJoinTime(LocalDateTime.now());
+            chatGroupMemberMapper.insert(groupMember);
+        }
+
+        // 6. 更新团队人数
+        team.setMemberCount(team.getMemberCount() + 1);
+        teamMapper.updateById(team);
+
+        // 7. 返回加入结果
+        Map<String, Object> response = new HashMap<>();
+        response.put("teamId", team.getId());
+        response.put("teamName", team.getName());
+        response.put("role", TeamRoleEnum.MEMBER);
+        response.put("joinTime", newMember.getJoinTime());
+        return response;
     }
 
     @Override
     public Map<String, Object> getTeamInvitations(Long userId) {
-        // TODO: 实现获取团队邀请列表的逻辑
-        // 查询用户收到的所有团队邀请
+        List<TeamInvite> invites = teamInviteMapper.selectList(new LambdaQueryWrapper<TeamInvite>()
+                .eq(TeamInvite::getInviteeId, userId)
+                .eq(TeamInvite::getStatus, "PENDING")
+                .orderByDesc(TeamInvite::getInviteTime));
+
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (TeamInvite inv : invites) {
+            Team team = inv.getTeamId() != null ? teamMapper.selectById(inv.getTeamId()) : null;
+            User inviter = inv.getInviterId() != null ? userMapper.selectById(inv.getInviterId()) : null;
+
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", inv.getId());
+            item.put("teamId", inv.getTeamId());
+            item.put("teamName", team != null ? team.getName() : null);
+            item.put("inviterId", inv.getInviterId());
+            item.put("inviterName", inviter != null
+                    ? (inviter.getNickname() != null ? inviter.getNickname() : inviter.getUsername())
+                    : null);
+            item.put("status", inv.getStatus());
+            item.put("inviteTime", inv.getInviteTime());
+            list.add(item);
+        }
+
         Map<String, Object> response = new HashMap<>();
-        response.put("invitations", new ArrayList<>());
+        response.put("invitations", list);
+        response.put("total", (long) list.size());
         return response;
     }
 
@@ -1176,7 +1775,7 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         if (!schedule.getCreatorId().equals(userId)) {
             throw new BusinessException(ErrorCode.FORBIDDEN);
         }
-        
+
         // 更新提醒状态（通过设置remindType来实现）
         if (!enabled) {
             schedule.setRemindType(null); // 禁用提醒
@@ -1230,10 +1829,9 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         TeamMember member = teamMemberMapper.selectOne(
                 new LambdaQueryWrapper<TeamMember>()
                         .eq(TeamMember::getTeamId, teamId)
-                        .eq(TeamMember::getUserId, userId)
-        );
-        if (member == null || 
-            (member.getRole() != TeamRoleEnum.CREATOR && member.getRole() != TeamRoleEnum.ADMIN)) {
+                        .eq(TeamMember::getUserId, userId));
+        if (member == null ||
+                (member.getRole() != TeamRoleEnum.CREATOR && member.getRole() != TeamRoleEnum.ADMIN)) {
             throw new BusinessException(ErrorCode.TEAM_ROLE_DENIED);
         }
 
@@ -1243,6 +1841,98 @@ public class ScheduleServiceImpl extends ServiceImpl<PersonalScheduleMapper, Per
         teamMapper.updateById(team);
 
         return newInviteCode;
+    }
+
+    @Override
+    @Transactional
+    public TeamVO setTeamAdmins(Long userId, Long teamId, TeamAdminSetDTO dto) {
+        Team team = teamMapper.selectById(teamId);
+        if (team == null || team.getIsDeleted() == 1) {
+            throw new BusinessException(ErrorCode.TEAM_NOT_EXIST);
+        }
+
+        TeamMember operator = teamMemberMapper.selectOne(
+                new LambdaQueryWrapper<TeamMember>()
+                        .eq(TeamMember::getTeamId, teamId)
+                        .eq(TeamMember::getUserId, userId));
+        if (operator == null || operator.getRole() != TeamRoleEnum.CREATOR) {
+            throw new BusinessException(ErrorCode.TEAM_ROLE_DENIED);
+        }
+
+        List<Long> adminIds = dto != null ? dto.getAdminUserIds() : null;
+        adminIds = adminIds == null ? new ArrayList<>()
+                : adminIds.stream().filter(Objects::nonNull).distinct().collect(Collectors.toList());
+
+        // 不允许把创建者放入管理员列表
+        adminIds = adminIds.stream().filter(id -> !id.equals(team.getCreatorId())).collect(Collectors.toList());
+
+        if (adminIds.size() > 4) {
+            throw new BusinessException(ErrorCode.BAD_REQUEST, "管理员最多4人");
+        }
+
+        // 校验管理员必须是团队成员
+        List<TeamMember> members = teamMemberMapper
+                .selectList(new LambdaQueryWrapper<TeamMember>().eq(TeamMember::getTeamId, teamId));
+        Set<Long> memberSet = members.stream().map(TeamMember::getUserId).collect(Collectors.toSet());
+        for (Long id : adminIds) {
+            if (!memberSet.contains(id)) {
+                throw new BusinessException(ErrorCode.BAD_REQUEST, "管理员必须为团队成员");
+            }
+        }
+
+        // 更新 team_member 角色：在列表里=ADMIN，否则（非CREATOR）=MEMBER
+        for (TeamMember m : members) {
+            if (m.getUserId() == null)
+                continue;
+            if (m.getUserId().equals(team.getCreatorId())) {
+                if (m.getRole() != TeamRoleEnum.CREATOR) {
+                    m.setRole(TeamRoleEnum.CREATOR);
+                    teamMemberMapper.updateById(m);
+                }
+                continue;
+            }
+
+            TeamRoleEnum newRole = adminIds.contains(m.getUserId()) ? TeamRoleEnum.ADMIN : TeamRoleEnum.MEMBER;
+            if (m.getRole() != newRole) {
+                m.setRole(newRole);
+                teamMemberMapper.updateById(m);
+            }
+        }
+
+        // 同步到 chat_group_member（确保群存在）
+        ensureTeamChatGroup(team);
+        ChatGroup group = chatGroupMapper.selectOne(new LambdaQueryWrapper<ChatGroup>()
+                .eq(ChatGroup::getTeamId, teamId)
+                .eq(ChatGroup::getIsDeleted, 0)
+                .last("LIMIT 1"));
+        if (group != null) {
+            List<ChatGroupMember> groupMembers = chatGroupMemberMapper.selectList(
+                    new LambdaQueryWrapper<ChatGroupMember>().eq(ChatGroupMember::getGroupId, group.getId()));
+            Map<Long, ChatGroupMember> gmMap = groupMembers.stream()
+                    .filter(gm -> gm.getUserId() != null)
+                    .collect(Collectors.toMap(ChatGroupMember::getUserId, gm -> gm, (a, b) -> a));
+
+            // 创建者=OWNER
+            ChatGroupMember owner = gmMap.get(team.getCreatorId());
+            if (owner != null && owner.getRole() != ChatGroupRoleEnum.OWNER) {
+                owner.setRole(ChatGroupRoleEnum.OWNER);
+                chatGroupMemberMapper.updateById(owner);
+            }
+
+            for (Long mid : memberSet) {
+                if (mid.equals(team.getCreatorId()))
+                    continue;
+                ChatGroupRoleEnum role = adminIds.contains(mid) ? ChatGroupRoleEnum.ADMIN : ChatGroupRoleEnum.MEMBER;
+                ChatGroupMember gm = gmMap.get(mid);
+                if (gm != null && gm.getRole() != role) {
+                    gm.setRole(role);
+                    chatGroupMemberMapper.updateById(gm);
+                }
+            }
+        }
+
+        // 返回最新团队详情
+        return getTeamDetail(userId, teamId);
     }
 
     /**

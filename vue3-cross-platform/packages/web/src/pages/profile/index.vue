@@ -7,22 +7,37 @@
       <aside class="sidebar">
       <!-- 用户信息卡片 -->
         <div class="user-card">
-          <div class="user-avatar">
-            <i class="fas fa-user"></i>
+          <div class="user-avatar-wrapper" @click="handleEditAvatar">
+            <img v-if="userAvatar" :src="userAvatar" alt="用户头像" class="user-avatar-img" />
+            <div v-else class="user-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <div class="avatar-badge">
+              <i class="fas fa-camera"></i>
+            </div>
           </div>
           <h2 class="user-name">{{ userInfo.name || userStore.username || '用户' }}</h2>
           <p class="user-role">{{ roleLabel }}</p>
-          <p class="user-school" v-if="userInfo.school">{{ userInfo.school }}</p>
+          <p class="user-school" v-if="userInfo.school || userStore.userInfo?.campusName">
+            {{ userInfo.school || userStore.userInfo?.campusName }}
+          </p>
           <div class="user-stats">
-            <div class="stat-item">
-              <span class="stat-value">{{ orderCount }}</span>
-              <span class="stat-label">我的订单</span>
-            </div>
-            <div class="stat-item">
+            <div class="stat-item" @click="handleViewFavorites">
               <span class="stat-value">{{ favoriteCount }}</span>
-              <span class="stat-label">我的收藏</span>
+              <span class="stat-label">收藏</span>
             </div>
-            <div class="stat-item">
+            <div class="stat-divider"></div>
+            <div class="stat-item" @click="handleViewHistory">
+              <span class="stat-value">{{ historyCount }}</span>
+              <span class="stat-label">历史</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item" @click="handleMyPublish">
+              <span class="stat-value">{{ publishCount }}</span>
+              <span class="stat-label">发布</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item" @click="handleMyWallet">
               <span class="stat-value">{{ points }}</span>
               <span class="stat-label">积分</span>
             </div>
@@ -50,10 +65,48 @@
         <div v-if="activeMenu === 'overview'" class="content-section">
           <div class="section-header">
             <h2>个人信息概览</h2>
-            <button class="btn-edit" @click="editProfile">
-              <i class="fas fa-edit"></i> 编辑资料
-            </button>
+            <div class="header-actions">
+              <button class="action-btn" @click="handleSettings">
+                <i class="fas fa-cog"></i>
+              </button>
+              <button class="action-btn" @click="handleMessages">
+                <i class="fas fa-bell"></i>
+                <span v-if="messageCount > 0" class="badge">{{ messageCount > 99 ? '99+' : messageCount }}</span>
+              </button>
+              <button class="btn-edit" @click="editProfile">
+                <i class="fas fa-edit"></i> 编辑资料
+              </button>
             </div>
+          </div>
+
+          <!-- 快捷功能网格（参考app端） -->
+          <div class="quick-actions-grid">
+            <div class="quick-action-item" @click="handleMyOrders">
+              <div class="quick-icon-wrapper orders">
+                <i class="fas fa-shopping-bag"></i>
+              </div>
+              <span class="quick-label">我的订单</span>
+              <span v-if="pendingOrders > 0" class="quick-badge">{{ pendingOrders > 9 ? '9+' : pendingOrders }}</span>
+            </div>
+            <div class="quick-action-item" @click="handleMyFavorites">
+              <div class="quick-icon-wrapper favorites">
+                <i class="fas fa-heart"></i>
+              </div>
+              <span class="quick-label">我的收藏</span>
+            </div>
+            <div class="quick-action-item" @click="handleMyPublish">
+              <div class="quick-icon-wrapper publish">
+                <i class="fas fa-file-alt"></i>
+              </div>
+              <span class="quick-label">我的发布</span>
+            </div>
+            <div class="quick-action-item" @click="handleMyWallet">
+              <div class="quick-icon-wrapper wallet">
+                <i class="fas fa-wallet"></i>
+              </div>
+              <span class="quick-label">我的钱包</span>
+            </div>
+          </div>
 
           <!-- 毕业提醒：引导即将毕业的学生去重新发起学生身份认证 -->
           <div class="alert-box" v-if="userInfo.role === 'student'">
@@ -355,6 +408,21 @@
               <button class="tab-btn" :class="{ active: orderFilter === 'parttime' }" @click="orderFilter = 'parttime'">兼职收藏</button>
             </div>
           </div>
+          <!-- 搜索栏 -->
+          <div class="search-bar">
+            <div class="search-box">
+              <i class="fas fa-search search-icon"></i>
+              <input
+                type="text"
+                v-model="orderSearchKeyword"
+                placeholder="搜索订单标题、描述或订单号..."
+                class="search-input"
+              />
+              <button v-if="orderSearchKeyword" class="search-clear" @click="orderSearchKeyword = ''">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
           <div class="order-list">
             <div v-for="order in filteredOrders" :key="order.id" class="order-item">
               <div class="order-type">{{ order.type }}</div>
@@ -380,8 +448,23 @@
           <div class="section-header">
             <h2>我的收藏</h2>
           </div>
+          <!-- 搜索栏 -->
+          <div class="search-bar">
+            <div class="search-box">
+              <i class="fas fa-search search-icon"></i>
+              <input
+                type="text"
+                v-model="favoriteSearchKeyword"
+                placeholder="搜索收藏内容..."
+                class="search-input"
+              />
+              <button v-if="favoriteSearchKeyword" class="search-clear" @click="favoriteSearchKeyword = ''">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
           <div class="favorite-list">
-            <div v-for="item in favorites" :key="item.id" class="favorite-item">
+            <div v-for="item in filteredFavorites" :key="item.id" class="favorite-item">
               <div class="favorite-content">
                 <h4>{{ item.title }}</h4>
                 <p>{{ item.description }}</p>
@@ -393,7 +476,7 @@
               </div>
               <button class="btn-link" @click="viewFavoriteDetail(item.id)">查看详情</button>
             </div>
-            <div v-if="favorites.length === 0" class="empty-state">
+            <div v-if="filteredFavorites.length === 0" class="empty-state">
               <i class="fas fa-heart"></i>
               <p>您还没有任何收藏</p>
               <p class="empty-hint">在浏览商品或服务时，点击心形图标即可收藏</p>
@@ -408,8 +491,23 @@
             <h2>浏览记录</h2>
             <button class="btn-secondary" @click="clearHistory">清空记录</button>
           </div>
+          <!-- 搜索栏 -->
+          <div class="search-bar">
+            <div class="search-box">
+              <i class="fas fa-search search-icon"></i>
+              <input
+                type="text"
+                v-model="historySearchKeyword"
+                placeholder="搜索浏览记录..."
+                class="search-input"
+              />
+              <button v-if="historySearchKeyword" class="search-clear" @click="historySearchKeyword = ''">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
           <div class="history-list">
-            <div v-for="item in history" :key="item.id" class="history-item">
+            <div v-for="item in filteredHistory" :key="item.id" class="history-item">
               <div class="history-content">
                 <h4>{{ item.title }}</h4>
                 <p>{{ item.description }}</p>
@@ -420,17 +518,17 @@
               </div>
               <button class="btn-link" @click="viewHistoryDetail(item.id)">查看</button>
             </div>
-            <div v-if="history.length === 0" class="empty-state">
+            <div v-if="filteredHistory.length === 0" class="empty-state">
               <i class="fas fa-history"></i>
               <p>暂无浏览记录</p>
             </div>
             </div>
           </div>
 
-        <!-- 消息中心 -->
+        <!-- 通知提醒 -->
         <div v-if="activeMenu === 'messages'" class="content-section">
           <div class="section-header">
-            <h2>消息中心</h2>
+            <h2>通知提醒</h2>
             <div class="header-actions">
               <div class="filter-tabs">
                 <button class="tab-btn" :class="{ active: messageFilter === 'all' }" @click="messageFilter = 'all'">全部消息</button>
@@ -438,6 +536,21 @@
                 <button class="tab-btn" :class="{ active: messageFilter === 'parttime' }" @click="messageFilter = 'parttime'">兼职交流</button>
             </div>
               <button class="btn-secondary" @click="markAllRead">全部已读</button>
+            </div>
+          </div>
+          <!-- 搜索栏 -->
+          <div class="search-bar">
+            <div class="search-box">
+              <i class="fas fa-search search-icon"></i>
+              <input
+                type="text"
+                v-model="messageSearchKeyword"
+                placeholder="搜索通知标题或内容..."
+                class="search-input"
+              />
+              <button v-if="messageSearchKeyword" class="search-clear" @click="messageSearchKeyword = ''">
+                <i class="fas fa-times"></i>
+              </button>
             </div>
           </div>
           <div class="message-list">
@@ -471,6 +584,21 @@
               <button class="tab-btn" :class="{ active: appFilter === 'parttime' }" @click="appFilter = 'parttime'">兼职申请</button>
             </div>
           </div>
+          <!-- 搜索栏 -->
+          <div class="search-bar">
+            <div class="search-box">
+              <i class="fas fa-search search-icon"></i>
+              <input
+                type="text"
+                v-model="appSearchKeyword"
+                placeholder="搜索申请标题或描述..."
+                class="search-input"
+              />
+              <button v-if="appSearchKeyword" class="search-clear" @click="appSearchKeyword = ''">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
           <div class="application-list">
             <div v-for="app in filteredApplications" :key="app.id" class="application-item">
               <div class="application-content">
@@ -485,6 +613,295 @@
             <div v-if="filteredApplications.length === 0" class="empty-state">
               <i class="fas fa-file-alt"></i>
               <p>暂无申请记录</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 我的优惠券 -->
+        <div v-if="activeMenu === 'coupons'" class="content-section">
+          <div class="section-header">
+            <h2>我的优惠券</h2>
+            <button class="btn-primary" @click="goToPage('/coupons/receive')">领取优惠券</button>
+          </div>
+          <div class="coupon-list">
+            <div v-for="coupon in coupons" :key="coupon.id" class="coupon-item" :class="{ used: coupon.used, expired: coupon.expired }">
+              <div class="coupon-content">
+                <div class="coupon-amount">
+                  <span class="amount-symbol">¥</span>
+                  <span class="amount-value">{{ coupon.amount }}</span>
+                </div>
+                <div class="coupon-info">
+                  <h4>{{ coupon.title }}</h4>
+                  <p>{{ coupon.description }}</p>
+                  <div class="coupon-meta">
+                    <span>有效期至：{{ coupon.expireDate }}</span>
+                    <span class="coupon-status" :class="coupon.used ? 'status-used' : coupon.expired ? 'status-expired' : 'status-available'">
+                      {{ coupon.used ? '已使用' : coupon.expired ? '已过期' : '可使用' }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-if="coupons.length === 0" class="empty-state">
+              <i class="fas fa-ticket-alt"></i>
+              <p>暂无优惠券</p>
+              <button class="btn-primary" @click="goToPage('/coupons/receive')">去领取</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 收货地址 -->
+        <div v-if="activeMenu === 'address'" class="content-section">
+          <div class="section-header">
+            <h2>收货地址</h2>
+            <button class="btn-primary" @click="showAddressModal = true">
+              <i class="fas fa-plus"></i> 新增地址
+            </button>
+          </div>
+          <div class="address-list">
+            <div v-for="addr in addresses" :key="addr.id" class="address-item" :class="{ default: addr.isDefault }">
+              <div class="address-content">
+                <div class="address-header">
+                  <span class="address-name">{{ addr.name }}</span>
+                  <span class="address-phone">{{ addr.phone }}</span>
+                  <span v-if="addr.isDefault" class="default-badge">默认</span>
+                </div>
+                <p class="address-detail">{{ addr.province }} {{ addr.city }} {{ addr.district }} {{ addr.detail }}</p>
+              </div>
+              <div class="address-actions">
+                <button class="btn-link" @click="editAddress(addr)">编辑</button>
+                <button class="btn-link" @click="deleteAddress(addr.id)">删除</button>
+                <button v-if="!addr.isDefault" class="btn-link" @click="setDefaultAddress(addr.id)">设为默认</button>
+              </div>
+            </div>
+            <div v-if="addresses.length === 0" class="empty-state">
+              <i class="fas fa-map-marker-alt"></i>
+              <p>暂无收货地址</p>
+              <button class="btn-primary" @click="showAddressModal = true">添加地址</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 我的等级 -->
+        <div v-if="activeMenu === 'level'" class="content-section">
+          <div class="section-header">
+            <h2>我的等级</h2>
+          </div>
+          <div class="level-card">
+            <div class="level-header">
+              <div class="level-icon">
+                <i class="fas fa-crown"></i>
+              </div>
+              <div class="level-info">
+                <h3>VIP{{ userLevel }}</h3>
+                <p>当前等级：{{ getLevelName(userLevel) }}</p>
+              </div>
+            </div>
+            <div class="level-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" :style="{ width: levelProgress + '%' }"></div>
+              </div>
+              <div class="progress-text">
+                <span>还需 {{ nextLevelPoints - currentPoints }} 积分升级到 VIP{{ userLevel + 1 }}</span>
+              </div>
+            </div>
+            <div class="level-benefits">
+              <h4>当前等级权益</h4>
+              <ul class="benefits-list">
+                <li v-for="benefit in currentLevelBenefits" :key="benefit">
+                  <i class="fas fa-check-circle"></i>
+                  <span>{{ benefit }}</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- 我的发布 -->
+        <div v-if="activeMenu === 'publish'" class="content-section">
+          <div class="section-header">
+            <h2>我的发布</h2>
+          </div>
+          <!-- 搜索栏 -->
+          <div class="search-bar">
+            <div class="search-box">
+              <i class="fas fa-search search-icon"></i>
+              <input
+                type="text"
+                v-model="publishSearchKeyword"
+                placeholder="搜索发布内容..."
+                class="search-input"
+              />
+              <button v-if="publishSearchKeyword" class="search-clear" @click="publishSearchKeyword = ''">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+          <div class="publish-list">
+            <div v-for="item in filteredPublishes" :key="item.id" class="publish-item">
+              <div class="publish-content">
+                <h4>{{ item.title }}</h4>
+                <p>{{ item.description }}</p>
+                <div class="publish-meta">
+                  <span>{{ item.category }}</span>
+                  <span>{{ item.date }}</span>
+                  <span class="status-badge" :class="item.status === '在售' || item.status === '招聘中' ? 'status-active' : 'status-inactive'">{{ item.status }}</span>
+                </div>
+              </div>
+              <button class="btn-link" @click="viewPublishDetail(item.id)">查看详情</button>
+            </div>
+            <div v-if="filteredPublishes.length === 0" class="empty-state">
+              <i class="fas fa-file-alt"></i>
+              <p>暂无发布记录</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 我的评价 -->
+        <div v-if="activeMenu === 'reviews'" class="content-section">
+          <div class="section-header">
+            <h2>我的评价</h2>
+            <div class="filter-tabs">
+              <button class="tab-btn" :class="{ active: reviewFilter === 'all' }" @click="reviewFilter = 'all'">全部</button>
+              <button class="tab-btn" :class="{ active: reviewFilter === 'goods' }" @click="reviewFilter = 'goods'">商品评价</button>
+              <button class="tab-btn" :class="{ active: reviewFilter === 'service' }" @click="reviewFilter = 'service'">服务评价</button>
+            </div>
+          </div>
+          <!-- 搜索栏 -->
+          <div class="search-bar">
+            <div class="search-box">
+              <i class="fas fa-search search-icon"></i>
+              <input
+                type="text"
+                v-model="reviewSearchKeyword"
+                placeholder="搜索评价内容..."
+                class="search-input"
+              />
+              <button v-if="reviewSearchKeyword" class="search-clear" @click="reviewSearchKeyword = ''">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+          <div class="review-list">
+            <div v-for="review in filteredReviews" :key="review.id" class="review-item-card">
+              <div class="review-header">
+                <div class="review-target">
+                  <h4>{{ review.targetName }}</h4>
+                  <div class="review-rating">
+                    <i v-for="(star, index) in 5" :key="index" :class="index < review.rating ? 'fas fa-star' : 'far fa-star'" class="star"></i>
+                  </div>
+                </div>
+                <span class="review-time">{{ review.time }}</span>
+              </div>
+              <p class="review-content">{{ review.content }}</p>
+              <div class="review-images" v-if="review.images && review.images.length > 0">
+                <img v-for="(img, index) in review.images" :key="index" :src="img" alt="评价图片" />
+              </div>
+            </div>
+            <div v-if="filteredReviews.length === 0" class="empty-state">
+              <i class="fas fa-star"></i>
+              <p>暂无评价记录</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 帮助中心 -->
+        <div v-if="activeMenu === 'help'" class="content-section">
+          <div class="section-header">
+            <h2>帮助中心</h2>
+          </div>
+          <div class="help-categories">
+            <div v-for="category in helpCategories" :key="category.id" class="help-category">
+              <h3 class="category-title">
+                <i :class="category.icon"></i>
+                {{ category.title }}
+              </h3>
+              <div class="help-articles">
+                <div v-for="article in category.articles" :key="article.id" class="help-article" @click="viewArticle(article.id)">
+                  <span>{{ article.title }}</span>
+                  <i class="fas fa-chevron-right"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 意见反馈 -->
+        <div v-if="activeMenu === 'feedback'" class="content-section">
+          <div class="section-header">
+            <h2>意见反馈</h2>
+          </div>
+          <div class="form-card">
+            <form @submit.prevent="submitFeedback">
+              <div class="form-group">
+                <label>反馈类型</label>
+                <select v-model="feedbackForm.type" required>
+                  <option value="">请选择反馈类型</option>
+                  <option value="bug">Bug反馈</option>
+                  <option value="suggestion">功能建议</option>
+                  <option value="complaint">投诉建议</option>
+                  <option value="other">其他</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>反馈内容</label>
+                <textarea v-model="feedbackForm.content" placeholder="请详细描述您的问题或建议..." rows="6" required></textarea>
+              </div>
+              <div class="form-group">
+                <label>联系方式（选填）</label>
+                <input type="text" v-model="feedbackForm.contact" placeholder="手机号或邮箱，方便我们联系您" />
+              </div>
+              <div class="form-group">
+                <label>上传截图（选填）</label>
+                <input type="file" @change="handleFeedbackImage" accept="image/*" multiple />
+                <div class="image-preview" v-if="feedbackForm.images.length > 0">
+                  <div v-for="(img, index) in feedbackForm.images" :key="index" class="preview-item">
+                    <img :src="img" alt="反馈图片" />
+                    <button type="button" class="remove-image" @click="removeFeedbackImage(index)">×</button>
+                  </div>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn-primary">提交反馈</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- 关于我们 -->
+        <div v-if="activeMenu === 'about'" class="content-section">
+          <div class="section-header">
+            <h2>关于我们</h2>
+            <span class="version-text">v1.0.0</span>
+          </div>
+          <div class="about-content">
+            <div class="about-logo">
+              <i class="fas fa-graduation-cap"></i>
+            </div>
+            <h3>上大学Online</h3>
+            <p class="about-desc">我们致力于构建安全、可靠的校园服务平台，为学生提供便捷的校园生活服务。</p>
+            <div class="about-info">
+              <div class="info-item">
+                <span class="info-label">版本号</span>
+                <span class="info-value">v1.0.0</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">更新时间</span>
+                <span class="info-value">2024-05-20</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">服务热线</span>
+                <span class="info-value">400-123-4567</span>
+              </div>
+              <div class="info-item">
+                <span class="info-label">官方邮箱</span>
+                <span class="info-value">support@campus.edu.cn</span>
+              </div>
+            </div>
+            <div class="about-links">
+              <a href="#" @click.prevent="viewPrivacyPolicy">隐私政策</a>
+              <a href="#" @click.prevent="viewServiceAgreement">服务协议</a>
+              <a href="#" @click.prevent="viewSecurityInfo">安全保障</a>
             </div>
           </div>
         </div>
@@ -642,7 +1059,7 @@ const userStore = useUserStore()
 // 当前激活的菜单项
 const activeMenu = ref('overview')
 
-// 菜单项配置
+// 菜单项配置（参考app端）
 const menuItems = [
   { key: 'overview', label: '个人信息概览', icon: 'fas fa-user-circle' },
   { key: 'profile', label: '个人资料', icon: 'fas fa-user-edit' },
@@ -650,9 +1067,17 @@ const menuItems = [
   { key: 'studentId', label: '学号管理', icon: 'fas fa-id-card' },
   { key: 'orders', label: '我的订单', icon: 'fas fa-shopping-bag' },
   { key: 'favorites', label: '我的收藏', icon: 'fas fa-heart' },
+  { key: 'publish', label: '我的发布', icon: 'fas fa-file-alt' },
   { key: 'history', label: '浏览记录', icon: 'fas fa-history' },
-  { key: 'messages', label: '消息中心', icon: 'fas fa-envelope' },
+  { key: 'messages', label: '通知提醒', icon: 'fas fa-bell' },
   { key: 'applications', label: '我的申请', icon: 'fas fa-file-alt' },
+  { key: 'coupons', label: '我的优惠券', icon: 'fas fa-ticket-alt' },
+  { key: 'address', label: '收货地址', icon: 'fas fa-map-marker-alt' },
+  { key: 'level', label: '我的等级', icon: 'fas fa-crown' },
+  { key: 'reviews', label: '我的评价', icon: 'fas fa-star' },
+  { key: 'help', label: '帮助中心', icon: 'fas fa-question-circle' },
+  { key: 'feedback', label: '意见反馈', icon: 'fas fa-comment-dots' },
+  { key: 'about', label: '关于我们', icon: 'fas fa-info-circle' },
   { key: 'settings', label: '系统设置', icon: 'fas fa-cog' }
 ]
 
@@ -671,12 +1096,44 @@ const userInfo = ref({
   expiryDate: '2027-06-30'
 })
 
-// 统计数据
+// 用户头像
+const userAvatar = ref<string>('')
+
+// 编辑头像
+const handleEditAvatar = () => {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/*'
+  input.onchange = (e: Event) => {
+    const target = e.target as HTMLInputElement
+    if (target.files && target.files[0]) {
+      const file = target.files[0]
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          userAvatar.value = event.target.result as string
+          // TODO: 上传头像到服务器
+          alert('头像已更新')
+        }
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+  input.click()
+}
+
+// 统计数据（参考app端）
 const orderCount = ref(12)
 const favoriteCount = ref(8)
-const points = ref(256)
+const historyCount = ref(28)
+const publishCount = ref(8)
+const points = ref(1280)
 const creditScore = ref(98)
 const deviceCount = ref(3)
+const messageCount = ref(5)
+const pendingOrders = ref(3)
+const couponsCount = ref(5)
+const userLevel = ref(3)
 
 // 角色标签
 const roleLabel = computed(() => {
@@ -712,10 +1169,23 @@ const editForm = ref({
 const years = ref(['2020', '2021', '2022', '2023', '2024'])
 
 // 保存个人资料
-const saveProfile = () => {
-  // TODO: 调用API保存
-  Object.assign(userInfo.value, editForm.value)
-  alert('保存成功！')
+const saveProfile = async () => {
+  try {
+    const { updateUserInfo } = await import('@campus/common/api/auth')
+    await updateUserInfo({
+      nickname: editForm.value.name,
+      phone: editForm.value.phone,
+      email: editForm.value.email
+    })
+    // 更新本地用户信息
+    Object.assign(userInfo.value, editForm.value)
+    alert('保存成功！')
+    // 切换回概览页面
+    activeMenu.value = 'overview'
+  } catch (error) {
+    console.error('保存用户信息失败:', error)
+    alert('保存失败，请稍后重试')
+  }
 }
 
 // 取消编辑
@@ -784,6 +1254,7 @@ const submitStudentIdChange = () => {
 
 // 订单相关
 const orderFilter = ref('all')
+const orderSearchKeyword = ref('')
 const orders = ref([
   { id: 1, type: '二手市场', title: '二手教材《数据结构与算法》', description: '九成新，有少量笔记，价格实惠', orderNo: '20240520001', date: '2024-05-20' },
   { id: 2, type: '兼职收藏', title: '校园图书馆助理', description: '工作时间灵活，适合学生兼职', orderNo: '', date: '2024-05-18' },
@@ -791,29 +1262,68 @@ const orders = ref([
 ])
 
 const filteredOrders = computed(() => {
-  if (orderFilter.value === 'all') return orders.value
-  return orders.value.filter(order => {
-    if (orderFilter.value === 'secondhand') return order.type === '二手市场'
-    if (orderFilter.value === 'parttime') return order.type === '兼职收藏'
-    return false
-  })
+  let result = orders.value
+  
+  // 类型筛选
+  if (orderFilter.value !== 'all') {
+    result = result.filter(order => {
+      if (orderFilter.value === 'secondhand') return order.type === '二手市场'
+      if (orderFilter.value === 'parttime') return order.type === '兼职收藏'
+      return false
+    })
+  }
+  
+  // 搜索筛选
+  if (orderSearchKeyword.value.trim()) {
+    const keyword = orderSearchKeyword.value.trim().toLowerCase()
+    result = result.filter(order => 
+      order.title.toLowerCase().includes(keyword) ||
+      order.description.toLowerCase().includes(keyword) ||
+      order.orderNo.toLowerCase().includes(keyword)
+    )
+  }
+  
+  return result
 })
 
 // 收藏列表
+const favoriteSearchKeyword = ref('')
 const favorites = ref([
   { id: 1, title: '校园图书馆助理', description: '工作时间灵活，适合学生兼职', category: '兼职收藏', date: '2024-05-18', status: '已收藏' },
   { id: 2, title: '校园活动策划助理', description: '协助组织校园文化活动，积累经验', category: '兼职收藏', date: '2024-05-10', status: '已收藏' }
 ])
 
+const filteredFavorites = computed(() => {
+  if (!favoriteSearchKeyword.value.trim()) return favorites.value
+  const keyword = favoriteSearchKeyword.value.trim().toLowerCase()
+  return favorites.value.filter(item =>
+    item.title.toLowerCase().includes(keyword) ||
+    item.description.toLowerCase().includes(keyword) ||
+    item.category.toLowerCase().includes(keyword)
+  )
+})
+
 // 浏览记录
+const historySearchKeyword = ref('')
 const history = ref([
   { id: 1, title: '二手教材《Java编程思想》', description: '经典编程教材，九成新，无笔记', category: '二手市场', time: '今天 10:30' },
   { id: 2, title: '校园咖啡厅兼职', description: '工作时间灵活，提供培训，适合学生', category: '兼职招聘', time: '昨天 15:20' },
   { id: 3, title: '二手MacBook Pro', description: '2019款，16GB内存，512GB SSD', category: '二手市场', time: '昨天 09:15' }
 ])
 
+const filteredHistory = computed(() => {
+  if (!historySearchKeyword.value.trim()) return history.value
+  const keyword = historySearchKeyword.value.trim().toLowerCase()
+  return history.value.filter(item =>
+    item.title.toLowerCase().includes(keyword) ||
+    item.description.toLowerCase().includes(keyword) ||
+    item.category.toLowerCase().includes(keyword)
+  )
+})
+
 // 消息列表
 const messageFilter = ref('all')
+const messageSearchKeyword = ref('')
 const messages = ref([
   { id: 1, title: '交易提醒：订单已发货', content: '您购买的《数据结构与算法》教材已发货，预计明天送达。', category: '二手交易', time: '2小时前', read: false, icon: 'fas fa-shopping-bag' },
   { id: 2, title: '兼职申请状态更新', content: '您申请的校园图书馆助理职位已通过初审，请等待面试通知。', category: '兼职交流', time: '1天前', read: false, icon: 'fas fa-briefcase' },
@@ -821,12 +1331,28 @@ const messages = ref([
 ])
 
 const filteredMessages = computed(() => {
-  if (messageFilter.value === 'all') return messages.value
-  return messages.value.filter(msg => {
-    if (messageFilter.value === 'secondhand') return msg.category === '二手交易'
-    if (messageFilter.value === 'parttime') return msg.category === '兼职交流'
-    return false
-  })
+  let result = messages.value
+  
+  // 类型筛选
+  if (messageFilter.value !== 'all') {
+    result = result.filter(msg => {
+      if (messageFilter.value === 'secondhand') return msg.category === '二手交易'
+      if (messageFilter.value === 'parttime') return msg.category === '兼职交流'
+      return false
+    })
+  }
+  
+  // 搜索筛选
+  if (messageSearchKeyword.value.trim()) {
+    const keyword = messageSearchKeyword.value.trim().toLowerCase()
+    result = result.filter(msg =>
+      msg.title.toLowerCase().includes(keyword) ||
+      msg.content.toLowerCase().includes(keyword) ||
+      msg.category.toLowerCase().includes(keyword)
+    )
+  }
+  
+  return result
 })
 
 // 申请列表当前筛选标签（all：全部；auth：身份认证；parttime：兼职申请）
@@ -845,15 +1371,30 @@ interface ApplicationViewItem { // ApplicationViewItem：前端用于渲染“�
 // 实际用于渲染“我的申请”列表的数据，初始为空，后续由接口填充
 const applications = ref<ApplicationViewItem[]>([]) // applications：承载“我的申请”列表的响应式数组
 
+const appSearchKeyword = ref('')
 const filteredApplications = computed(() => {
-  // 当筛选条件为 all 时，直接返回全部申请记录
-  if (appFilter.value === 'all') return applications.value
-  // 其余情况按照类别字段进行过滤
-  return applications.value.filter(app => {
-    if (appFilter.value === 'auth') return app.category === '身份认证' // 仅展示身份认证相关记录
-    if (appFilter.value === 'parttime') return app.category === '兼职申请' // 仅展示兼职申请相关记录（目前暂无真实数据）
-    return false // 其他情况不返回任何记录
-  })
+  let result = applications.value
+  
+  // 类型筛选
+  if (appFilter.value !== 'all') {
+    result = result.filter(app => {
+      if (appFilter.value === 'auth') return app.category === '身份认证'
+      if (appFilter.value === 'parttime') return app.category === '兼职申请'
+      return false
+    })
+  }
+  
+  // 搜索筛选
+  if (appSearchKeyword.value.trim()) {
+    const keyword = appSearchKeyword.value.trim().toLowerCase()
+    result = result.filter(app =>
+      app.title.toLowerCase().includes(keyword) ||
+      app.description.toLowerCase().includes(keyword) ||
+      app.category.toLowerCase().includes(keyword)
+    )
+  }
+  
+  return result
 })
 
 // 将后端返回的英文状态码映射为中文友好状态文案
@@ -938,6 +1479,12 @@ const viewHistoryDetail = (id: number) => {
   console.log('查看记录:', id)
 }
 
+// 查看发布详情
+const viewPublishDetail = (id: number) => {
+  // TODO: 跳转到发布详情页
+  console.log('查看发布:', id)
+}
+
 // 清空浏览记录
 const clearHistory = () => {
   if (confirm('确定要清空所有浏览记录吗？')) {
@@ -960,13 +1507,270 @@ const dismissAlert = () => {
   console.log('稍后提醒')
 }
 
+// 快捷功能处理（参考app端）
+const handleMyOrders = () => {
+  activeMenu.value = 'orders'
+}
+
+const handleMyFavorites = () => {
+  activeMenu.value = 'favorites'
+}
+
+const handleMyPublish = () => {
+  activeMenu.value = 'publish'
+}
+
+// 我的发布相关
+const publishSearchKeyword = ref('')
+const publishes = ref([
+  { id: 1, title: '二手教材《数据结构与算法》', description: '九成新，有少量笔记，价格实惠', category: '二手市场', date: '2024-05-20', status: '在售' },
+  { id: 2, title: '校园图书馆助理招聘', description: '工作时间灵活，适合学生兼职', category: '兼职招聘', date: '2024-05-18', status: '招聘中' },
+  { id: 3, title: '二手笔记本电脑', description: '配置良好，运行流畅，适合学习使用', category: '二手市场', date: '2024-05-15', status: '已售' }
+])
+
+const filteredPublishes = computed(() => {
+  if (!publishSearchKeyword.value.trim()) return publishes.value
+  const keyword = publishSearchKeyword.value.trim().toLowerCase()
+  return publishes.value.filter(item =>
+    item.title.toLowerCase().includes(keyword) ||
+    item.description.toLowerCase().includes(keyword) ||
+    item.category.toLowerCase().includes(keyword)
+  )
+})
+
+const handleMyWallet = () => {
+  // TODO: 跳转到钱包页面
+  alert('钱包功能开发中...')
+}
+
+const handleViewFavorites = () => {
+  activeMenu.value = 'favorites'
+}
+
+const handleViewHistory = () => {
+  activeMenu.value = 'history'
+}
+
+const handleSettings = () => {
+  activeMenu.value = 'settings'
+}
+
+const handleMessages = () => {
+  activeMenu.value = 'messages'
+}
+
+// 优惠券数据
+const coupons = ref([
+  { id: 1, title: '新用户专享', amount: 10, description: '满50元可用', expireDate: '2024-12-31', used: false, expired: false },
+  { id: 2, title: '满减优惠', amount: 20, description: '满100元可用', expireDate: '2024-11-30', used: false, expired: false },
+  { id: 3, title: '限时优惠', amount: 5, description: '满30元可用', expireDate: '2024-10-15', used: true, expired: false }
+])
+
+// 收货地址数据
+const addresses = ref([
+  { id: 1, name: '张三', phone: '138****5678', province: '北京市', city: '北京市', district: '海淀区', detail: '中关村大街1号', isDefault: true },
+  { id: 2, name: '张三', phone: '138****5678', province: '北京市', city: '北京市', district: '朝阳区', detail: '建国路88号', isDefault: false }
+])
+
+const showAddressModal = ref(false)
+
+const editAddress = (addr: any) => {
+  // TODO: 编辑地址
+  console.log('编辑地址:', addr)
+}
+
+const deleteAddress = (id: number) => {
+  if (confirm('确定要删除这个地址吗？')) {
+    addresses.value = addresses.value.filter(addr => addr.id !== id)
+  }
+}
+
+const setDefaultAddress = (id: number) => {
+  addresses.value.forEach(addr => {
+    addr.isDefault = addr.id === id
+  })
+}
+
+// 等级相关
+const currentPoints = ref(1280)
+const nextLevelPoints = ref(2000)
+const levelProgress = computed(() => {
+  return Math.min((currentPoints.value / nextLevelPoints.value) * 100, 100)
+})
+
+const getLevelName = (level: number) => {
+  const names = ['普通用户', 'VIP1', 'VIP2', 'VIP3', 'VIP4', 'VIP5']
+  return names[level] || 'VIP' + level
+}
+
+const currentLevelBenefits = computed(() => {
+  const benefits = [
+    '享受平台专属服务',
+    '优先客服支持',
+    '专属活动邀请',
+    '积分翻倍奖励'
+  ]
+  return benefits
+})
+
+// 评价相关
+const reviewFilter = ref('all')
+const reviewSearchKeyword = ref('')
+const reviews = ref([
+  { id: 1, targetName: '二手教材《数据结构与算法》', rating: 5, content: '书很新，价格实惠，卖家很nice！', time: '2024-05-20', type: 'goods', images: [] },
+  { id: 2, targetName: '校园图书馆助理', rating: 4, content: '工作环境不错，同事都很友好。', time: '2024-05-15', type: 'service', images: [] }
+])
+
+const filteredReviews = computed(() => {
+  let result = reviews.value
+  
+  // 类型筛选
+  if (reviewFilter.value !== 'all') {
+    result = result.filter(r => r.type === reviewFilter.value)
+  }
+  
+  // 搜索筛选
+  if (reviewSearchKeyword.value.trim()) {
+    const keyword = reviewSearchKeyword.value.trim().toLowerCase()
+    result = result.filter(r =>
+      r.targetName.toLowerCase().includes(keyword) ||
+      r.content.toLowerCase().includes(keyword)
+    )
+  }
+  
+  return result
+})
+
+// 帮助中心数据
+const helpCategories = ref([
+  {
+    id: 1,
+    title: '账户相关',
+    icon: 'fas fa-user-circle',
+    articles: [
+      { id: 1, title: '如何修改个人信息？' },
+      { id: 2, title: '如何绑定手机号？' },
+      { id: 3, title: '忘记密码怎么办？' }
+    ]
+  },
+  {
+    id: 2,
+    title: '交易相关',
+    icon: 'fas fa-shopping-bag',
+    articles: [
+      { id: 4, title: '如何发布商品？' },
+      { id: 5, title: '如何申请兼职？' },
+      { id: 6, title: '交易安全如何保障？' }
+    ]
+  },
+  {
+    id: 3,
+    title: '其他问题',
+    icon: 'fas fa-question-circle',
+    articles: [
+      { id: 7, title: '如何联系客服？' },
+      { id: 8, title: '平台使用规则' }
+    ]
+  }
+])
+
+const viewArticle = (id: number) => {
+  // TODO: 查看帮助文章详情
+  console.log('查看文章:', id)
+}
+
+// 意见反馈
+const feedbackForm = ref({
+  type: '',
+  content: '',
+  contact: '',
+  images: [] as string[]
+})
+
+const handleFeedbackImage = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  if (target.files && target.files.length > 0) {
+    Array.from(target.files).forEach(file => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        if (e.target?.result) {
+          feedbackForm.value.images.push(e.target.result as string)
+        }
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+}
+
+const removeFeedbackImage = (index: number) => {
+  feedbackForm.value.images.splice(index, 1)
+}
+
+const submitFeedback = () => {
+  // TODO: 提交反馈
+  alert('反馈已提交，感谢您的建议！')
+  feedbackForm.value = { type: '', content: '', contact: '', images: [] }
+}
+
+const viewPrivacyPolicy = () => {
+  // TODO: 查看隐私政策
+  alert('隐私政策页面开发中...')
+}
+
+const viewServiceAgreement = () => {
+  // TODO: 查看服务协议
+  alert('服务协议页面开发中...')
+}
+
+const viewSecurityInfo = () => {
+  // TODO: 查看安全保障
+  alert('安全保障页面开发中...')
+}
+
+// 加载用户信息
+const loadUserInfo = async () => {
+  try {
+    const { getUserInfo } = await import('@campus/common/api/auth')
+    const info = await getUserInfo()
+    if (info) {
+      userInfo.value.name = (info as any).nickname || (info as any).username || userInfo.value.name;
+      userInfo.value.phone = info.phone || userInfo.value.phone
+      userInfo.value.email = info.email || userInfo.value.email
+      userAvatar.value = info.avatar || ''
+      // 更新编辑表单
+      editForm.value.name = userInfo.value.name
+      editForm.value.phone = userInfo.value.phone
+      editForm.value.email = userInfo.value.email
+    }
+  } catch (error) {
+    console.error('加载用户信息失败:', error)
+  }
+}
+
+// 加载用户统计数据
+const loadUserStats = async () => {
+  try {
+    const { getUserStats } = await import('@campus/common/api/auth')
+    const stats = await getUserStats()
+    if (stats) {
+      favoriteCount.value = stats.favoritesCount || favoriteCount.value
+      historyCount.value = stats.historyCount || historyCount.value
+      publishCount.value = stats.publishCount || publishCount.value
+      points.value = stats.pointsCount || points.value
+    }
+  } catch (error) {
+    console.error('加载用户统计数据失败:', error)
+  }
+}
+
 // 组件挂载时初始化
 onMounted(() => {
   // 初始化编辑表单
   cancelEdit()
-  // TODO: 加载用户信息
-  // loadUserInfo()
-  // 加载“我的申请”中来自后端的身份认证申请记录
+  // 加载用户信息和统计数据
+  loadUserInfo()
+  loadUserStats()
+  // 加载"我的申请"中来自后端的身份认证申请记录
   loadAuthApplications()
 })
 </script>
@@ -975,7 +1779,8 @@ onMounted(() => {
 /* 主容器样式 */
 .profile-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
+  /* 使用浅灰色背景，更符合主流App设计 */
+  background: #f5f5f5;
   padding-bottom: 40px;
 }
 
@@ -991,55 +1796,158 @@ onMounted(() => {
 .sidebar {
   width: 280px;
   flex-shrink: 0;
+  position: sticky;
+  top: 20px;
+  align-self: flex-start;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: #FF6B9D;
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .user-card {
-  background: white;
+  /* 使用单原色：淡淡的马卡龙粉色，与背景有对比度 */
+  background: #FFB5D8;
   border-radius: 16px;
   padding: 30px 20px;
   margin-bottom: 20px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   text-align: center;
+  position: relative;
+  overflow: hidden;
+  
+  /* 背景装饰圆圈 */
+  &::before {
+    content: '';
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 50%;
+    top: -200px;
+    right: -100px;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    width: 300px;
+    height: 300px;
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 50%;
+    bottom: -150px;
+    left: -50px;
+  }
 }
 
-.user-avatar {
+.user-avatar-wrapper {
+  position: relative;
+  margin: 0 auto 15px;
+  width: 80px;
+  height: 80px;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.user-avatar,
+.user-avatar-img {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #d81b60 0%, #c2185b 100%);
+  background: rgba(255, 255, 255, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-size: 36px;
-  margin: 0 auto 15px;
-  box-shadow: 0 4px 15px rgba(216, 27, 96, 0.2);
+  box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+  border: 4px solid rgba(255, 255, 255, 0.5);
+  object-fit: cover;
+}
+
+.avatar-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 28px;
+  height: 28px;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+.avatar-badge i {
+  font-size: 14px;
+  color: #FF6B9D;
 }
 
 .user-name {
   font-size: 20px;
   font-weight: bold;
-  color: #333;
+  color: #fff;
   margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
 }
 
 .user-role {
   font-size: 14px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.9);
   margin-bottom: 5px;
+  background: rgba(255, 255, 255, 0.2);
+  padding: 4px 12px;
+  border-radius: 8px;
+  display: inline-block;
+  position: relative;
+  z-index: 1;
 }
 
 .user-school {
   font-size: 13px;
-  color: #999;
+  color: rgba(255, 255, 255, 0.8);
   margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
 }
 
 .user-stats {
   display: flex;
   justify-content: space-around;
+  align-items: center;
   padding-top: 20px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  z-index: 1;
+}
+
+.stat-divider {
+  width: 1px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.stat-item {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
 }
 
 .stat-item {
@@ -1051,12 +1959,12 @@ onMounted(() => {
 .stat-value {
   font-size: 20px;
   font-weight: bold;
-  color: #d81b60;
+  color: #fff;
 }
 
 .stat-label {
   font-size: 12px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.85);
 }
 
 /* 导航菜单样式 */
@@ -1085,8 +1993,9 @@ onMounted(() => {
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #d81b60 0%, #c2185b 100%);
-  color: white;
+  background: #FFB5D8;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(255, 181, 216, 0.3);
 }
 
 .nav-item i {
@@ -1124,10 +2033,638 @@ onMounted(() => {
   align-items: center;
 }
 
+.action-btn {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 181, 216, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #FF6B9D;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  border: none;
+}
+
+.action-btn:hover {
+  background: rgba(255, 181, 216, 0.3);
+  transform: scale(1.05);
+}
+
+.action-btn .badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 20px;
+  height: 20px;
+  background: #ff4757;
+  color: white;
+  font-size: 12px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border: 2px solid white;
+}
+
+/* 快捷功能网格样式（参考app端） */
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
+  background: white;
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.quick-action-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.quick-action-item:hover {
+  transform: translateY(-3px);
+}
+
+.quick-icon-wrapper {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.quick-icon-wrapper i {
+  font-size: 28px;
+  color: rgba(0, 0, 0, 0.7);
+}
+
+.quick-icon-wrapper.orders {
+  background: #FFD3B6;
+}
+
+.quick-icon-wrapper.favorites {
+  background: #FFB5D8;
+}
+
+.quick-icon-wrapper.publish {
+  background: #C7CEEA;
+}
+
+.quick-icon-wrapper.wallet {
+  background: #A8E6CF;
+}
+
+.quick-label {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.quick-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 24px;
+  height: 24px;
+  background: #ff4757;
+  color: white;
+  font-size: 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  border: 2px solid white;
+}
+
+/* 优惠券样式 */
+.coupon-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.coupon-item {
+  background: linear-gradient(135deg, #FFE5E5 0%, #FFD1D1 100%);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  border: 2px solid #FFB5D8;
+  transition: all 0.3s;
+}
+
+.coupon-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(255, 181, 216, 0.3);
+}
+
+.coupon-item.used,
+.coupon-item.expired {
+  opacity: 0.6;
+  background: #f5f5f5;
+  border-color: #ddd;
+}
+
+.coupon-content {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 1;
+}
+
+.coupon-amount {
+  display: flex;
+  align-items: baseline;
+  color: #FF6B9D;
+}
+
+.amount-symbol {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.amount-value {
+  font-size: 36px;
+  font-weight: bold;
+}
+
+.coupon-info {
+  flex: 1;
+}
+
+.coupon-info h4 {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.coupon-info p {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.coupon-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #999;
+}
+
+.coupon-status {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-available {
+  background: #e6f7ff;
+  color: #0288d1;
+}
+
+.status-used {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.status-expired {
+  background: #fff1f0;
+  color: #ff4d4f;
+}
+
+/* 收货地址样式 */
+.address-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.address-item {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 2px solid #eee;
+  transition: all 0.3s;
+}
+
+.address-item:hover {
+  border-color: #FFB5D8;
+  box-shadow: 0 2px 8px rgba(255, 181, 216, 0.2);
+}
+
+.address-item.default {
+  border-color: #FFB5D8;
+  background: #fff8fc;
+}
+
+.address-content {
+  margin-bottom: 15px;
+}
+
+.address-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 10px;
+}
+
+.address-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.address-phone {
+  font-size: 14px;
+  color: #666;
+}
+
+.default-badge {
+  padding: 4px 10px;
+  background: #FFB5D8;
+  color: white;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.address-detail {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.address-actions {
+  display: flex;
+  gap: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #eee;
+}
+
+/* 等级卡片样式 */
+.level-card {
+  background: linear-gradient(135deg, #FFE5E5 0%, #FFD1D1 100%);
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(255, 181, 216, 0.2);
+}
+
+.level-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.level-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #D4A5F5 0%, #C7CEEA 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 36px;
+  box-shadow: 0 4px 15px rgba(212, 165, 245, 0.3);
+}
+
+.level-info h3 {
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.level-info p {
+  font-size: 14px;
+  color: #666;
+}
+
+.level-progress {
+  margin-bottom: 25px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 12px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FFB5D8 0%, #FF6B9D 100%);
+  border-radius: 6px;
+  transition: width 0.3s;
+}
+
+.progress-text {
+  font-size: 13px;
+  color: #666;
+  text-align: center;
+}
+
+.level-benefits {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.level-benefits h4 {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.benefits-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.benefits-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.benefits-list i {
+  color: #52c41a;
+}
+
+/* 评价列表样式 */
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.review-item-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #eee;
+  transition: all 0.3s;
+}
+
+.review-item-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.review-target h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.review-rating {
+  display: flex;
+  gap: 4px;
+}
+
+.review-rating .star {
+  font-size: 14px;
+  color: #FFA500;
+}
+
+.review-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.review-content {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.review-images {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.review-images img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* 帮助中心样式 */
+.help-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.help-category {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.category-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.category-title i {
+  color: #FF6B9D;
+}
+
+.help-articles {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.help-article {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.help-article:hover {
+  background: #fff0f5;
+  transform: translateX(5px);
+}
+
+.help-article span {
+  font-size: 14px;
+  color: #333;
+}
+
+.help-article i {
+  color: #999;
+  font-size: 12px;
+}
+
+/* 意见反馈样式 */
+.image-preview {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.preview-item {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.remove-image {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 24px;
+  height: 24px;
+  background: #ff4757;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* 关于我们样式 */
+.about-content {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.about-logo {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(135deg, #FFB5D8 0%, #FF6B9D 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: white;
+  font-size: 48px;
+  box-shadow: 0 4px 20px rgba(255, 181, 216, 0.3);
+}
+
+.about-content h3 {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.about-desc {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.8;
+  margin-bottom: 30px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.about-info {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 30px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.about-links {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  padding-top: 30px;
+  border-top: 1px solid #eee;
+}
+
+.about-links a {
+  color: #FF6B9D;
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.about-links a:hover {
+  color: #FFB5D8;
+  text-decoration: underline;
+}
+
+.version-text {
+  font-size: 14px;
+  color: #999;
+}
+
 /* 按钮样式 */
 .btn-primary {
   padding: 10px 20px;
-  background: linear-gradient(135deg, #d81b60 0%, #c2185b 100%);
+  background: #FFB5D8;
   color: white;
   border: none;
   border-radius: 8px;
@@ -1137,11 +2674,13 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  box-shadow: 0 2px 8px rgba(255, 181, 216, 0.3);
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(216, 27, 96, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 181, 216, 0.4);
+  background: #FF6B9D;
 }
 
 .btn-secondary {
@@ -1157,15 +2696,15 @@ onMounted(() => {
 
 .btn-secondary:hover {
   background: #f5f5f5;
-  border-color: #d81b60;
-  color: #d81b60;
+  border-color: #FFB5D8;
+  color: #FF6B9D;
 }
 
 .btn-edit {
   padding: 8px 16px;
   background: white;
-  color: #d81b60;
-  border: 1px solid #d81b60;
+  color: #FF6B9D;
+  border: 1px solid #FFB5D8;
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
@@ -1176,14 +2715,14 @@ onMounted(() => {
 }
 
 .btn-edit:hover {
-  background: #d81b60;
+  background: #FFB5D8;
   color: white;
 }
 
 .btn-link {
   background: none;
   border: none;
-  color: #d81b60;
+  color: #FF6B9D;
   cursor: pointer;
   font-size: 14px;
   padding: 0;
@@ -1191,7 +2730,7 @@ onMounted(() => {
 }
 
 .btn-link:hover {
-  color: #c2185b;
+  color: #FFB5D8;
 }
 
 /* 信息卡片样式 */
@@ -1213,7 +2752,7 @@ onMounted(() => {
 }
 
 .card-title i {
-  color: #d81b60;
+  color: #FF6B9D;
 }
 
 .info-grid {
@@ -1294,7 +2833,7 @@ onMounted(() => {
 }
 
 .points {
-  color: #d81b60;
+  color: #FF6B9D;
   font-weight: bold;
 }
 
@@ -1379,12 +2918,12 @@ onMounted(() => {
 .quick-action-item:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border-color: #d81b60;
+  border-color: #FFB5D8;
 }
 
 .quick-action-item i {
   font-size: 24px;
-  color: #d81b60;
+  color: #FF6B9D;
   width: 40px;
   text-align: center;
 }
@@ -1436,8 +2975,8 @@ onMounted(() => {
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #d81b60;
-  box-shadow: 0 0 0 3px rgba(216, 27, 96, 0.1);
+  border-color: #FFB5D8;
+  box-shadow: 0 0 0 3px rgba(255, 181, 216, 0.1);
 }
 
 .form-group input:disabled {
@@ -1481,7 +3020,7 @@ onMounted(() => {
 
 .security-info i {
   font-size: 20px;
-  color: #d81b60;
+  color: #FF6B9D;
   width: 30px;
   text-align: center;
 }
@@ -1574,7 +3113,7 @@ onMounted(() => {
 }
 
 input:checked + .slider {
-  background-color: #d81b60;
+  background-color: #FFB5D8;
 }
 
 input:checked + .slider:before {
@@ -1594,17 +3133,143 @@ input:checked + .slider:before {
 .favorite-list,
 .history-list,
 .message-list,
-.application-list {
+.application-list,
+.publish-list {
   display: flex;
   flex-direction: column;
   gap: 15px;
+}
+
+/* 搜索栏样式 */
+.search-bar {
+  margin-bottom: 20px;
+}
+
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 600px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 15px;
+  color: #999;
+  font-size: 16px;
+  z-index: 1;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 15px 12px 45px;
+  border: 2px solid #e0e0e0;
+  border-radius: 25px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s;
+  background: #f8f9fa;
+}
+
+.search-input:focus {
+  border-color: #FF6B9D;
+  background: white;
+  box-shadow: 0 2px 8px rgba(255, 107, 157, 0.15);
+}
+
+.search-input::placeholder {
+  color: #999;
+}
+
+.search-clear {
+  position: absolute;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  color: #666;
+}
+
+.search-clear:hover {
+  background: #FF6B9D;
+  color: white;
+  transform: scale(1.1);
+}
+
+/* 发布列表项样式 */
+.publish-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #f0f0f0;
+  transition: all 0.3s;
+}
+
+.publish-item:hover {
+  border-color: #FF6B9D;
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.1);
+  transform: translateY(-2px);
+}
+
+.publish-content {
+  flex: 1;
+}
+
+.publish-content h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.publish-content p {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.publish-meta {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  font-size: 13px;
+  color: #999;
+}
+
+.publish-meta .status-badge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.status-active {
+  background: rgba(76, 175, 80, 0.1);
+  color: #4caf50;
+}
+
+.status-inactive {
+  background: rgba(158, 158, 158, 0.1);
+  color: #9e9e9e;
 }
 
 .order-item,
 .favorite-item,
 .history-item,
 .message-item,
-.application-item {
+.application-item,
+.publish-item {
   display: flex;
   align-items: center;
   gap: 15px;
@@ -1619,14 +3284,15 @@ input:checked + .slider:before {
 .favorite-item:hover,
 .history-item:hover,
 .message-item:hover,
-.application-item:hover {
+.application-item:hover,
+.publish-item:hover {
   transform: translateX(5px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .order-type {
   padding: 4px 10px;
-  background: #d81b60;
+  background: #FFB5D8;
   color: white;
   border-radius: 12px;
   font-size: 12px;
@@ -1685,7 +3351,7 @@ input:checked + .slider:before {
   transform: translateY(-50%);
   width: 4px;
   height: 60%;
-  background: #d81b60;
+  background: #FFB5D8;
   border-radius: 0 2px 2px 0;
 }
 
@@ -1693,11 +3359,11 @@ input:checked + .slider:before {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #f9f0ff;
+  background: #FFF0F5;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #d81b60;
+  color: #FF6B9D;
   font-size: 18px;
 }
 
@@ -1719,14 +3385,14 @@ input:checked + .slider:before {
 }
 
 .tab-btn:hover {
-  border-color: #d81b60;
-  color: #d81b60;
+  border-color: #FFB5D8;
+  color: #FF6B9D;
 }
 
 .tab-btn.active {
-  background: #d81b60;
+  background: #FFB5D8;
   color: white;
-  border-color: #d81b60;
+  border-color: #FFB5D8;
 }
 
 /* 空状态样式 */

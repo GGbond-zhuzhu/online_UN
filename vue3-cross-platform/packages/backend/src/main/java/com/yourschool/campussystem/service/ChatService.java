@@ -39,6 +39,18 @@ public interface ChatService {
     Map<String, Object> sendMessage(Long senderId, Long receiverId, String content, String type, String imageUrl, String fileUrl);
 
     /**
+     * 发送群聊消息
+     * @param senderId 发送者ID
+     * @param groupId 群ID
+     * @param content 消息内容
+     * @param type 消息类型（TEXT/IMAGE/FILE）
+     * @param imageUrl 图片URL（如果是图片消息）
+     * @param fileUrl 文件URL（如果是文件消息）
+     * @return 消息信息
+     */
+    Map<String, Object> sendGroupMessage(Long senderId, Long groupId, String content, String type, String imageUrl, String fileUrl);
+
+    /**
      * 标记消息为已读
      * @param userId 用户ID
      * @param conversationId 会话ID

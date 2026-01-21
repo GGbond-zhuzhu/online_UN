@@ -56,6 +56,12 @@ public class PersonalScheduleVO {
     @Schema(description = "标签", example = "学习")
     private String tag;
 
+    @Schema(description = "是否为行程系列", example = "false")
+    private Boolean isRouteSeries = false;
+
+    @Schema(description = "行程系列主题", example = "做饭工作")
+    private String routeSeriesTheme;
+
     @Schema(description = "创建人ID", example = "1")
     private Long creatorId;
 

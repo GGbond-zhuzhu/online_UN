@@ -11,6 +11,11 @@
         <p class="page-subtitle">查看我的兼职申请记录</p>
       </section>
 
+      <!-- 收藏/浏览/申请：互相跳转 -->
+      <section class="tabs-section">
+        <ParttimeCenterTabs />
+      </section>
+
       <!-- 筛选栏 -->
       <section class="filter-section">
         <div class="filter-tabs">
@@ -111,6 +116,7 @@ import { useRouter } from 'vue-router'
 import NavBar from '@/components/common/NavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 import FloatingMenu from '@/components/common/FloatingMenu.vue'
+import ParttimeCenterTabs from '@/components/business/ParttimeCenterTabs.vue'
 // 引入公共兼职 Store，统一管理“我的兼职申请”记录
 import { useParttimeStore } from '@campus/common'
 
@@ -204,7 +210,7 @@ onMounted(() => {
 }
 
 .page-container {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 40px 20px;
 }
@@ -212,6 +218,11 @@ onMounted(() => {
 .page-header {
   text-align: center;
   margin-bottom: 30px;
+}
+
+.tabs-section {
+  max-width: 900px;
+  margin: 0 auto 18px;
 }
 
 .page-title {

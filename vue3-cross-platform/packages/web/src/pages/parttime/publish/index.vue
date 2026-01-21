@@ -1,10 +1,10 @@
 <template>
-  <div class="publish-page">
-    <NavBar />
+  <div class="publish-page" :class="{ embedded }">
+    <NavBar v-if="!embedded" />
 
     <div class="page-container">
       <!-- 页面标题 -->
-      <section class="page-header">
+      <section v-if="!embedded" class="page-header">
         <h1 class="page-title">
           <i class="fas fa-plus-circle"></i> 发布兼职
         </h1>
@@ -456,20 +456,27 @@
       </section>
     </div>
 
-    <FloatingMenu />
-    <AppFooter />
+    <FloatingMenu v-if="!embedded" />
+    <AppFooter v-if="!embedded" />
   </div>
 </template>
 
 <script setup lang="ts">
 // 引入 Vue 的组合式 API，用于管理表单数据和计算属性
-import { ref, reactive, computed } from 'vue' // 从 vue 导入 ref、reactive、computed
+import { ref, reactive, computed, toRefs } from 'vue' // 从 vue 导入 ref、reactive、computed
 import { useRouter } from 'vue-router' // 从 vue-router 导入 useRouter，用于页面跳转
 import NavBar from '@/components/common/NavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 import FloatingMenu from '@/components/common/FloatingMenu.vue'
 // 从公共包引入兼职 Store 和类型，统一管理“发布兼职”的后端交互
 import { useParttimeStore, type PublishParttimeParams } from '@campus/common' // useParttimeStore：统一的兼职 Store；PublishParttimeParams：发布接口参数类型
+
+const props = withDefaults(defineProps<{ embedded?: boolean }>(), { embedded: false })
+const emit = defineEmits<{
+  close: []
+  submitted: []
+}>()
+const { embedded } = toRefs(props)
 
 const router = useRouter() // 获取路由实例，用于表单提交后跳转到列表页
 const parttimeStore = useParttimeStore() // 获取兼职 Store 实例，用于调用发布接口和读取 loading / 错误信息
@@ -668,7 +675,13 @@ const handleSubmit = async () => {
     await parttimeStore.publishJob(payload) // 如果发布成功，会在 Store 中同步更新“我发布的兼职列表”
 
     alert('发布成功！') // 提示用户发布成功
-    router.push('/parttime') // 跳转回兼职列表页，方便查看刚发布的岗位
+    // 弹窗模式：只关闭弹窗，不做页面跳转（避免“发布=跳页”）
+    if (embedded.value) {
+      emit('submitted')
+      emit('close')
+      return
+    }
+    router.push('/parttime') // 页面模式：跳转回兼职列表页
   } catch (error) {
     console.error('发布失败:', error) // 控制台打印错误日志
     alert(parttimeStore.errorMessage || '发布失败，请稍后重试') // 优先展示 Store 中的错误提示
@@ -684,6 +697,10 @@ const saveDraft = () => {
 
 // 取消发布
 const handleCancel = () => {
+  if (embedded.value) {
+    emit('close')
+    return
+  }
   if (confirm('确定要取消发布吗？未保存的内容将丢失。')) {
     router.back()
   }
@@ -705,6 +722,17 @@ const handleCancel = () => {
   min-height: 100vh;
   background: var(--bg);
   padding-bottom: 40px;
+}
+
+.publish-page.embedded {
+  min-height: auto;
+  background: transparent;
+  padding-bottom: 0;
+}
+
+.publish-page.embedded .page-container {
+  max-width: 100%;
+  padding: 0;
 }
 
 .page-container {
@@ -1005,9 +1033,8 @@ const handleCancel = () => {
 }
 
 .btn:active {
-  background: var(--primary-dark);
-  border-color: var(--primary-dark);
-  transform: translateY(0);
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.2);
 }
 
 .cancel-btn {

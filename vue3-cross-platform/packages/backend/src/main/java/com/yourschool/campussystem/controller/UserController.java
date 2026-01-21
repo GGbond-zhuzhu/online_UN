@@ -3,6 +3,7 @@ package com.yourschool.campussystem.controller;
 import com.yourschool.campussystem.common.ApiResponse;
 import com.yourschool.campussystem.dto.LoginDTO;
 import com.yourschool.campussystem.dto.UserRegisterDTO;
+import com.yourschool.campussystem.dto.UserUpdateDTO;
 import com.yourschool.campussystem.service.UserService;
 import com.yourschool.campussystem.util.UserContextUtils;
 import com.yourschool.campussystem.vo.LoginVO;
@@ -14,6 +15,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
@@ -72,49 +75,53 @@ public class UserController {
     @Operation(summary = "更新用户信息", description = "更新当前用户的基本信息（昵称、头像等）")
     @PutMapping("/info")
     public ApiResponse<UserInfoVO> updateUserInfo(
-            @Parameter(description = "用户ID", required = true)
-            @RequestParam Long userId,
-            
-            @Parameter(description = "昵称")
-            @RequestParam(required = false) String nickname,
-            
-            @Parameter(description = "头像URL")
-            @RequestParam(required = false) String avatarUrl,
-            
-            @Parameter(description = "手机号")
-            @RequestParam(required = false) String phone) {
-        
-        // 模拟更新后的用户信息
-        UserInfoVO userInfo = new UserInfoVO();
-        userInfo.setId(userId);
-        userInfo.setNickname(nickname != null ? nickname : "张三");
-        userInfo.setAvatarUrl(avatarUrl != null ? avatarUrl : "https://example.com/avatar.jpg");
-        userInfo.setPhone(phone != null ? phone : "13800138000");
-        
+            HttpServletRequest request,
+            @Parameter(description = "用户更新信息", required = true)
+            @Valid @RequestBody UserUpdateDTO updateDTO) {
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        UserInfoVO userInfo = userService.updateUserInfo(userId, updateDTO);
         return ApiResponse.success("用户信息更新成功", userInfo);
+    }
+
+    @Operation(summary = "获取用户统计数据", description = "获取当前用户的收藏数、历史记录数、发布数、积分等统计数据")
+    @GetMapping("/stats")
+    public ApiResponse<Map<String, Object>> getUserStats(HttpServletRequest request) {
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        Map<String, Object> stats = userService.getUserStats(userId);
+        return ApiResponse.success("查询成功", stats);
     }
 
     @Operation(summary = "修改密码", description = "用户修改登录密码")
     @PostMapping("/change-password")
     public ApiResponse<String> changePassword(
-            @Parameter(description = "用户ID", required = true)
-            @RequestParam Long userId,
-            
-            @Parameter(description = "旧密码", required = true)
-            @RequestParam String oldPassword,
-            
-            @Parameter(description = "新密码", required = true)
-            @RequestParam String newPassword) {
+            HttpServletRequest request,
+            @Parameter(description = "修改密码参数", required = true)
+            @RequestBody Map<String, String> params) {
         
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        String oldPassword = params.get("oldPassword");
+        String newPassword = params.get("newPassword");
+        
+        if (oldPassword == null || oldPassword.isEmpty()) {
+            return ApiResponse.error(com.yourschool.campussystem.common.ErrorCode.BAD_REQUEST, "旧密码不能为空");
+        }
+        if (newPassword == null || newPassword.isEmpty()) {
+            return ApiResponse.error(com.yourschool.campussystem.common.ErrorCode.BAD_REQUEST, "新密码不能为空");
+        }
+        
+        userService.changePassword(userId, oldPassword, newPassword);
         return ApiResponse.success("密码修改成功，请重新登录");
     }
 
     @Operation(summary = "退出登录", description = "用户退出登录，清除token")
     @PostMapping("/logout")
-    public ApiResponse<String> logout(
-            @Parameter(description = "用户ID", required = true)
-            @RequestParam Long userId) {
-        
+    public ApiResponse<String> logout(HttpServletRequest request) {
+        // 从token中获取用户ID，更安全可靠
+        Long userId = UserContextUtils.getUserId(request);
+        if (userId != null) {
+            // 可以在这里实现清除token的逻辑，比如将token加入黑名单
+            // 当前JWT是无状态的，所以只需要前端清除token即可
+        }
         return ApiResponse.success("退出登录成功");
     }
 }

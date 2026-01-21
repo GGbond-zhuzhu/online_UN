@@ -14,6 +14,7 @@ import { defineStore } from 'pinia' // 从 pinia 中导入 defineStore 函数，
 import { ref, computed } from 'vue' // 从 vue 中导入 ref 和 computed，用来创建响应式变量和计算属性
 
 // 引入认证相关接口与类型定义（账号登录 / 注册 / 获取用户信息 / 退出登录）
+// 注意：从 @campus/common 包导入，避免路径解析错误
 import {
   login as loginApi, // loginApi：封装好的账号密码登录接口
   register as registerApi, // registerApi：封装好的注册接口
@@ -22,7 +23,7 @@ import {
   type LoginParams, // LoginParams：账号密码登录参数类型
   type RegisterParams, // RegisterParams：用户注册参数类型
   type UserInfo as ApiUserInfo // ApiUserInfo：后端返回的用户信息类型
-} from '@campus/common/api/auth' // 从 common 包的 api/auth 模块中导入认证相关方法
+} from '@campus/common/api/auth' // 从 @campus/common 包的 api/auth 模块中导入认证相关方法
 
 // 引入认证工具方法，用于在本地存储 token 和用户信息
 import {
@@ -33,7 +34,7 @@ import {
   setUserInfo as setStoredUserInfo, // setStoredUserInfo：将用户信息写入本地存储
   removeUserInfo, // removeUserInfo：从本地删除用户信息（当前未直接使用，保留备用）
   clearAuth // clearAuth：同时清除 token 和用户信息
-} from '../utils/auth' // 从 utils/auth 中导入跨端认证工具（使用相对路径，避免别名解析问题）
+} from '@campus/common/utils/auth' // 从 @campus/common 包的 utils/auth 中导入跨端认证工具
 
 // ==================== 类型定义 ====================
 
@@ -117,6 +118,16 @@ export const useUserStore = defineStore('user', () => {
 
   const isLoggedIn = computed(() => { // isLoggedIn：是否已登录
     return !!getToken() && userId.value !== null // 既有 token 又有 userId 时视为已登录
+  })
+
+  // 演示登录（demo-token）：仅用于前端预览，不具备真实后端鉴权能力
+  const isDemoLogin = computed(() => {
+    return getToken() === 'demo-token'
+  })
+
+  // 是否具备调用“需要登录的后端接口”的条件：真实登录（非 demo-token）
+  const isApiReady = computed(() => {
+    return isLoggedIn.value && !isDemoLogin.value
   })
 
   const isStudent = computed(() => currentRole.value === 'student') // isStudent：是否学生角色
@@ -276,6 +287,8 @@ export const useUserStore = defineStore('user', () => {
 
     // 派生状态
     isLoggedIn, // 是否已登录
+    isDemoLogin, // 是否为演示登录（demo-token）
+    isApiReady, // 是否可安全调用需要登录的后端接口
     isStudent, // 是否学生角色
     isTeacher, // 是否教师角色
     isUniversity, // 是否高校管理员角色
@@ -293,6 +306,24 @@ export const useUserStore = defineStore('user', () => {
     logout, // 退出登录
 
     // 辅助方法：判断当前用户是否拥有指定角色
-    hasRole: (role: UserRole) => currentRole.value === role // 简单比较当前角色与目标角色是否一致
+    hasRole: (role: UserRole) => currentRole.value === role, // 简单比较当前角色与目标角色是否一致
+
+    // 身份认证方法（临时实现，后续对接后端API）
+    identityAuth: async (role: UserRole, info: Record<string, any>): Promise<boolean> => {
+      try {
+        // TODO: 对接后端身份认证API
+        // 临时实现：直接更新角色
+        currentRole.value = role
+        if (info.name) {
+          username.value = info.name
+        }
+        // 保存到本地存储
+        setStoredUserInfo(userInfo.value, true)
+        return true
+      } catch (error) {
+        console.error('身份认证失败:', error)
+        return false
+      }
+    }
   }
 }) // useUserStore 定义结束

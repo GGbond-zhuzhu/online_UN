@@ -1,5 +1,18 @@
 # 后端功能测试结果
 
+## 🤖 自动化测试（已执行）
+
+### 团队管理（邀请流）
+
+- **测试代码**：`src/test/java/com/yourschool/campussystem/service/impl/ScheduleServiceImplTeamInviteTest.java`
+- **执行命令**：
+  ```bash
+  cd packages/backend
+  mvn test
+  ```
+- **结果**：✅ Tests run: 6, Failures: 0, Errors: 0, Skipped: 0
+- **详细报告**：`TEAM_MANAGEMENT_TEST_REPORT.md`
+
 ## 🚀 服务启动
 
 ### 启动命令

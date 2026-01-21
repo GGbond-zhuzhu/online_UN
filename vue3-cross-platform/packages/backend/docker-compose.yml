@@ -1,0 +1,22 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: campus-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      # 与 application.properties 默认保持一致；也可用环境变量 DB_PASSWORD 覆盖
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-campus_db_password}
+      MYSQL_DATABASE: campus_db
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-time-zone=+08:00
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:
+

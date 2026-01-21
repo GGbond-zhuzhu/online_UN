@@ -36,6 +36,9 @@ public class TeamScheduleDTO {
     @Schema(description = "参会人员ID列表")
     private List<Long> attendeeIds;
 
+    @Schema(description = "同步置入成员ID列表（将团队行程写入这些成员的个人行程表；为空则默认使用attendeeIds；两者都为空则兼容旧行为：默认全员）")
+    private List<Long> syncInUserIds;
+
     @Schema(description = "是否需要确认", example = "true")
     private Boolean needConfirm = false;
 }

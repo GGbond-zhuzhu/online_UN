@@ -746,19 +746,55 @@ onMounted(() => {
 <style>
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css');
 
-* {
+/* 与首页一致的玫红主题变量 */
+:root {
+  --auth-primary: #d81b60;
+  --auth-primary-light: #ffb6c1;
+  --auth-bg: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
+}
+
+/* 仅作用于注册页，避免污染全站 */
+.register-page,
+.register-page * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   font-family: 'Arial', 'Microsoft YaHei', sans-serif;
 }
 
-body {
-  background: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
+.register-page {
+  background: var(--auth-bg);
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   color: #333;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 添加背景装饰（仅注册页） */
+.register-page::before {
+  content: "";
+  position: fixed;
+  top: -50%;
+  right: -20%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(216, 27, 96, 0.14) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.register-page::after {
+  content: "";
+  position: fixed;
+  bottom: -30%;
+  left: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(230, 247, 255, 0.35) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
 }
 </style>
 
@@ -776,7 +812,7 @@ body {
 .header-logo {
   font-size: 24px;
   font-weight: bold;
-  color: #d81b60;
+  color: var(--auth-primary); /* 玫红主色 */
   text-decoration: none;
 }
 
@@ -794,7 +830,7 @@ body {
 }
 
 .header-links a:hover {
-  color: #d81b60;
+  color: var(--auth-primary); /* 玫红主色 */
 }
 
 .login-status {
@@ -817,7 +853,7 @@ body {
 }
 
 .login-link-nav:hover {
-  color: #d81b60;
+  color: var(--auth-primary); /* 玫红主色 */
 }
 
 .divider {
@@ -830,23 +866,27 @@ body {
   justify-content: center;
   align-items: center;
   padding: 20px;
+  position: relative;
+  z-index: 1; /* 确保在背景装饰之上 */
 }
 
 .register-wrapper {
   width: 100%;
   max-width: 1200px;
-  background-color: white;
-  border-radius: 16px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  background-color: rgba(255, 255, 255, 0.95); /* 半透明白色 */
+  border-radius: 24px; /* 更大的圆角 */
+  box-shadow: 0 8px 30px rgba(255, 182, 193, 0.15); /* 淡粉阴影 */
   overflow: hidden;
   display: flex;
   min-height: 600px;
+  backdrop-filter: blur(10px); /* 毛玻璃效果 */
+  border: 1px solid rgba(255, 182, 193, 0.2); /* 淡粉色边框 */
 }
 
 .register-left {
   flex: 1.2;
-  background: linear-gradient(135deg, #d81b60 0%, #c2185b 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--auth-primary) 0%, var(--auth-primary-light) 100%);
+  color: #fff;
   padding: 50px 40px;
   display: flex;
   flex-direction: column;
@@ -909,26 +949,30 @@ body {
   align-items: center;
   margin-bottom: 20px;
   padding: 12px 15px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6); /* 半透明白色 */
+  color: #374151; /* 卡片内部用深色文字，保证对比度 */
+  border-radius: 12px; /* 更大的圆角 */
   transition: all 0.3s;
+  border: 1px solid rgba(255, 255, 255, 0.8); /* 白色边框 */
 }
 
 .feature-item:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.8);
   transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(255, 182, 193, 0.2); /* 淡粉阴影 */
 }
 
 .feature-icon {
   width: 40px;
   height: 40px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--auth-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 15px;
   font-size: 16px;
+  color: white; /* 白色图标 */
 }
 
 .feature-text {
@@ -946,9 +990,9 @@ body {
 }
 
 .experience-btn {
-  background: white;
-  color: #d81b60;
-  border: none;
+  background: rgba(255, 255, 255, 0.9); /* 半透明白色 */
+  color: #5a5a5a; /* 深灰色文字 */
+  border: 2px solid rgba(255, 255, 255, 0.8); /* 白色边框 */
   padding: 12px 30px;
   border-radius: 25px;
   font-size: 16px;
@@ -962,7 +1006,9 @@ body {
 
 .experience-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 15px rgba(255, 182, 193, 0.3); /* 淡粉阴影 */
+  background: rgba(255, 255, 255, 1); /* 完全不透明 */
+  color: var(--auth-primary);
 }
 
 .register-right {
@@ -976,7 +1022,7 @@ body {
 .register-title {
   font-size: 28px;
   font-weight: bold;
-  color: #d81b60;
+  color: var(--auth-primary);
   margin-bottom: 30px;
   text-align: center;
 }
@@ -1008,8 +1054,8 @@ body {
 }
 
 .form-control:focus {
-  border-color: #d81b60;
-  box-shadow: 0 0 0 3px rgba(216, 27, 96, 0.1);
+  border-color: var(--auth-primary);
+  box-shadow: 0 0 0 3px rgba(216, 27, 96, 0.12);
   outline: none;
 }
 
@@ -1028,9 +1074,9 @@ body {
 }
 
 .send-code-btn {
-  background-color: #f9d0da;
-  color: #d81b60;
-  border: none;
+  background-color: rgba(216, 27, 96, 0.08);
+  color: var(--auth-primary);
+  border: 1px solid rgba(216, 27, 96, 0.35);
   border-radius: 8px;
   padding: 0 20px;
   font-size: 14px;
@@ -1040,8 +1086,11 @@ body {
   font-weight: 500;
 }
 
-.send-code-btn:hover {
-  background-color: #f5b8c9;
+.send-code-btn:hover:not(:disabled) {
+  background-color: var(--auth-primary);
+  color: white; /* 白色文字 */
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
 }
 
 .send-code-btn:disabled {
@@ -1063,7 +1112,7 @@ body {
 }
 
 .agreement-group a {
-  color: #d81b60;
+  color: var(--auth-primary);
   text-decoration: none;
 }
 
@@ -1074,21 +1123,22 @@ body {
 .register-btn {
   width: 100%;
   padding: 14px;
-  background-color: #d81b60;
+  background: linear-gradient(135deg, var(--auth-primary) 0%, #c2185b 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px; /* 更大的圆角 */
   font-size: 16px;
   cursor: pointer;
   transition: all 0.3s;
   font-weight: 600;
   margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3); /* 淡粉阴影 */
 }
 
-.register-btn:hover {
-  background-color: #c2185b;
+.register-btn:hover:not(:disabled) {
+  background-color: #FFC0CB; /* 浅粉色 */
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(216, 27, 96, 0.3);
+  box-shadow: 0 6px 20px rgba(255, 182, 193, 0.4); /* 更强的淡粉阴影 */
 }
 
 .register-btn:disabled {
@@ -1107,7 +1157,7 @@ body {
 }
 
 .login-link a {
-  color: #d81b60;
+  color: var(--auth-primary);
   text-decoration: none;
   font-weight: bold;
 }
@@ -1207,7 +1257,7 @@ body {
 
 .timer {
   font-size: 12px;
-  color: #d81b60;
+  color: var(--auth-primary);
   margin-top: 5px;
   text-align: center;
 }
@@ -1232,7 +1282,7 @@ body {
 
 .redirect-countdown {
   font-weight: bold;
-  color: #d81b60;
+  color: var(--auth-primary);
 }
 
 .help-bubble {
@@ -1241,21 +1291,21 @@ body {
   bottom: 30px;
   width: 60px;
   height: 60px;
-  background: linear-gradient(135deg, #d81b60 0%, #c2185b 100%);
+  background: linear-gradient(135deg, var(--auth-primary) 0%, var(--auth-primary-light) 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(216, 27, 96, 0.3);
+  box-shadow: 0 4px 15px rgba(255, 182, 193, 0.3); /* 淡粉阴影 */
   z-index: 1000;
   transition: all 0.3s;
 }
 
 .help-bubble:hover {
   transform: scale(1.1);
-  box-shadow: 0 6px 20px rgba(216, 27, 96, 0.4);
+  box-shadow: 0 6px 20px rgba(255, 182, 193, 0.4); /* 更强的淡粉阴影 */
 }
 
 .help-bubble i {
@@ -1285,7 +1335,7 @@ body {
 }
 
 .footer-links a:hover {
-  color: #d81b60;
+  color: var(--auth-primary);
 }
 
 .password-strength {

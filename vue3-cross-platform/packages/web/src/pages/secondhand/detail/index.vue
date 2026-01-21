@@ -3,15 +3,36 @@
     <NavBar />
 
     <div class="page-container">
-      <!-- 商品图片轮播 -->
+      <!-- 商品图片轮播（增强版） -->
       <section class="product-images">
-        <div class="main-image">
-          <img :src="currentImage" :alt="product.title" />
-          <div class="image-indicator">
-            <span>{{ currentImageIndex + 1 }} / {{ product.images.length }}</span>
+        <div class="main-image-wrapper">
+          <div class="main-image" @click="showImageGallery">
+            <img v-if="currentImage" :src="currentImage" :alt="product.title" />
+            <div v-else class="image-placeholder">
+              <i class="fas fa-image"></i>
+              <span>暂无图片</span>
+            </div>
+            <div v-if="product.images.length > 1" class="image-indicator">
+              <span>{{ currentImageIndex + 1 }} / {{ product.images.length }}</span>
+            </div>
           </div>
+          <!-- 图片切换按钮 -->
+          <button 
+            v-if="product.images.length > 1 && currentImageIndex > 0"
+            class="image-nav-btn prev-btn"
+            @click="prevImage"
+          >
+            <i class="fas fa-chevron-left"></i>
+          </button>
+          <button 
+            v-if="product.images.length > 1 && currentImageIndex < product.images.length - 1"
+            class="image-nav-btn next-btn"
+            @click="nextImage"
+          >
+            <i class="fas fa-chevron-right"></i>
+          </button>
         </div>
-        <div class="thumbnail-list">
+        <div v-if="product.images.length > 1" class="thumbnail-list">
           <div
             v-for="(img, idx) in product.images"
             :key="idx"
@@ -190,6 +211,7 @@ const router = useRouter()
 // 当前图片索引
 const currentImageIndex = ref(0)
 const isFavorite = ref(false)
+const showGallery = ref(false)
 
 // 商品数据（从后端接口加载）
 const product = ref({
@@ -230,8 +252,29 @@ const recommendedProducts = ref([
 
 // 计算属性
 const currentImage = computed(() => {
-  return product.value.images[currentImageIndex.value] || product.value.images[0]
+  if (product.value.images && product.value.images.length > 0) {
+    return product.value.images[currentImageIndex.value] || product.value.images[0]
+  }
+  return ''
 })
+
+// 图片导航方法
+const prevImage = () => {
+  if (currentImageIndex.value > 0) {
+    currentImageIndex.value--
+  }
+}
+
+const nextImage = () => {
+  if (currentImageIndex.value < product.value.images.length - 1) {
+    currentImageIndex.value++
+  }
+}
+
+const showImageGallery = () => {
+  // 可以在这里实现图片全屏查看功能
+  showGallery.value = true
+}
 
 // 方法
 const getCategoryLabel = (category: string) => {
@@ -376,6 +419,14 @@ const loadProduct = async (id: number) => {
     if (typeof detail.isFavorited === 'boolean') {
       isFavorite.value = detail.isFavorited
     }
+    
+    // 确保图片数组存在
+    if (!product.value.images || product.value.images.length === 0) {
+      product.value.images = ['https://via.placeholder.com/600x400?text=商品图片']
+    }
+    
+    // 重置图片索引
+    currentImageIndex.value = 0
   } catch (error) {
     console.error('加载商品详情失败:', error)
   }
@@ -430,20 +481,77 @@ onMounted(() => {
   margin-right: auto;
 }
 
+.main-image-wrapper {
+  position: relative;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
 .main-image {
   position: relative;
   width: 100%;
   height: 500px;
-  margin-bottom: 15px;
   border-radius: 8px;
   overflow: hidden;
   background: #f5f5f5;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.main-image:hover {
+  transform: scale(1.02);
 }
 
 .main-image img {
   width: 100%;
   height: 100%;
   object-fit: contain;
+}
+
+.image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 18px;
+}
+
+.image-placeholder i {
+  font-size: 64px;
+  margin-bottom: 10px;
+}
+
+.image-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  z-index: 10;
+}
+
+.image-nav-btn:hover {
+  background: rgba(216, 27, 96, 0.8);
+}
+
+.prev-btn {
+  left: 15px;
+}
+
+.next-btn {
+  right: 15px;
 }
 
 .image-indicator {

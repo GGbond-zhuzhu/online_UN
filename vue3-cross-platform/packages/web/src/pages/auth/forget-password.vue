@@ -407,7 +407,7 @@ onUnmounted(() => {
 
 .forget-password-page {
   min-height: 100vh;
-  background: linear-gradient(120deg, #fdf2f8 0%, #fef7fb 30%, #fcf1f7 100%);
+  background: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%); /* 与首页一致 */
   display: flex;
   flex-direction: column;
   position: relative;
@@ -426,7 +426,7 @@ onUnmounted(() => {
   width: 400px;
   height: 400px;
   border-radius: 50%;
-  background: radial-gradient(circle, #d81b60 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(216, 27, 96, 0.14) 0%, transparent 70%);
   top: -100px;
   right: -100px;
 }
@@ -435,7 +435,7 @@ onUnmounted(() => {
   width: 300px;
   height: 300px;
   border-radius: 50%;
-  background: radial-gradient(circle, #9c27b0 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(230, 247, 255, 0.35) 0%, transparent 70%);
   bottom: -100px;
   left: -100px;
 }
@@ -445,7 +445,7 @@ onUnmounted(() => {
   height: 150px;
   bottom: 0;
   left: 0;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23d81b60' fill-opacity='0.2' d='M0,192L48,176C96,160,192,128,288,128C384,128,480,160,576,181.3C672,203,768,213,864,197.3C960,181,1056,139,1152,128C1248,117,1344,139,1392,149.3L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='%23d81b60' fill-opacity='0.14' d='M0,192L48,176C96,160,192,128,288,128C384,128,480,160,576,181.3C672,203,768,213,864,197.3C960,181,1056,139,1152,128C1248,117,1344,139,1392,149.3L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
   background-size: cover;
 }
 
@@ -460,16 +460,16 @@ onUnmounted(() => {
 }
 
 .forget-card {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.95); /* 半透明白色 */
   border-radius: 24px;
   padding: 60px 50px;
-  box-shadow: 0 15px 50px rgba(216, 27, 96, 0.12);
+  box-shadow: 0 15px 50px rgba(255, 182, 193, 0.15); /* 淡粉阴影 */
   max-width: 520px;
   width: 100%;
   position: relative;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 182, 193, 0.2); /* 淡粉色边框 */
+  backdrop-filter: blur(10px); /* 毛玻璃效果 */
 }
 
 /* 标题区域美化 */
@@ -481,18 +481,18 @@ onUnmounted(() => {
 .forget-logo {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, #d81b60 0%, #c2185b 100%);
+  background: linear-gradient(135deg, #d81b60 0%, #ffb6c1 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 20px;
-  box-shadow: 0 8px 20px rgba(216, 27, 96, 0.2);
+  box-shadow: 0 8px 20px rgba(255, 182, 193, 0.2); /* 淡粉阴影 */
 }
 
 .forget-logo i {
   font-size: 36px;
-  color: white;
+  color: white; /* 白色图标 */
 }
 
 .forget-title {
@@ -544,10 +544,10 @@ onUnmounted(() => {
 }
 
 .step-item.active .step-number {
-  background: linear-gradient(135deg, #d81b60 0%, #c2185b 100%);
+  background: linear-gradient(135deg, #d81b60 0%, #ffb6c1 100%);
   color: white;
   border-color: #d81b60;
-  box-shadow: 0 4px 15px rgba(216, 27, 96, 0.2);
+  box-shadow: 0 4px 15px rgba(216, 27, 96, 0.18);
   transform: scale(1.05);
 }
 
@@ -565,7 +565,7 @@ onUnmounted(() => {
 }
 
 .step-item.active .step-label {
-  color: #d81b60;
+  color: #d81b60; /* 玫红主色 */
   font-weight: 600;
 }
 
@@ -583,7 +583,7 @@ onUnmounted(() => {
 }
 
 .step-line.active {
-  background: linear-gradient(90deg, #d81b60 0%, #c2185b 100%);
+  background: linear-gradient(90deg, #d81b60 0%, #ffb6c1 100%);
 }
 
 /* 表单区域美化 */
@@ -637,7 +637,7 @@ onUnmounted(() => {
   outline: none;
   border-color: #d81b60;
   background: white;
-  box-shadow: 0 0 0 4px rgba(216, 27, 96, 0.08);
+  box-shadow: 0 0 0 4px rgba(216, 27, 96, 0.12);
   transform: translateY(-2px);
 }
 
@@ -671,11 +671,11 @@ onUnmounted(() => {
 }
 
 .btn-send-code:hover:not(:disabled) {
-  background: linear-gradient(135deg, #d81b60 0%, #c2185b 100%);
+  background: linear-gradient(135deg, #d81b60 0%, #ffb6c1 100%);
   color: white;
   border-color: #d81b60;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(216, 27, 96, 0.2);
+  box-shadow: 0 4px 12px rgba(216, 27, 96, 0.16);
 }
 
 .btn-send-code:disabled {
@@ -796,8 +796,8 @@ onUnmounted(() => {
 }
 
 .btn-back:hover:not(:disabled) {
-  background: #faf0f5;
-  border-color: #f06292;
+  background: rgba(216, 27, 96, 0.08);
+  border-color: rgba(216, 27, 96, 0.35);
   color: #d81b60;
   transform: translateY(-2px);
 }
@@ -823,12 +823,13 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3); /* 淡粉阴影 */
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(216, 27, 96, 0.3);
-  background: linear-gradient(135deg, #c2185b 0%, #ad1457 100%);
+  box-shadow: 0 8px 20px rgba(216, 27, 96, 0.22);
+  background: linear-gradient(135deg, #ec407a 0%, #ffb6c1 100%);
 }
 
 .btn-primary:disabled {
@@ -915,12 +916,13 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3); /* 淡粉阴影 */
 }
 
 .btn-login:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(216, 27, 96, 0.3);
-  background: linear-gradient(135deg, #c2185b 0%, #ad1457 100%);
+  box-shadow: 0 8px 20px rgba(216, 27, 96, 0.22);
+  background: linear-gradient(135deg, #ec407a 0%, #ffb6c1 100%);
 }
 
 /* 响应式适配优化 */

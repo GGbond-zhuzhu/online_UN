@@ -685,9 +685,8 @@ const goSchedule = () => {
 
 /* 顶部搜索按钮按下态 */
 .hero-search-button:active {
-  transform: translateY(0);
-  box-shadow: 0 8px 16px rgba(255, 75, 139, 0.3);
-  opacity: 0.92;
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.2);
 }
 
 /* 搜索结果计数提示文案 */

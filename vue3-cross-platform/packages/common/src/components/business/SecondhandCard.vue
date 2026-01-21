@@ -185,9 +185,10 @@ const handleClick = () => { // handleClick：卡片点击事件处理函数
 /* 商品标题样式 */
 .card-title {
   font-size: 15px; /* 标题字体大小中等偏大 */
-  font-weight: 600; /* 使用半粗体提升标题重要性 */
-  color: #333333; /* 使用深色字体增强可读性 */
+  font-weight: 700; /* 使用粗体提升标题重要性 */
+  color: #222222; /* 使用更深色字体增强可读性 */
   margin: 0; /* 去掉默认外边距 */
+  line-height: 1.5; /* 增加行高，提升可读性 */
 }
 
 /* 价格区域样式 */
@@ -201,21 +202,24 @@ const handleClick = () => { // handleClick：卡片点击事件处理函数
 .price-current {
   font-size: 16px; /* 当前价格稍大以吸引注意 */
   font-weight: 700; /* 使用粗体强调价格 */
-  color: #d81b60; /* 使用品牌主色表示关键价格信息 */
+  color: #C2185B; /* 使用更深的品牌主色，提升对比度 */
 }
 
 /* 原价样式：显示删除线表示已优惠 */
 .price-original {
   font-size: 12px; /* 原价字体较小，降低视觉权重 */
-  color: #999999; /* 使用浅灰色弱化原价 */
+  color: #777777; /* 使用更深的灰色，提升对比度 */
   text-decoration: line-through; /* 使用删除线表示不再有效 */
+  font-weight: 500; /* 加粗字体，提升可读性 */
 }
 
 /* 描述文本样式 */
 .card-desc {
   font-size: 13px; /* 描述使用中等字号，便于阅读 */
-  color: #666666; /* 使用中灰色文字 */
+  color: #555555; /* 使用更深的灰色，提升对比度 */
   margin: 0; /* 去掉默认外边距 */
+  line-height: 1.5; /* 增加行高，提升可读性 */
+  font-weight: 400; /* 保持正常字重 */
 }
 
 /* 底部元信息行：校区、时间、浏览量等 */
@@ -244,7 +248,8 @@ const handleClick = () => { // handleClick：卡片点击事件处理函数
 /* 单条元信息样式 */
 .meta-item {
   font-size: 12px; /* 使用较小字号显示辅助信息 */
-  color: #999999; /* 使用浅灰色弱化显示 */
+  color: #666666; /* 使用更深的灰色，提升对比度 */
+  font-weight: 500; /* 加粗字体，提升可读性 */
   display: inline-flex; /* 使用 inline-flex 方便图标和文字对齐 */
   align-items: center; /* 垂直方向居中图标和文字 */
   gap: 4px; /* 图标和文字之间保留水平间距 */

@@ -1,24 +1,30 @@
-# 依赖目录
 node_modules/
-
-# 系统文件
 .DS_Store
 Thumbs.db
-
-# 编辑器文件
 .vscode/
 .idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
-
-# 环境变量/敏感信息
 .env
 .env.local
-
-# 日志和运行时文件
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+dist/
+build/
+out/
+.cache/
+.tmp/
+*.swp
+*~
+
+# Cursor/IDE 临时目录
+.cursor/
+**/.cursor/
+
+# 过程记录/测试报告（如不需要纳入版本管理）
+**/*SUMMARY*.md
+**/*REPORT*.md
+
+# 测试目录（如你确定不保留测试）
+**/src/test/

@@ -52,6 +52,9 @@ export interface Team {
   creatorId: number
   creatorName: string
   inviteCode?: string
+  chatGroupId?: number
+  maxAdmins?: number
+  userRole?: string
   members: TeamMember[]
   createTime: string
 }
@@ -74,6 +77,27 @@ export interface CreateScheduleParams {
   type: string
   reminderType?: string
   reminderTime?: string
+  isRouteSeries?: boolean // 是否为行程系列
+  routeSeriesData?: RouteSeriesData // 行程系列数据
+}
+
+// 行程系列数据
+export interface RouteSeriesData {
+  theme: string // 行程主题
+  locations: Array<{
+    name: string
+    address: string
+    longitude: number
+    latitude: number
+  }> // 地点列表
+  routeResult?: {
+    totalDistance: number // 总距离（公里）
+    totalDuration: number // 总时长（分钟）
+    steps: Array<{
+      instruction: string
+      distance?: number
+    }> // 路线步骤
+  } // 路线规划结果（可选）
 }
 
 // 创建团队参数
@@ -90,6 +114,8 @@ export interface CreateTeamScheduleParams {
   startTime: string
   endTime: string
   location?: string
+  attendeeIds?: number[]
+  needConfirm?: boolean
 }
 
 // 查询参数
@@ -120,7 +146,15 @@ export function getPersonalSchedules(params: ScheduleQueryParams = {}): Promise<
  * @param id 行程ID
  */
 export function getPersonalScheduleDetail(id: number): Promise<PersonalSchedule> {
-  return request.get<PersonalSchedule>(`/api/schedule/personal/${id}`)
+  return request.get<PersonalSchedule>(`/api/schedule/personal/detail/${id}`)
+}
+
+/**
+ * 获取个人行程详情（兼容旧函数名）
+ * @deprecated 请使用 getPersonalScheduleDetail
+ */
+export function getPersonalScheduleById(id: number): Promise<PersonalSchedule> {
+  return getPersonalScheduleDetail(id)
 }
 
 /**
@@ -128,7 +162,7 @@ export function getPersonalScheduleDetail(id: number): Promise<PersonalSchedule>
  * @param params 创建参数
  */
 export function createPersonalSchedule(params: CreateScheduleParams): Promise<PersonalSchedule> {
-  return request.post<PersonalSchedule>('/api/schedule/personal', params)
+  return request.post<PersonalSchedule>('/api/schedule/personal/create', params)
 }
 
 /**
@@ -136,8 +170,20 @@ export function createPersonalSchedule(params: CreateScheduleParams): Promise<Pe
  * @param id 行程ID
  * @param params 更新参数
  */
-export function updatePersonalSchedule(id: number, params: Partial<CreateScheduleParams>): Promise<PersonalSchedule> {
-  return request.put<PersonalSchedule>(`/api/schedule/personal/${id}`, params)
+export function updatePersonalSchedule(id: number, params: Partial<CreateScheduleParams>): Promise<PersonalSchedule>
+export function updatePersonalSchedule(params: { id: number } & Partial<CreateScheduleParams>): Promise<PersonalSchedule>
+export function updatePersonalSchedule(arg1: any, arg2?: any): Promise<PersonalSchedule> {
+  // 兼容两种调用方式：
+  // 1) updatePersonalSchedule(id, params)
+  // 2) updatePersonalSchedule({ id, ...params })
+  if (typeof arg1 === 'number') {
+    return request.put<PersonalSchedule>(`/api/schedule/personal/update/${arg1}`, arg2 || {})
+  }
+  if (arg1 && typeof arg1 === 'object' && typeof arg1.id === 'number') {
+    const { id, ...rest } = arg1
+    return request.put<PersonalSchedule>(`/api/schedule/personal/update/${id}`, rest)
+  }
+  return Promise.reject(new Error('updatePersonalSchedule 参数错误'))
 }
 
 /**
@@ -145,14 +191,39 @@ export function updatePersonalSchedule(id: number, params: Partial<CreateSchedul
  * @param id 行程ID
  */
 export function deletePersonalSchedule(id: number): Promise<void> {
-  return request.delete(`/api/schedule/personal/${id}`)
+  return request.delete(`/api/schedule/personal/delete/${id}`)
 }
 
 /**
- * 获取团队列表
+ * 更新行程状态
+ * @param id 行程ID
+ * @param status 状态
+ */
+export function updatePersonalScheduleStatus(id: number, status: string): Promise<PersonalSchedule> {
+  return request.put<PersonalSchedule>(`/api/schedule/personal/update-status/${id}`, null, {
+    params: { status }
+  })
+}
+
+/**
+ * 获取我的团队列表
+ */
+export function getMyTeams(page?: number, size?: number): Promise<{
+  records: Team[]
+  total: number
+  current: number
+  size: number
+}> {
+  return request.get('/api/schedule/team/my-teams', {
+    params: { page, size }
+  })
+}
+
+/**
+ * 获取团队列表（兼容旧接口）
  */
 export function getTeams(): Promise<Team[]> {
-  return request.get<Team[]>('/api/schedule/team/list')
+  return getMyTeams(1, 100).then(res => res.records)
 }
 
 /**
@@ -161,6 +232,13 @@ export function getTeams(): Promise<Team[]> {
  */
 export function createTeam(params: CreateTeamParams): Promise<Team> {
   return request.post<Team>('/api/schedule/team/create', params)
+}
+
+/**
+ * 设置团队管理员（仅创建者；最多4人）
+ */
+export function setTeamAdmins(teamId: number, adminUserIds: number[]): Promise<Team> {
+  return request.put<Team>(`/api/schedule/team/${teamId}/admins`, { adminUserIds })
 }
 
 /**
@@ -211,6 +289,34 @@ export function createTeamSchedule(params: CreateTeamScheduleParams): Promise<Te
 }
 
 /**
+ * 批量同步团队行程到指定成员
+ */
+export function syncTeamScheduleToMembers(teamId: number, scheduleId: number, userIds: number[]): Promise<{
+  teamId: number
+  teamScheduleId: number
+  syncedCount: number
+  skippedCount: number
+}> {
+  return request.post(`/api/schedule/team/${teamId}/sync/team-schedule/${scheduleId}`, { userIds })
+}
+
+/**
+ * 批量同步课程表到指定成员
+ */
+export function syncCoursesToMembers(teamId: number, sourceUserId: number, targetUserIds: number[], overwrite = false): Promise<{
+  teamId: number
+  sourceUserId: number
+  targetCount: number
+  sourceCourseCount: number
+  overwrite: boolean
+  deletedCount: number
+  insertedCount: number
+  skippedCount: number
+}> {
+  return request.post(`/api/schedule/team/${teamId}/sync/courses`, { sourceUserId, targetUserIds, overwrite })
+}
+
+/**
  * 同步团队行程到个人
  * @param scheduleId 团队行程ID
  */
@@ -227,8 +333,46 @@ export function getCalendarData(year: number, month: number): Promise<{
   personal: PersonalSchedule[]
   team: TeamSchedule[]
 }> {
-  return request.get('/api/schedule/calendar', {
-    params: { year, month }
+  return request.get(`/api/schedule/calendar/${year}/${month}`)
+}
+
+/**
+ * 获取今日提醒
+ */
+export function getTodayReminders(): Promise<{
+  reminders: any[]
+  schedules: PersonalSchedule[]
+}> {
+  return request.get('/api/schedule/reminders/today')
+}
+
+/**
+ * 获取团队邀请列表
+ */
+export function getTeamInvitations(): Promise<{
+  invitations: any[]
+}> {
+  return request.get('/api/schedule/team/invitations')
+}
+
+/**
+ * 处理团队邀请
+ * @param inviteId 邀请ID
+ * @param action 操作（accept/reject）
+ */
+export function processTeamInvitation(inviteId: number, action: 'accept' | 'reject'): Promise<void> {
+  return request.post(`/api/schedule/team/invitation/${inviteId}/process`, null, {
+    params: { action }
+  })
+}
+
+/**
+ * 通过邀请码加入团队
+ * @param inviteCode 邀请码
+ */
+export function joinTeamByCode(inviteCode: string): Promise<Team> {
+  return request.post<Team>('/api/schedule/team/join-by-code', null, {
+    params: { inviteCode }
   })
 }
 

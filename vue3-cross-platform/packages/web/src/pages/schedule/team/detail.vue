@@ -3,108 +3,276 @@
     <NavBar />
 
     <div class="page-container">
-      <!-- 团队信息 -->
-      <section class="team-info-section">
-        <div class="team-header">
-          <div class="team-avatar">
+      <!-- 团队信息横幅 -->
+      <section class="team-hero-section">
+        <div class="hero-background"></div>
+        <div class="hero-content">
+          <div class="team-header-main">
+            <div class="team-avatar-large">
             <i class="fas fa-users"></i>
+              <div class="avatar-badge" v-if="isCreator">
+                <i class="fas fa-crown"></i>
           </div>
-          <div class="team-details">
+            </div>
+            <div class="team-info-main">
+              <div class="team-title-row">
             <h1 class="team-name">{{ teamInfo.name }}</h1>
-            <p class="team-desc">{{ teamInfo.description }}</p>
-            <div class="team-stats">
-              <div class="stat-item">
+                <div class="team-status-badge" v-if="isCreator">
+                  <i class="fas fa-crown"></i>
+                  <span>创建者</span>
+                </div>
+              </div>
+              <p class="team-desc">{{ teamInfo.description || '暂无描述' }}</p>
+              <div class="team-stats-row">
+                <div class="stat-badge">
                 <i class="fas fa-users"></i>
                 <span>{{ teamInfo.memberCount }} 成员</span>
               </div>
-              <div class="stat-item">
-                <i class="fas fa-calendar"></i>
+                <div class="stat-badge">
+                  <i class="fas fa-calendar-check"></i>
                 <span>{{ teamInfo.scheduleCount }} 行程</span>
               </div>
+                <div class="stat-badge">
+                  <i class="fas fa-clock"></i>
+                  <span>最近活跃：{{ lastActivity }}</span>
             </div>
           </div>
-          <div class="team-actions">
-            <button class="btn-invite" @click="showInviteModal = true">
-              <i class="fas fa-user-plus"></i> 邀请码
+            </div>
+            <div class="team-actions-main">
+              <button class="btn-action-primary" @click="showInviteModal = true">
+                <i class="fas fa-user-plus"></i>
+                <span>邀请成员</span>
             </button>
-            <button class="btn-invite" @click="showSendInviteModal = true">
-              <i class="fas fa-paper-plane"></i> 发送邀请
+              <button class="btn-action-secondary" @click="showSendInviteModal = true">
+                <i class="fas fa-paper-plane"></i>
+                <span>发送邀请</span>
             </button>
-            <button class="btn-settings" @click="editTeam">
-              <i class="fas fa-cog"></i> 设置
+              <button class="btn-action-icon" @click="editTeam" title="团队设置">
+                <i class="fas fa-cog"></i>
             </button>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- 成员列表 -->
-      <section class="members-section">
-        <h2 class="section-title">团队成员</h2>
-        <div class="members-grid">
-          <div
-            v-for="member in members"
-            :key="member.id"
-            class="member-card"
+      <!-- 标签导航栏 -->
+      <section class="tabs-section">
+        <div class="tabs-container">
+          <button
+            class="tab-item"
+            :class="{ active: activeTab === 'schedules' }"
+            @click="activeTab = 'schedules'"
           >
-            <div class="member-avatar">
-              <i class="fas fa-user"></i>
-            </div>
-            <div class="member-info">
-              <h3 class="member-name">{{ member.name }}</h3>
-              <p class="member-role">{{ member.role }}</p>
-            </div>
+            <i class="fas fa-calendar"></i>
+            <span>团队行程</span>
+            <span class="tab-badge">{{ teamSchedules.length }}</span>
+          </button>
             <button
-              v-if="member.id !== currentUserId"
-              class="btn-remove-member"
-              @click="removeMember(member.id)"
+            class="tab-item"
+            :class="{ active: activeTab === 'members' }"
+            @click="activeTab = 'members'"
+          >
+            <i class="fas fa-users"></i>
+            <span>团队成员</span>
+            <span class="tab-badge">{{ members.length }}</span>
+          </button>
+          <button
+            class="tab-item"
+            :class="{ active: activeTab === 'settings' }"
+            @click="activeTab = 'settings'"
+            v-if="isCreator"
             >
-              <i class="fas fa-times"></i>
+            <i class="fas fa-cog"></i>
+            <span>团队设置</span>
             </button>
-          </div>
         </div>
       </section>
 
-      <!-- 团队行程 -->
-      <section class="schedules-section">
-        <div class="section-header">
-          <h2 class="section-title">团队行程</h2>
+      <!-- 内容区域 -->
+      <div class="content-area">
+        <!-- 团队行程标签页 -->
+        <div v-show="activeTab === 'schedules'" class="tab-content">
+          <div class="section-header-modern">
+            <div class="header-left">
+              <h2 class="section-title-modern">
+                <i class="fas fa-calendar-check"></i>
+                团队行程
+              </h2>
+              <p class="section-subtitle">管理团队的共享行程安排</p>
+            </div>
           <button 
             v-if="isCreator" 
-            class="btn-create-schedule" 
+              class="btn-create-modern"
             @click="showCreateScheduleModal = true"
           >
-            <i class="fas fa-plus"></i> 创建行程
+              <i class="fas fa-plus"></i>
+              <span>创建行程</span>
           </button>
         </div>
-        <div v-if="teamSchedules.length === 0" class="empty-state">
-          <i class="fas fa-calendar"></i>
-          <p>暂无团队行程</p>
+
+          <div v-if="teamSchedules.length === 0" class="empty-state-modern">
+            <div class="empty-icon-wrapper">
+              <i class="fas fa-calendar-times"></i>
         </div>
-        <div v-else class="schedules-list">
+            <h3>暂无团队行程</h3>
+            <p>创建第一个团队行程，让所有成员都能看到</p>
+            <button
+              v-if="isCreator"
+              class="btn-primary-empty"
+              @click="showCreateScheduleModal = true"
+            >
+              <i class="fas fa-plus"></i>
+              创建行程
+            </button>
+          </div>
+
+          <div v-else class="schedules-grid-modern">
           <div
             v-for="schedule in teamSchedules"
             :key="schedule.id"
-            class="schedule-card"
+              class="schedule-card-modern"
           >
-            <div class="schedule-date">
-              <span class="date">{{ schedule.date }}</span>
-              <span class="day">{{ schedule.day }}</span>
+              <div class="schedule-date-modern">
+                <div class="date-main">{{ schedule.date.split('-')[2] }}</div>
+                <div class="date-month">{{ getMonthName(schedule.date) }}</div>
+                <div class="date-day">{{ schedule.day }}</div>
             </div>
-            <div class="schedule-content">
-              <h3 class="schedule-title">{{ schedule.title }}</h3>
-              <p class="schedule-desc">{{ schedule.description }}</p>
-              <div class="schedule-meta">
-                <span class="time">
-                  <i class="fas fa-clock"></i> {{ schedule.time }}
-                </span>
-                <span class="location" v-if="schedule.location">
-                  <i class="fas fa-map-marker-alt"></i> {{ schedule.location }}
-                </span>
+              <div class="schedule-content-modern">
+                <div class="schedule-header-modern">
+                  <h3 class="schedule-title-modern">{{ schedule.title }}</h3>
+                  <div class="schedule-status" :class="getScheduleStatus(schedule)">
+                    <i class="fas fa-circle"></i>
+                    <span>{{ getScheduleStatusText(schedule) }}</span>
+                  </div>
+                </div>
+                <p class="schedule-desc-modern" v-if="schedule.description">
+                  {{ schedule.description }}
+                </p>
+                <div class="schedule-meta-modern">
+                  <div class="meta-item">
+                    <i class="fas fa-clock"></i>
+                    <span>{{ schedule.time }}</span>
+                  </div>
+                  <div class="meta-item" v-if="schedule.location">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>{{ schedule.location }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="schedule-actions">
+                <button class="btn-action-mini" @click="viewScheduleDetail(schedule.id)">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button
+                  v-if="isCreator"
+                  class="btn-action-mini"
+                  @click="editSchedule(schedule.id)"
+                >
+                  <i class="fas fa-edit"></i>
+                </button>
               </div>
             </div>
           </div>
         </div>
-      </section>
+
+        <!-- 团队成员标签页 -->
+        <div v-show="activeTab === 'members'" class="tab-content">
+          <div class="section-header-modern">
+            <div class="header-left">
+              <h2 class="section-title-modern">
+                <i class="fas fa-users"></i>
+                团队成员
+              </h2>
+              <p class="section-subtitle">查看和管理团队成员</p>
+            </div>
+            <button
+              v-if="isCreator"
+              class="btn-create-modern"
+              @click="showInviteModal = true"
+            >
+              <i class="fas fa-user-plus"></i>
+              <span>邀请成员</span>
+            </button>
+          </div>
+
+          <div class="members-grid-modern">
+            <div
+              v-for="member in members"
+              :key="member.id"
+              class="member-card-modern"
+            >
+              <div class="member-avatar-modern">
+                <i class="fas fa-user"></i>
+                <div class="role-badge" :class="member.role.toLowerCase()">
+                  <i :class="getRoleIcon(member.role)"></i>
+                </div>
+              </div>
+              <div class="member-info-modern">
+                <h3 class="member-name-modern">{{ member.name }}</h3>
+                <p class="member-role-modern">{{ member.role }}</p>
+                <div class="member-stats">
+                  <span class="member-stat-item">
+                    <i class="fas fa-calendar"></i>
+                    {{ getMemberScheduleCount(member.id) }} 行程
+                </span>
+              </div>
+            </div>
+              <div class="member-actions-modern" v-if="isCreator && member.id !== currentUserId">
+                <button
+                  class="btn-remove-modern"
+                  @click="removeMember(member.id)"
+                  title="移除成员"
+                >
+                  <i class="fas fa-times"></i>
+                </button>
+          </div>
+        </div>
+          </div>
+        </div>
+
+        <!-- 团队设置标签页 -->
+        <div v-show="activeTab === 'settings'" class="tab-content" v-if="isCreator">
+          <div class="section-header-modern">
+            <div class="header-left">
+              <h2 class="section-title-modern">
+                <i class="fas fa-cog"></i>
+                团队设置
+              </h2>
+              <p class="section-subtitle">管理团队的基本信息和权限</p>
+            </div>
+          </div>
+
+          <div class="settings-content">
+            <div class="settings-card">
+              <h3 class="settings-card-title">基本信息</h3>
+              <div class="settings-form">
+                <div class="form-group-modern">
+                  <label>团队名称</label>
+                  <input
+                    v-model="teamInfo.name"
+                    type="text"
+                    class="form-input-modern"
+                    placeholder="请输入团队名称"
+                  />
+                </div>
+                <div class="form-group-modern">
+                  <label>团队描述</label>
+                  <textarea
+                    v-model="teamInfo.description"
+                    class="form-textarea-modern"
+                    placeholder="请输入团队描述"
+                    rows="4"
+                  ></textarea>
+                </div>
+                <button class="btn-save-settings" @click="saveTeamSettings">
+                  <i class="fas fa-save"></i>
+                  保存设置
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- 邀请成员模态框（显示邀请码） -->
@@ -309,6 +477,8 @@ const showInviteModal = ref(false)
 const showSendInviteModal = ref(false)
 const showCreateScheduleModal = ref(false)
 const creatingSchedule = ref(false)
+const activeTab = ref<'schedules' | 'members' | 'settings'>('schedules')
+const lastActivity = ref('2小时前')
 
 // 当前用户ID（从store获取，如果没有则使用默认值1用于测试）
 const currentUserId = computed(() => userStore.userId || 1)
@@ -398,7 +568,62 @@ const teamSchedules = ref([
 
 // 编辑团队
 const editTeam = () => {
-  router.push('/schedule/team')
+  activeTab.value = 'settings'
+}
+
+// 获取月份名称
+const getMonthName = (dateStr: string) => {
+  const month = parseInt(dateStr.split('-')[1])
+  const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+  return months[month - 1]
+}
+
+// 获取行程状态
+const getScheduleStatus = (schedule: any) => {
+  const now = new Date()
+  const scheduleDate = new Date(schedule.date + ' ' + schedule.time.split('-')[0])
+  if (scheduleDate < now) return 'past'
+  if (scheduleDate.getTime() - now.getTime() < 24 * 60 * 60 * 1000) return 'upcoming'
+  return 'future'
+}
+
+// 获取行程状态文本
+const getScheduleStatusText = (schedule: any) => {
+  const status = getScheduleStatus(schedule)
+  if (status === 'past') return '已结束'
+  if (status === 'upcoming') return '即将开始'
+  return '未开始'
+}
+
+// 查看行程详情
+const viewScheduleDetail = (id: number) => {
+  // TODO: 跳转到行程详情页
+  console.log('查看行程详情:', id)
+}
+
+// 编辑行程
+const editSchedule = (id: number) => {
+  // TODO: 编辑行程
+  console.log('编辑行程:', id)
+}
+
+// 获取角色图标
+const getRoleIcon = (role: string) => {
+  if (role === '创建者' || role === 'CREATOR') return 'fas fa-crown'
+  if (role === '管理员' || role === 'ADMIN') return 'fas fa-user-shield'
+  return 'fas fa-user'
+}
+
+// 获取成员行程数量
+const getMemberScheduleCount = (memberId: number) => {
+  // TODO: 从API获取
+  return Math.floor(Math.random() * 10)
+}
+
+// 保存团队设置
+const saveTeamSettings = () => {
+  // TODO: 保存设置
+  alert('设置已保存')
 }
 
 // 移除成员
@@ -659,8 +884,9 @@ onMounted(() => {
 
 <style scoped>
 :root {
-  --primary: #d81b60;
-  --bg: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
+  --primary: #FF6B9D;
+  --primary-dark: #C2185B;
+  --bg: linear-gradient(135deg, #F5F7FA 0%, #E8F4F8 100%);
 }
 
 .team-detail-page {
@@ -670,9 +896,766 @@ onMounted(() => {
 }
 
 .page-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 0 20px;
+}
+
+/* 团队横幅区域 */
+.team-hero-section {
+  position: relative;
+  background: linear-gradient(135deg, #FF6B9D 0%, #C2185B 100%);
+  border-radius: 20px;
+  padding: 50px 40px;
+  margin: 30px 0;
+  box-shadow: 0 10px 40px rgba(255, 107, 157, 0.3);
+  overflow: hidden;
+}
+
+.hero-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+  opacity: 0.3;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.team-header-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.team-avatar-large {
+  width: 100px;
+  height: 100px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 48px;
+  flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  position: relative;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.avatar-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 32px;
+  height: 32px;
+  background: #FFD700;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #333;
+  font-size: 16px;
+  border: 3px solid white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.team-info-main {
+  flex: 1;
+  color: white;
+}
+
+.team-title-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.team-name {
+  font-size: 36px;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.team-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.team-status-badge i {
+  color: #FFD700;
+}
+
+.team-desc {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.team-stats-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.stat-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stat-badge i {
+  font-size: 16px;
+}
+
+.team-actions-main {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.btn-action-primary,
+.btn-action-secondary,
+.btn-action-icon {
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-action-primary {
+  background: white;
+  color: #FF6B9D;
+}
+
+.btn-action-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+}
+
+.btn-action-secondary {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.btn-action-secondary:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.btn-action-icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+.btn-action-icon:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* 标签导航栏 */
+.tabs-section {
+  background: white;
+  border-radius: 16px;
+  padding: 8px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  position: sticky;
+  top: 80px;
+  z-index: 10;
+}
+
+.tabs-container {
+  display: flex;
+  gap: 8px;
+}
+
+.tab-item {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+}
+
+.tab-item:hover {
+  background: #f5f5f5;
+  color: #FF6B9D;
+}
+
+.tab-item.active {
+  background: linear-gradient(135deg, #FF6B9D 0%, #C2185B 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(255, 107, 157, 0.3);
+}
+
+.tab-badge {
+  padding: 2px 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.tab-item.active .tab-badge {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* 内容区域 */
+.content-area {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  margin-bottom: 40px;
+}
+
+.section-header-modern {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.header-left {
+  flex: 1;
+}
+
+.section-title-modern {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-title-modern i {
+  color: #FF6B9D;
+}
+
+.section-subtitle {
+  font-size: 14px;
+  color: #999;
+  margin: 0;
+}
+
+.btn-create-modern {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #FF6B9D 0%, #C2185B 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+}
+
+.btn-create-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4);
+}
+
+/* 空状态 */
+.empty-state-modern {
+  text-align: center;
+  padding: 80px 40px;
+}
+
+.empty-icon-wrapper {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 24px;
+  background: linear-gradient(135deg, #FFE5F1 0%, #FFB3D1 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-icon-wrapper i {
+  font-size: 60px;
+  color: #FF6B9D;
+}
+
+.empty-state-modern h3 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+.empty-state-modern p {
+  font-size: 16px;
+  color: #999;
+  margin-bottom: 32px;
+}
+
+.btn-primary-empty {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #FF6B9D 0%, #C2185B 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+}
+
+.btn-primary-empty:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4);
+}
+
+/* 行程网格 */
+.schedules-grid-modern {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
+.schedule-card-modern {
+  background: white;
+  border: 2px solid #f0f0f0;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  gap: 16px;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.schedule-card-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #FF6B9D 0%, #C2185B 100%);
+}
+
+.schedule-card-modern:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(255, 107, 157, 0.15);
+  border-color: #FFB3D1;
+}
+
+.schedule-date-modern {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 70px;
+  padding: 12px;
+  background: linear-gradient(135deg, #FFF5F8 0%, #FFE5F1 100%);
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.date-main {
+  font-size: 32px;
+  font-weight: 700;
+  color: #FF6B9D;
+  line-height: 1;
+}
+
+.date-month {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.date-day {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.schedule-content-modern {
+  flex: 1;
+  min-width: 0;
+}
+
+.schedule-header-modern {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.schedule-title-modern {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+  flex: 1;
+}
+
+.schedule-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.schedule-status i {
+  font-size: 8px;
+}
+
+.schedule-status.past {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.schedule-status.upcoming {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+.schedule-status.future {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.schedule-desc-modern {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.schedule-meta-modern {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #999;
+}
+
+.meta-item i {
+  font-size: 14px;
+  color: #FF6B9D;
+}
+
+.schedule-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-action-mini {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #e0e0e0;
+  background: white;
+  border-radius: 8px;
+  color: #666;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.btn-action-mini:hover {
+  border-color: #FF6B9D;
+  color: #FF6B9D;
+  background: #FFF5F8;
+}
+
+/* 成员网格 */
+.members-grid-modern {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.member-card-modern {
+  background: white;
+  border: 2px solid #f0f0f0;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  transition: all 0.3s;
+  position: relative;
+}
+
+.member-card-modern:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(255, 107, 157, 0.15);
+  border-color: #FFB3D1;
+}
+
+.member-avatar-modern {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #FF6B9D 0%, #C2185B 100%);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 28px;
+  flex-shrink: 0;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+}
+
+.role-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 12px;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.role-badge.创建者,
+.role-badge.creator {
+  background: #FFD700;
+  color: #333;
+}
+
+.role-badge.管理员,
+.role-badge.admin {
+  background: #1890ff;
+}
+
+.role-badge.成员,
+.role-badge.member {
+  background: #52c41a;
+}
+
+.member-info-modern {
+  flex: 1;
+  min-width: 0;
+}
+
+.member-name-modern {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 6px 0;
+}
+
+.member-role-modern {
+  font-size: 14px;
+  color: #999;
+  margin: 0 0 12px 0;
+}
+
+.member-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.member-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #666;
+}
+
+.member-stat-item i {
+  color: #FF6B9D;
+}
+
+.member-actions-modern {
+  flex-shrink: 0;
+}
+
+.btn-remove-modern {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #ff4d4f;
+  background: white;
+  border-radius: 8px;
+  color: #ff4d4f;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.btn-remove-modern:hover {
+  background: #ff4d4f;
+  color: white;
+}
+
+/* 设置内容 */
+.settings-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.settings-card {
+  background: #f9f9f9;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid #f0f0f0;
+}
+
+.settings-card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group-modern label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-input-modern,
+.form-textarea-modern {
+  padding: 12px 16px;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 15px;
+  transition: all 0.3s;
+  font-family: inherit;
+}
+
+.form-input-modern:focus,
+.form-textarea-modern:focus {
+  outline: none;
+  border-color: #FF6B9D;
+  box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
+}
+
+.form-textarea-modern {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.btn-save-settings {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #FF6B9D 0%, #C2185B 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  box-shadow: 0 4px 12px rgba(255, 107, 157, 0.3);
+}
+
+.btn-save-settings:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4);
 }
 
 .team-info-section {

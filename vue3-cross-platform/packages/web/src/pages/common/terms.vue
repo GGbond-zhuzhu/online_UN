@@ -1,135 +1,247 @@
 <template>
-  <div class="common-page terms-page">
-    <!-- 全局导航栏 -->
+  <div class="terms-page">
     <NavBar />
 
-    <!-- 页面内容 -->
-    <div class="page-content">
-      <div class="content-container">
-        <!-- 页面标题 -->
-        <div class="page-header">
-          <h1 class="page-title">服务协议</h1>
-          <p class="page-subtitle">使用本平台服务前，请仔细阅读并同意本服务协议</p>
+    <main class="terms-main">
+      <header class="page-head">
+        <div class="head-inner">
+          <p class="breadcrumb">首页 / 服务协议</p>
+          <h1 class="page-title">服务条款</h1>
+          <p class="page-subtitle">请仔细阅读以下条款内容。滚动阅读时，左侧目录会自动高亮当前章节。</p>
         </div>
+      </header>
 
-        <!-- 服务协议内容 -->
-        <div class="terms-content" v-if="serviceAgreement">
-          <!-- 版本信息 -->
-          <div class="version-info">
-            <p>版本：{{ serviceAgreement.version }}</p>
-            <p>更新时间：{{ formatDate(serviceAgreement.updateTime) }}</p>
-          </div>
+      <section class="terms-wrap">
+        <div class="terms-container">
+          <!-- 左侧目录导航 -->
+          <aside class="toc-sidebar" aria-label="服务条款目录">
+            <h2 class="toc-title">目录</h2>
+            <ul class="toc-list">
+              <li v-for="s in sections" :key="s.id" class="toc-item">
+                <a
+                  class="toc-link"
+                  :class="{ active: activeSectionId === s.id }"
+                  :href="`#${s.id}`"
+                  @click.prevent="scrollTo(s.id)"
+                >
+                  {{ s.label }}
+                </a>
+              </li>
+            </ul>
+          </aside>
 
-          <!-- 协议内容 -->
-          <div class="agreement-content">
-            <div class="content-text" v-html="formatContent(serviceAgreement.content)"></div>
-          </div>
-
-          <!-- 详细条款 -->
-          <div class="agreement-sections">
-            <div class="agreement-section">
-              <h3>1. 协议的接受</h3>
-              <p>欢迎使用"上大学Online"平台服务。在使用本平台服务前，您应当仔细阅读并充分理解本服务协议的全部内容。当您点击"同意"或开始使用本平台服务时，即表示您已充分理解并同意接受本协议的全部内容。</p>
+          <!-- 右侧内容区域 -->
+          <div class="terms-content">
+            <div class="meta-bar">
+              <div class="meta-item">
+                <span class="meta-label">版本</span>
+                <span class="meta-value">{{ serviceAgreement?.version || 'v1.0' }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">更新时间</span>
+                <span class="meta-value">{{ serviceAgreement?.updateTime ? formatDate(serviceAgreement.updateTime) : '2026年1月' }}</span>
+              </div>
             </div>
 
-            <div class="agreement-section">
-              <h3>2. 服务说明</h3>
-              <p>本平台提供以下服务：</p>
-              <ul>
-                <li>校园E卡通服务：提供学生码消费、门禁、图书馆等功能</li>
-                <li>二手交易服务：提供同校二手商品交易平台</li>
-                <li>兼职服务：提供规范化校园兼职信息发布和申请</li>
-                <li>行程管理服务：提供课程表管理和团队行程功能</li>
-                <li>其他相关服务</li>
-              </ul>
-            </div>
+            <h2 class="section-title">服务条款详情</h2>
 
-            <div class="agreement-section">
-              <h3>3. 用户账户</h3>
-              <p>使用本平台服务需要注册账户。您应当：</p>
-              <ul>
-                <li>提供真实、准确、完整的注册信息</li>
-                <li>妥善保管账户密码，对账户下的所有行为负责</li>
-                <li>及时更新注册信息，保持信息的准确性</li>
-                <li>不得将账户转让、出售或授权他人使用</li>
-              </ul>
-            </div>
+            <div class="terms-article">
+              <div class="terms-section" id="section1">
+                <h2>1. 服务说明</h2>
+                <p>
+                  欢迎使用上大学Online！上大学Online（以下简称"本平台"）是由苏州天富数字科技有限公司（以下简称"我们"）开发和运营的在线教育服务平台。本平台通过网站、移动应用程序和电脑客户端为大学生提供课程管理、学习资源、校园社交等服务。
+                </p>
+                <p>本服务条款（以下简称"本条款"）是您与我们之间就使用本平台服务所订立的协议。请您在使用本平台服务前，仔细阅读并理解本条款的全部内容。</p>
 
-            <div class="agreement-section">
-              <h3>4. 用户行为规范</h3>
-              <p>您在使用本平台服务时，应当遵守以下规范：</p>
-              <ul>
-                <li>遵守国家法律法规和平台规则</li>
-                <li>不得发布虚假、违法、侵权信息</li>
-                <li>不得进行欺诈、诈骗等违法行为</li>
-                <li>不得干扰平台正常运营</li>
-                <li>尊重其他用户的合法权益</li>
-              </ul>
-            </div>
+                <div class="highlight-box">
+                  <p>
+                    <strong>重要提示：</strong>
+                    当您完成注册程序或开始使用本平台服务时，即表示您已充分阅读、理解并接受本条款的所有内容。如果您不同意本条款的任何内容，请立即停止使用本平台服务。
+                  </p>
+                </div>
+              </div>
 
-            <div class="agreement-section">
-              <h3>5. 知识产权</h3>
-              <p>本平台的所有内容，包括但不限于文字、图片、音频、视频、软件、程序、版面设计等，均受知识产权法保护。未经授权，您不得复制、传播、展示、镜像、上传、下载本平台的任何内容。</p>
-            </div>
+              <div class="terms-section" id="section2">
+                <h2>2. 账户注册</h2>
+                <p>为使用本平台的服务，您需要注册一个上大学Online账户：</p>
 
-            <div class="agreement-section">
-              <h3>6. 免责声明</h3>
-              <p>在以下情况下，本平台不承担责任：</p>
-              <ul>
-                <li>因不可抗力导致的服务中断或数据丢失</li>
-                <li>因用户违反本协议导致的一切后果</li>
-                <li>因第三方原因导致的服务问题</li>
-                <li>用户因使用本平台服务而产生的直接或间接损失</li>
-              </ul>
-            </div>
+                <h3>2.1 注册资格</h3>
+                <ul>
+                  <li>您必须是具有完全民事行为能力的自然人，或依法成立并有效存续的法人或其他组织。</li>
+                  <li>如果您是未成年人，请在法定监护人的陪同下阅读和判断是否同意本条款，并在监护人的指导下使用本平台服务。</li>
+                  <li>您保证在注册时提供的信息真实、准确、完整，并及时更新。</li>
+                </ul>
 
-            <div class="agreement-section">
-              <h3>7. 服务变更与终止</h3>
-              <p>本平台有权根据业务发展需要，变更、中断或终止部分或全部服务。如因服务变更、中断或终止给您造成损失的，本平台不承担责任。</p>
-            </div>
+                <h3>2.2 账户安全</h3>
+                <ul>
+                  <li>您应对您的账户和密码的安全负全部责任，并对通过您的账户进行的所有活动承担责任。</li>
+                  <li>您同意在发现任何未经授权的账户使用行为时立即通知我们。</li>
+                  <li>我们保留在发现异常使用情况时暂停或终止为您提供服务的权利。</li>
+                </ul>
 
-            <div class="agreement-section">
-              <h3>8. 协议修改</h3>
-              <p>本平台有权根据法律法规变化和业务发展需要，随时修改本协议。修改后的协议将在平台上公布，自公布之日起生效。如您不同意修改后的协议，应当停止使用本平台服务。</p>
-            </div>
+                <h3>2.3 账户注销</h3>
+                <p>您可以通过平台提供的注销功能或联系客服申请注销账户。账户注销后，我们将根据相关法律法规处理您的个人信息。</p>
+              </div>
 
-            <div class="agreement-section">
-              <h3>9. 争议解决</h3>
-              <p>因本协议引起的或与本协议有关的任何争议，双方应当友好协商解决。协商不成的，任何一方均可向本平台所在地的人民法院提起诉讼。</p>
-            </div>
+              <div class="terms-section" id="section3">
+                <h2>3. 用户行为规范</h2>
+                <p>在使用本平台服务时，您同意遵守以下行为规范：</p>
 
-            <div class="agreement-section">
-              <h3>10. 联系我们</h3>
-              <p>如果您对本服务协议有任何疑问，请通过以下方式联系我们：</p>
-              <ul>
-                <li>邮箱：legal@campus.edu.cn</li>
-                <li>服务热线：400-123-4567</li>
-              </ul>
+                <h3>3.1 禁止行为</h3>
+                <p>您不得利用本平台服务从事以下行为：</p>
+                <ul>
+                  <li>发布、传播违反国家法律法规、社会主义制度、中国共产党领导、国家主权和领土完整等内容；</li>
+                  <li>发布、传播淫秽、色情、赌博、暴力、凶杀、恐怖或者教唆犯罪的内容；</li>
+                  <li>发布、传播侮辱或者诽谤他人，侵害他人合法权益的内容；</li>
+                  <li>发布、传播虚假、骚扰性、中伤性、辱骂性、恐吓性、伤害性、庸俗或淫秽的信息；</li>
+                  <li>从事任何干扰或破坏本平台服务或与本平台服务相连的服务器和网络的活动；</li>
+                  <li>未经我们明确授权，使用本平台的名称、商标、标识等；</li>
+                  <li>其他违反法律法规、社会公德和公序良俗的行为。</li>
+                </ul>
+
+                <h3>3.2 内容责任</h3>
+                <p>您应对您在本平台上发布、传播的所有内容承担全部责任。我们有权对您发布的内容进行审核，但不对内容的真实性、准确性、完整性承担任何责任。</p>
+
+                <h3>3.3 违规处理</h3>
+                <p>
+                  如果我们发现或收到他人举报您违反本条款，我们有权进行独立判断并采取技术手段予以删除、屏蔽或断开链接。同时，我们有权视用户的行为性质，采取包括但不限于暂停、终止部分或全部服务、限制、冻结或终止账户使用、追究法律责任等措施。
+                </p>
+              </div>
+
+              <div class="terms-section" id="section4">
+                <h2>4. 知识产权</h2>
+                <p>本平台服务中包含的全部知识产权，以及与本平台服务相关的所有信息内容，均受著作权法、商标法、专利法等法律法规保护。</p>
+
+                <h3>4.1 平台知识产权</h3>
+                <ul>
+                  <li>我们拥有本平台的著作权、商标权、专利权等所有知识产权；</li>
+                  <li>未经我们书面同意，您不得为任何商业或非商业目的自行或许可任何第三方实施、利用、转让上述知识产权；</li>
+                  <li>本平台展示的课程内容、学习资料等，其知识产权归内容提供方或我们所有。</li>
+                </ul>
+
+                <h3>4.2 用户内容授权</h3>
+                <p>您在本平台上传、发布或传输的内容，您授予我们及其关联公司全球范围内、免费、非独家、可再许可的许可，使我们能够使用、托管、存储、复制、修改、创建衍生作品、传播、出版、公开演示、公开展示和分发此类内容。</p>
+
+                <h3>4.3 第三方内容</h3>
+                <p>本平台可能包含指向第三方网站或资源的链接。我们不对这些网站或资源的可用性负责，也不认可这些网站或资源上提供的任何内容、产品、服务或其他材料。</p>
+              </div>
+
+              <div class="terms-section" id="section5">
+                <h2>5. 服务变更与终止</h2>
+                <p>我们始终在不断更改和改进我们提供的服务。我们可能会增加或删除功能，也可能暂停或彻底停止某项服务。</p>
+
+                <h3>5.1 服务变更</h3>
+                <p>我们可以自行决定随时变更服务内容，或中止、终止向您提供服务。服务变更、中止或终止前，我们将尽可能通过适当方式向您发出通知。</p>
+
+                <h3>5.2 服务终止</h3>
+                <p>在下列情况下，我们有权终止向您提供服务：</p>
+                <ul>
+                  <li>您违反相关法律法规或本条款的规定；</li>
+                  <li>按照法律规定或有权机关的要求；</li>
+                  <li>出于安全原因或其他必要的情形；</li>
+                  <li>本平台停止运营。</li>
+                </ul>
+
+                <h3>5.3 终止后果</h3>
+                <p>服务终止后，您使用本平台服务的权利立即终止，我们无法继续向您提供任何信息或为您提供任何服务。</p>
+              </div>
+
+              <div class="terms-section" id="section6">
+                <h2>6. 免责声明</h2>
+                <p>您理解并同意，本平台服务是按现状提供的，我们不提供任何形式的保证：</p>
+
+                <ul>
+                  <li><strong>服务可用性：</strong> 我们不保证服务不会中断，也不保证服务的及时性、安全性、准确性；</li>
+                  <li><strong>内容准确性：</strong> 我们不保证通过本平台服务获得的任何信息内容的准确性、真实性、适用性；</li>
+                  <li><strong>用户行为：</strong> 您应对使用本平台服务过程中接触到的内容自行加以判断，并承担因使用内容而引起的所有风险；</li>
+                  <li><strong>不可抗力：</strong> 对于因不可抗力或我们不能控制的原因造成的服务中断或其他缺陷，我们不承担任何责任。</li>
+                </ul>
+
+                <div class="highlight-box">
+                  <p><strong>重要提示：</strong> 您理解并同意，使用本平台服务涉及到互联网服务，可能会受到各个环节不稳定因素的影响，存在一定的风险。</p>
+                </div>
+              </div>
+
+              <div class="terms-section" id="section7">
+                <h2>7. 责任限制</h2>
+                <p>在法律允许的最大范围内，我们不对任何间接的、惩罚性的、偶然的、特殊的、后果性的损失承担责任：</p>
+
+                <ul>
+                  <li>因使用或无法使用本平台服务而引起的任何损害赔偿；</li>
+                  <li>因通过本平台服务购买或获取任何商品、服务、信息等而引起的损害赔偿；</li>
+                  <li>未经授权的访问或更改您的传输或数据；</li>
+                  <li>任何第三方的声明或行为与本平台服务相关。</li>
+                </ul>
+
+                <p>在任何情况下，我们的全部责任，无论是基于合同、侵权（包括过失）或其他原因，均不超过您使用本平台服务而向我们支付的费用总额。</p>
+              </div>
+
+              <div class="terms-section" id="section8">
+                <h2>8. 法律适用</h2>
+                <p>本条款的订立、执行和解释及争议的解决均应适用中华人民共和国法律。</p>
+
+                <h3>8.1 争议解决</h3>
+                <p>如双方就本条款内容或其执行发生任何争议，双方应尽量友好协商解决；协商不成时，任何一方均可向被告所在地有管辖权的人民法院提起诉讼。</p>
+
+                <h3>8.2 条款可分性</h3>
+                <p>如本条款中的任何条款无论因何种原因完全或部分无效或不具有执行力，本条款的其余条款仍应有效并且有约束力。</p>
+
+                <h3>8.3 标题解释</h3>
+                <p>本条款各条的标题仅为方便参考而设，不具法律效力，不能作为对本条款进行解释的依据。</p>
+              </div>
+
+              <div class="terms-section" id="section9">
+                <h2>9. 联系我们</h2>
+                <p>如果您对本服务条款有任何疑问、意见或建议，请通过以下方式联系我们：</p>
+
+                <ul>
+                  <li><strong>客服热线：</strong> 400-123-4567（工作日 9:00-18:00）</li>
+                  <li><strong>电子邮件：</strong> terms@shangdaxue.com</li>
+                  <li><strong>邮寄地址：</strong> 北京市海淀区中关村大街科技园区A座1001室 上大学Online服务条款办公室（邮编：100000）</li>
+                </ul>
+
+                <p>我们将尽快审核所涉问题，并在验证您的用户身份后的15个工作日内予以回复。</p>
+
+                <div class="highlight-box">
+                  <p>
+                    <strong>再次提醒：</strong>
+                    在您开始使用上大学Online服务之前，请仔细阅读本服务条款。如果您对本服务条款的任何条款表示异议，您可以选择不使用上大学Online服务；使用则意味着您对本服务条款的完全接受。
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
+      </section>
+    </main>
 
-        <!-- 加载状态 -->
-        <div v-else class="loading-state">
-          <div class="loading-spinner"></div>
-          <p>加载中...</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- 页脚 -->
     <AppFooter />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import NavBar from '@/components/common/NavBar.vue'
 import AppFooter from '@/components/common/AppFooter.vue'
 import { getServiceAgreement, type ServiceAgreement } from '@campus/common'
 
 // 服务协议
 const serviceAgreement = ref<ServiceAgreement | null>(null)
+
+const sections = [
+  { id: 'section1', label: '1. 服务说明' },
+  { id: 'section2', label: '2. 账户注册' },
+  { id: 'section3', label: '3. 用户行为规范' },
+  { id: 'section4', label: '4. 知识产权' },
+  { id: 'section5', label: '5. 服务变更与终止' },
+  { id: 'section6', label: '6. 免责声明' },
+  { id: 'section7', label: '7. 责任限制' },
+  { id: 'section8', label: '8. 法律适用' },
+  { id: 'section9', label: '9. 联系我们' }
+]
+
+const activeSectionId = ref<string>('section1')
+let observer: IntersectionObserver | null = null
 
 // 格式化日期
 const formatDate = (dateString: string): string => {
@@ -142,10 +254,11 @@ const formatDate = (dateString: string): string => {
   })
 }
 
-// 格式化内容（将换行符转换为HTML）
-const formatContent = (content: string): string => {
-  if (!content) return ''
-  return content.replace(/\n/g, '<br>')
+const scrollTo = (id: string) => {
+  const el = document.getElementById(id)
+  if (!el) return
+  activeSectionId.value = id
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 // 加载服务协议
@@ -160,163 +273,271 @@ const loadServiceAgreement = async () => {
 // 组件挂载时加载数据
 onMounted(() => {
   loadServiceAgreement()
+
+  const targets = sections
+    .map((s) => document.getElementById(s.id))
+    .filter(Boolean) as HTMLElement[]
+
+  if (targets.length === 0) return
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      const visible = entries
+        .filter((e) => e.isIntersecting)
+        .sort((a, b) => (a.boundingClientRect.top ?? 0) - (b.boundingClientRect.top ?? 0))
+      const first = visible[0]
+      const id = (first?.target as HTMLElement | undefined)?.id
+      if (id) activeSectionId.value = id
+    },
+    {
+      root: null,
+      threshold: [0.12, 0.25, 0.5],
+      rootMargin: '-15% 0px -70% 0px'
+    }
+  )
+
+  for (const el of targets) observer.observe(el)
+})
+
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect()
+    observer = null
+  }
 })
 </script>
 
 <style scoped>
-.common-page {
+.terms-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: linear-gradient(135deg, #fdfbff 0%, #f7f0ff 25%, #fdf3f7 60%, #ffffff 100%);
+  color: #111827;
 }
 
-.page-content {
+.terms-main {
   flex: 1;
-  padding: 2rem 0;
-  background: #f8f9fa;
+  padding: 26px 0 60px;
 }
 
-.content-container {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 0 2rem;
+.page-head {
+  max-width: 1200px;
+  margin: 0 auto 18px;
+  padding: 0 24px;
 }
 
-/* 页面标题区域 */
-.page-header {
-  text-align: center;
-  margin-bottom: 3rem;
-  padding-top: 2rem;
+.head-inner {
+  border-radius: 20px;
+  padding: 20px 22px;
+  background: linear-gradient(135deg, rgba(255, 64, 129, 0.06), rgba(63, 81, 181, 0.07));
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
+.breadcrumb {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #9e9eaa;
 }
 
 .page-title {
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 1rem;
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 800;
+  color: #233145;
 }
 
 .page-subtitle {
-  font-size: 1.1rem;
-  color: #666;
+  margin: 0;
+  font-size: 14px;
+  color: #5f6473;
 }
 
-/* 版本信息 */
-.version-info {
-  text-align: right;
-  margin-bottom: 2rem;
-  padding: 1rem;
-  background: #fff;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  color: #999;
+.terms-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
 }
 
-.version-info p {
-  margin: 0.3rem 0;
+.terms-container {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 18px;
+  align-items: start;
 }
 
-/* 协议内容 */
-.terms-content {
-  background: #fff;
-  border-radius: 12px;
-  padding: 2.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.toc-sidebar {
+  position: sticky;
+  top: 84px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(10px);
+  padding: 14px 12px;
 }
 
-.agreement-content {
-  margin-bottom: 3rem;
-  padding-bottom: 2rem;
-  border-bottom: 2px solid #f0f0f0;
+.toc-title {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 800;
+  letter-spacing: 0.3px;
 }
 
-.content-text {
-  font-size: 1rem;
-  color: #666;
-  line-height: 1.8;
-}
-
-/* 详细条款 */
-.agreement-sections {
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 6px;
 }
 
-.agreement-section {
-  padding: 1.5rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border-left: 4px solid #e91e63;
+.toc-link {
+  display: block;
+  padding: 10px 10px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 650;
+  color: #1f2937;
+  border: 1px solid transparent;
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
 
-.agreement-section h3 {
-  font-size: 1.3rem;
-  font-weight: bold;
-  color: #e91e63;
-  margin-bottom: 1rem;
+.toc-link:hover {
+  background: rgba(255, 75, 139, 0.06);
 }
 
-.agreement-section p {
-  font-size: 1rem;
-  color: #666;
-  line-height: 1.8;
-  margin-bottom: 1rem;
+.toc-link.active {
+  background: rgba(255, 75, 139, 0.09);
+  border-color: rgba(255, 75, 139, 0.22);
+  color: #ff4b8b;
 }
 
-.agreement-section ul {
-  margin-left: 2rem;
-  margin-bottom: 0;
+.terms-content {
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(10px);
+  padding: 18px 18px 10px;
 }
 
-.agreement-section li {
-  font-size: 0.95rem;
-  color: #666;
-  line-height: 1.8;
-  margin-bottom: 0.5rem;
+.meta-bar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-bottom: 10px;
 }
 
-/* 加载状态 */
-.loading-state {
-  text-align: center;
-  padding: 4rem 0;
+.meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  font-size: 12px;
+  color: #6b7280;
 }
 
-.loading-spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #e91e63;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin: 0 auto 1rem;
+.meta-label {
+  font-weight: 800;
 }
 
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+.meta-value {
+  color: #111827;
+  font-weight: 650;
 }
 
-/* 响应式设计 */
+.section-title {
+  margin: 6px 0 14px;
+  font-size: 18px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.terms-article {
+  padding-bottom: 8px;
+}
+
+.terms-section {
+  scroll-margin-top: 96px;
+  padding: 14px 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(255, 255, 255, 0.75);
+  margin-bottom: 12px;
+}
+
+.terms-section h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 850;
+  color: #111827;
+}
+
+.terms-section h3 {
+  margin: 14px 0 8px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #233145;
+}
+
+.terms-section p {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.85;
+}
+
+.terms-section ul {
+  margin: 0 0 10px 18px;
+  padding: 0;
+  color: #4b5563;
+  font-size: 13px;
+  line-height: 1.85;
+}
+
+.highlight-box {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 75, 139, 0.22);
+  background: rgba(255, 75, 139, 0.06);
+  padding: 12px 12px;
+}
+
+.highlight-box p {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .terms-container {
+    grid-template-columns: 1fr;
+  }
+
+  .toc-sidebar {
+    position: static;
+    top: auto;
+  }
+}
+
 @media (max-width: 768px) {
-  .content-container {
-    padding: 0 1rem;
+  .terms-main {
+    padding: 18px 0 46px;
+  }
+
+  .page-head,
+  .terms-wrap {
+    padding: 0 16px;
   }
 
   .page-title {
-    font-size: 2rem;
-  }
-
-  .terms-content {
-    padding: 1.5rem;
-  }
-
-  .agreement-section {
-    padding: 1rem;
-  }
-
-  .agreement-section h3 {
-    font-size: 1.1rem;
+    font-size: 24px;
   }
 }
 </style>

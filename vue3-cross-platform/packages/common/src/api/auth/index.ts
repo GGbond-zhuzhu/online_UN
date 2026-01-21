@@ -75,26 +75,46 @@ export function login(params: LoginParams): Promise<LoginResponse> { // 定义 l
 }
 
 /**
+ * 获取当前用户信息
+ */
+export function getUserInfo(): Promise<UserInfo> {
+  return request.get<UserInfo>('/api/user/info')
+}
+
+/**
+ * 更新用户信息
+ */
+export interface UpdateUserInfoParams {
+  nickname?: string
+  avatarUrl?: string
+  phone?: string
+  email?: string
+}
+
+export function updateUserInfo(params: UpdateUserInfoParams): Promise<UserInfo> {
+  return request.put<UserInfo>('/api/user/info', params)
+}
+
+/**
+ * 获取用户统计数据
+ */
+export interface UserStats {
+  favoritesCount: number
+  historyCount: number
+  publishCount: number
+  pointsCount: number
+}
+
+export function getUserStats(): Promise<UserStats> {
+  return request.get<UserStats>('/api/user/stats')
+}
+
+/**
  * 用户注册                                                 // register：调用后端注册接口，创建新用户
  * @param params 注册参数                                  // params：注册所需的用户名、密码等信息
  */
 export function register(params: RegisterParams): Promise<{ id: number; username: string }> { // 定义 register 函数
   return request.post('/api/user/register', params)                                            // 使用 POST 请求 /api/user/register
-}
-
-/**
- * 获取当前用户信息                                         // getUserInfo：根据当前登录态获取用户信息
- */
-export function getUserInfo(): Promise<UserInfo> {        // 定义 getUserInfo 函数，返回 Promise<UserInfo>
-  return request.get<UserInfo>('/api/user/info')          // 使用 GET 请求 /api/user/info
-}
-
-/**
- * 更新用户信息                                             // updateUserInfo：更新当前用户的基本信息
- * @param userInfo 用户信息                                // userInfo：需要更新的字段（部分字段即可）
- */
-export function updateUserInfo(userInfo: Partial<UserInfo>): Promise<UserInfo> { // 定义 updateUserInfo 函数
-  return request.put<UserInfo>('/api/user/info', userInfo)                       // 使用 PUT 请求 /api/user/info 提交修改
 }
 
 /**

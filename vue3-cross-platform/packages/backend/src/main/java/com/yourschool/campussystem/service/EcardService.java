@@ -63,4 +63,34 @@ public interface EcardService {
      * 生成动态学生码
      */
     Object generateDynamicCode(Long userId);
+
+    /**
+     * 获取月度消费统计
+     */
+    Object getMonthStatistics(Long userId, Integer year, Integer month);
+
+    /**
+     * 设置消费目标
+     */
+    Object setConsumeGoal(Long userId, java.math.BigDecimal monthlyGoal);
+
+    /**
+     * 获取消费目标
+     */
+    Object getConsumeGoal(Long userId);
+
+    /**
+     * 设置余额提醒
+     */
+    Object setBalanceReminder(Long userId, java.math.BigDecimal threshold, Boolean enabled);
+
+    /**
+     * 获取余额提醒设置
+     */
+    Object getBalanceReminder(Long userId);
+
+    /**
+     * 转账功能
+     */
+    Object transfer(Long userId, String targetCardNo, java.math.BigDecimal amount);
 }

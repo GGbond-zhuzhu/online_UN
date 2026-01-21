@@ -479,35 +479,59 @@ onUnmounted(() => {
 /* 全局引入Font Awesome图标 */
 @import url('https://cdn.bootcdn.net/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css');
 
-/* 全局粉色调变量 */
+/* 全局配色变量 - 与首页保持一致（玫红为主色调） */
 :root {
-  --primary-pink: #e91e63;
-  --secondary-pink: #ec407a;
-  --light-pink: #f8bbd9;
-  --light-pink-2: #fce4ec;
-  --pink-gradient: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%);
+  --primary-pink: #d81b60; /* 玫红主色 */
+  --secondary-pink: #ffb6c1; /* 浅粉强调 */
+  --light-pink: #f9f0ff; /* 首页渐变起色 */
+  --light-yellow: #e6f7ff; /* 首页渐变终色（偏蓝） */
+  --warm-yellow: #ffb6c1; /* 左侧渐变浅色端 */
+  --bg-gradient: linear-gradient(135deg, #f9f0ff 0%, #e6f7ff 100%); /* 与首页一致 */
+  --card-shadow: 0 10px 30px rgba(216, 27, 96, 0.12);
 }
 
-/* 全局重置样式 */
-* {
+/* 仅作用于登录页，避免污染全站 */
+.login-page * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   font-family: 'Microsoft YaHei', Arial, sans-serif;
 }
 
-html, body {
-  height: 100%;
-  overflow-x: hidden;
-}
-
-/* 页面基础布局 */
+/* 页面基础布局 - 淡粉鹅黄渐变背景 */
 .login-page {
   min-height: 100vh;
-  background: var(--pink-gradient);
+  background: var(--bg-gradient);
   display: flex;
   flex-direction: column;
   color: #333;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 添加背景装饰元素，增加层次感 */
+.login-page::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(255, 182, 193, 0.2) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.login-page::after {
+  content: "";
+  position: absolute;
+  bottom: -30%;
+  left: -10%;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(230, 247, 255, 0.35) 0%, transparent 70%);
+  border-radius: 50%;
+  z-index: 0;
 }
 </style>
 
@@ -520,24 +544,28 @@ html, body {
   align-items: center;
   padding: 20px;
   min-height: calc(100vh - 180px); /* 预留导航栏和页脚高度 */
+  position: relative;
+  z-index: 1; /* 确保在背景装饰之上 */
 }
 
 .login-wrapper {
   width: 100%;
   max-width: 1200px;
-  background-color: white;
-  border-radius: 16px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  background-color: rgba(255, 255, 255, 0.95); /* 半透明白色，更柔和 */
+  border-radius: 24px; /* 更大的圆角，更现代 */
+  box-shadow: var(--card-shadow);
   overflow: hidden;
   display: flex;
   min-height: 600px;
+  backdrop-filter: blur(10px); /* 毛玻璃效果 */
+  border: 1px solid rgba(255, 182, 193, 0.2); /* 淡粉色边框 */
 }
 
-/* 左侧粉色渐变区域 */
+/* 左侧淡粉鹅黄渐变区域 */
 .login-left {
   flex: 1.2;
-  background: linear-gradient(135deg, var(--secondary-pink) 0%, var(--primary-pink) 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--primary-pink) 0%, var(--warm-yellow) 100%); /* 淡粉到鹅黄渐变 */
+  color: #fff; /* 玫红主题下使用白色文字更清晰 */
   padding: 50px 40px;
   display: flex;
   flex-direction: column;
@@ -601,20 +629,23 @@ html, body {
   align-items: center;
   margin-bottom: 20px;
   padding: 12px 15px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.6); /* 半透明白色背景 */
+  color: #374151; /* 卡片内部用深色文字，保证对比度 */
+  border-radius: 12px; /* 更大的圆角 */
   transition: all 0.3s;
+  border: 1px solid rgba(255, 255, 255, 0.8); /* 白色边框 */
 }
 
 .feature-card:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.8);
   transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(255, 182, 193, 0.2); /* 淡粉阴影 */
 }
 
 .feature-icon {
   width: 40px;
   height: 40px;
-  background-color: rgba(255, 255, 255, 0.25);
+  background-color: var(--primary-pink); /* 淡粉色背景 */
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -622,6 +653,7 @@ html, body {
   margin-right: 15px;
   font-size: 16px;
   flex-shrink: 0;
+  color: white; /* 白色图标 */
 }
 
 .feature-content h3 {
@@ -642,9 +674,9 @@ html, body {
 }
 
 .btn-experience {
-  background: white;
-  color: var(--primary-pink);
-  border: none;
+  background: rgba(255, 255, 255, 0.9); /* 半透明白色 */
+  color: #5a5a5a; /* 深灰色文字 */
+  border: 2px solid rgba(255, 255, 255, 0.8); /* 白色边框 */
   padding: 12px 30px;
   border-radius: 25px;
   font-size: 16px;
@@ -658,8 +690,9 @@ html, body {
 
 .btn-experience:hover {
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-  background: #fff5f8;
+  box-shadow: 0 5px 15px rgba(255, 182, 193, 0.3); /* 淡粉阴影 */
+  background: rgba(255, 255, 255, 1); /* 完全不透明 */
+  color: var(--primary-pink); /* 淡粉色文字 */
 }
 
 /* 右侧登录区域 */
@@ -693,7 +726,7 @@ html, body {
 }
 
 .tab-btn.active {
-  color: var(--primary-pink);
+  color: var(--primary-pink); /* 淡粉色 */
   border-bottom: 3px solid var(--primary-pink);
   font-weight: bold;
 }
@@ -726,8 +759,8 @@ html, body {
 }
 
 .form-control:focus {
-  border-color: var(--primary-pink);
-  box-shadow: 0 0 0 3px rgba(233, 30, 99, 0.1);
+  border-color: var(--primary-pink); /* 淡粉色边框 */
+  box-shadow: 0 0 0 3px rgba(255, 182, 193, 0.15); /* 淡粉阴影 */
   outline: none;
 }
 
@@ -747,9 +780,9 @@ html, body {
 }
 
 .btn-send-code {
-  background-color: var(--light-pink-2);
-  color: var(--primary-pink);
-  border: none;
+  background-color: var(--light-pink); /* 极淡粉色 */
+  color: var(--primary-pink); /* 淡粉色文字 */
+  border: 1px solid var(--primary-pink); /* 淡粉色边框 */
   border-radius: 8px;
   padding: 0 20px;
   font-size: 14px;
@@ -760,7 +793,10 @@ html, body {
 }
 
 .btn-send-code:hover:not(:disabled) {
-  background-color: var(--light-pink);
+  background-color: var(--primary-pink); /* 淡粉色背景 */
+  color: white; /* 白色文字 */
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
 }
 
 .btn-send-code:disabled {
@@ -797,11 +833,11 @@ html, body {
   width: 16px;
   height: 16px;
   cursor: pointer;
-  accent-color: var(--primary-pink);
+  accent-color: var(--primary-pink); /* 淡粉色复选框 */
 }
 
 .forget-link {
-  color: var(--primary-pink);
+  color: var(--primary-pink); /* 淡粉色链接 */
   text-decoration: none;
   font-size: 14px;
 }
@@ -822,25 +858,31 @@ html, body {
   border-left: 3px solid #f5222d;
 }
 
-/* 登录按钮 */
+/* 登录按钮 - 淡粉色主题 */
 .btn-login {
   width: 100%;
   padding: 14px;
-  background-color: var(--primary-pink);
+  background-color: var(--primary-pink); /* 淡粉色背景 */
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px; /* 更大的圆角 */
   font-size: 16px;
   cursor: pointer;
   transition: all 0.3s;
   font-weight: 600;
   margin-bottom: 15px;
+  box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3); /* 淡粉阴影 */
 }
 
 .btn-login:hover:not(:disabled) {
-  background-color: #d81b60;
+  background-color: var(--secondary-pink); /* 浅粉色 */
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(233, 30, 99, 0.3);
+  box-shadow: 0 6px 20px rgba(255, 182, 193, 0.4); /* 更强的淡粉阴影 */
+}
+
+.btn-login:active:not(:disabled) {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.2);
 }
 
 .btn-login:disabled {
@@ -857,7 +899,7 @@ html, body {
 }
 
 .login-agreement a {
-  color: var(--primary-pink);
+  color: var(--primary-pink); /* 淡粉色链接 */
   text-decoration: none;
 }
 
@@ -914,19 +956,26 @@ html, body {
 
 .btn-refresh-qr {
   padding: 10px 20px;
-  background: var(--light-pink-2);
-  border: 1px solid var(--light-pink);
+  background: var(--light-pink); /* 极淡粉色 */
+  border: 1px solid var(--primary-pink); /* 淡粉色边框 */
   border-radius: 8px;
   font-size: 14px;
-  color: var(--primary-pink);
+  color: var(--primary-pink); /* 淡粉色文字 */
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .btn-refresh-qr:hover:not(:disabled) {
-  background: var(--primary-pink);
+  background: var(--primary-pink); /* 淡粉色背景 */
   color: white;
   border-color: var(--primary-pink);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 182, 193, 0.3);
+}
+
+.btn-refresh-qr:active:not(:disabled) {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.2);
 }
 
 .btn-refresh-qr:disabled {
@@ -944,7 +993,7 @@ html, body {
 }
 
 .register-link a {
-  color: var(--primary-pink);
+  color: var(--primary-pink); /* 淡粉色链接 */
   text-decoration: none;
   font-weight: bold;
 }
@@ -1008,6 +1057,11 @@ html, body {
 .other-btn:hover {
   background-color: #f9f9f9;
   transform: translateY(-2px);
+}
+
+.other-btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 8px rgba(216, 27, 96, 0.2);
 }
 
 /* 社交图标 */
@@ -1114,7 +1168,7 @@ html, body {
 
 .btn-jump {
   padding: 10px 28px;
-  background-color: var(--primary-pink);
+  background-color: var(--primary-pink); /* 淡粉色背景 */
   color: white;
   border: none;
   border-radius: 25px;
@@ -1122,12 +1176,13 @@ html, body {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(255, 182, 193, 0.3);
 }
 
 .btn-jump:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
-  background-color: #d81b60;
+  box-shadow: 0 6px 20px rgba(255, 182, 193, 0.4);
+  background-color: var(--secondary-pink); /* 浅粉色 */
 }
 
 /* 响应式适配 */

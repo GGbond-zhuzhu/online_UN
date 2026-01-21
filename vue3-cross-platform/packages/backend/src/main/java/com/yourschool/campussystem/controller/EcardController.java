@@ -5,10 +5,12 @@ import com.yourschool.campussystem.dto.EcardConsumeDTO;
 import com.yourschool.campussystem.dto.VisitorCardApplyDTO;
 import com.yourschool.campussystem.enums.ConsumeTypeEnum;
 import com.yourschool.campussystem.mapper.UserMapper;
+import com.yourschool.campussystem.mapper.UniversityMapper;
 import com.yourschool.campussystem.service.EcardService;
 import com.yourschool.campussystem.util.UserContextUtils;
 import com.yourschool.campussystem.vo.ConsumeRecordVO;
 import com.yourschool.campussystem.vo.EcardVO;
+import com.yourschool.campussystem.entity.University;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,6 +32,7 @@ public class EcardController {
 
     private final EcardService ecardService;
     private final UserMapper userMapper;
+    private final UniversityMapper universityMapper;
 
     @Operation(summary = "获取校园卡信息", description = "获取当前用户的校园卡基本信息、余额、状态等")
     @GetMapping("/info")
@@ -111,7 +114,7 @@ public class EcardController {
         return ApiResponse.success("校园卡解挂成功，卡片已恢复正常使用");
     }
 
-    @Operation(summary = "校验定位是否在校内", description = "根据经纬度判断是否在校内范围")
+    @Operation(summary = "校验定位是否在校内", description = "根据经纬度判断是否在校内范围，返回校区名称")
     @GetMapping("/check-location")
     public ApiResponse<Map<String, Object>> checkLocation(
             HttpServletRequest request,
@@ -128,6 +131,13 @@ public class EcardController {
             return ApiResponse.error(com.yourschool.campussystem.common.ErrorCode.USER_NOT_EXIST);
         }
         
+        // 获取高校信息
+        University university = universityMapper.selectById(user.getSchoolId());
+        String campusName = "校外区域";
+        if (university != null && university.getName() != null) {
+            campusName = university.getName();
+        }
+        
         // 调用Service进行定位校验
         boolean isInCampus = ecardService.checkLocation(user.getSchoolId(), 
                 BigDecimal.valueOf(longitude), BigDecimal.valueOf(latitude));
@@ -136,6 +146,7 @@ public class EcardController {
         locationInfo.put("longitude", longitude);
         locationInfo.put("latitude", latitude);
         locationInfo.put("isInCampus", isInCampus);
+        locationInfo.put("campusName", isInCampus ? campusName : "校外区域");
         locationInfo.put("message", isInCampus ? 
                 "当前位置在校内范围内，可正常使用校园卡" : 
                 "当前位置不在校内范围内，无法使用校园卡");
@@ -259,6 +270,72 @@ public class EcardController {
         };
 
         return ApiResponse.success("操作成功", result);
+    }
+
+    @Operation(summary = "获取月度消费统计", description = "获取指定年月的消费统计信息")
+    @GetMapping("/month-statistics")
+    public ApiResponse<Object> getMonthStatistics(
+            HttpServletRequest request,
+            @Parameter(description = "年份", example = "2024")
+            @RequestParam(required = false) Integer year,
+            @Parameter(description = "月份", example = "12")
+            @RequestParam(required = false) Integer month) {
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        Object statistics = ecardService.getMonthStatistics(userId, year, month);
+        return ApiResponse.success("查询成功", statistics);
+    }
+
+    @Operation(summary = "设置消费目标", description = "设置月度消费目标金额")
+    @PostMapping("/consume-goal")
+    public ApiResponse<Object> setConsumeGoal(
+            HttpServletRequest request,
+            @Parameter(description = "月度目标金额（元）", example = "500.00", required = true)
+            @RequestParam BigDecimal monthlyGoal) {
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        Object result = ecardService.setConsumeGoal(userId, monthlyGoal);
+        return ApiResponse.success("设置成功", result);
+    }
+
+    @Operation(summary = "获取消费目标", description = "获取当前用户的消费目标设置")
+    @GetMapping("/consume-goal")
+    public ApiResponse<Object> getConsumeGoal(HttpServletRequest request) {
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        Object result = ecardService.getConsumeGoal(userId);
+        return ApiResponse.success("查询成功", result);
+    }
+
+    @Operation(summary = "设置余额提醒", description = "设置余额不足提醒阈值和开关")
+    @PostMapping("/balance-reminder")
+    public ApiResponse<Object> setBalanceReminder(
+            HttpServletRequest request,
+            @Parameter(description = "提醒阈值（元）", example = "50.00", required = true)
+            @RequestParam BigDecimal threshold,
+            @Parameter(description = "是否启用", example = "true", required = true)
+            @RequestParam Boolean enabled) {
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        Object result = ecardService.setBalanceReminder(userId, threshold, enabled);
+        return ApiResponse.success("设置成功", result);
+    }
+
+    @Operation(summary = "获取余额提醒设置", description = "获取当前用户的余额提醒设置")
+    @GetMapping("/balance-reminder")
+    public ApiResponse<Object> getBalanceReminder(HttpServletRequest request) {
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        Object result = ecardService.getBalanceReminder(userId);
+        return ApiResponse.success("查询成功", result);
+    }
+
+    @Operation(summary = "转账功能", description = "向其他校园卡转账")
+    @PostMapping("/transfer")
+    public ApiResponse<Object> transfer(
+            HttpServletRequest request,
+            @Parameter(description = "目标卡号", example = "202400123456", required = true)
+            @RequestParam String targetCardNo,
+            @Parameter(description = "转账金额（元）", example = "100.00", required = true)
+            @RequestParam BigDecimal amount) {
+        Long userId = UserContextUtils.getUserIdRequired(request);
+        Object result = ecardService.transfer(userId, targetCardNo, amount);
+        return ApiResponse.success("转账成功", result);
     }
 
 }

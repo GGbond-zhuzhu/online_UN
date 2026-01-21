@@ -1,140 +1,168 @@
 <template>
-  <div class="common-page feedback-page">
-    <!-- 全局导航栏 -->
+  <div class="feedback-page">
     <NavBar />
 
-    <!-- 页面内容 -->
-    <div class="page-content">
-      <div class="content-container">
-        <!-- 页面标题 -->
-        <div class="page-header">
-          <h1 class="page-title">问题反馈</h1>
-          <p class="page-subtitle">您的意见对我们很重要，我们会认真对待每一条反馈</p>
+    <main class="feedback-main">
+      <section class="hero">
+        <div class="hero-inner">
+          <div class="hero-title-row">
+            <div>
+              <p class="breadcrumb">首页 / 问题反馈</p>
+              <h1 class="title">问题反馈</h1>
+              <p class="subtitle">你的每一条反馈，都会进入我们的迭代清单。</p>
+            </div>
+            <div class="hero-actions">
+              <a class="chip" href="/help">先去帮助中心</a>
+              <a class="chip" href="/messages">联系在线客服</a>
+            </div>
+          </div>
+
+          <div class="quick-tips">
+            <div class="tip">
+              <div class="tip-icon"><i class="fas fa-list-check"></i></div>
+              <div class="tip-text">
+                <div class="tip-title">建议这样写</div>
+                <div class="tip-desc">操作步骤 + 预期结果 + 实际结果</div>
+              </div>
+            </div>
+            <div class="tip">
+              <div class="tip-icon"><i class="fas fa-camera"></i></div>
+              <div class="tip-text">
+                <div class="tip-title">附上截图</div>
+                <div class="tip-desc">能显著提升排查效率</div>
+              </div>
+            </div>
+            <div class="tip">
+              <div class="tip-icon"><i class="fas fa-user-shield"></i></div>
+              <div class="tip-text">
+                <div class="tip-title">隐私提醒</div>
+                <div class="tip-desc">请勿上传身份证号等敏感信息</div>
+              </div>
+            </div>
+          </div>
         </div>
+      </section>
 
-        <!-- 反馈表单 -->
-        <div class="feedback-form-section">
-          <div class="form-card">
-            <form @submit.prevent="handleSubmit">
-              <!-- 反馈类型 -->
-              <div class="form-group">
-                <label class="form-label">反馈类型 <span class="required">*</span></label>
-                <select v-model="formData.feedbackType" class="form-select" required>
-                  <option value="">请选择反馈类型</option>
-                  <option value="BUG">Bug反馈</option>
-                  <option value="SUGGESTION">功能建议</option>
-                  <option value="COMPLAINT">投诉举报</option>
-                  <option value="OTHER">其他</option>
-                </select>
-              </div>
+      <section class="shell">
+        <div class="panel form-panel">
+          <div class="panel-head">
+            <h2>提交反馈</h2>
+            <p>带 <span class="req">*</span> 的为必填项</p>
+          </div>
 
-              <!-- 反馈标题 -->
-              <div class="form-group">
-                <label class="form-label">反馈标题 <span class="required">*</span></label>
+          <form class="form" @submit.prevent="handleSubmit">
+            <div class="field">
+              <label>反馈类型 <span class="req">*</span></label>
+              <select v-model="formData.feedbackType" class="control" required>
+                <option value="">请选择反馈类型</option>
+                <option value="BUG">Bug反馈</option>
+                <option value="SUGGESTION">功能建议</option>
+                <option value="COMPLAINT">投诉举报</option>
+                <option value="OTHER">其他</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>反馈标题 <span class="req">*</span></label>
+              <input
+                v-model="formData.title"
+                class="control"
+                type="text"
+                placeholder="一句话概括问题（例如：课程表导入失败）"
+                required
+              />
+            </div>
+
+            <div class="field">
+              <label>反馈内容 <span class="req">*</span></label>
+              <textarea
+                v-model="formData.content"
+                class="control"
+                rows="8"
+                placeholder="请详细描述：\n1）操作步骤\n2）预期结果\n3）实际结果\n4）设备/系统版本（可选）"
+                required
+              ></textarea>
+              <div class="hint">建议写清楚复现路径，便于我们快速定位。</div>
+            </div>
+
+            <div class="field">
+              <label>联系方式（选填）</label>
+              <input
+                v-model="formData.contact"
+                class="control"
+                type="text"
+                placeholder="邮箱或手机号（方便我们联系您）"
+              />
+              <div class="hint">填写后我们会在处理完成后同步结果。</div>
+            </div>
+
+            <div class="field">
+              <label>相关截图（选填）</label>
+              <div class="upload">
                 <input
-                  v-model="formData.title"
-                  type="text"
-                  class="form-input"
-                  placeholder="请简要描述您的问题或建议"
-                  required
+                  type="file"
+                  ref="fileInput"
+                  accept="image/*"
+                  @change="handleFileChange"
+                  class="file-input"
                 />
-              </div>
-
-              <!-- 反馈内容 -->
-              <div class="form-group">
-                <label class="form-label">反馈内容 <span class="required">*</span></label>
-                <textarea
-                  v-model="formData.content"
-                  class="form-textarea"
-                  rows="8"
-                  placeholder="请详细描述您的问题、建议或投诉内容..."
-                  required
-                ></textarea>
-                <div class="form-hint">建议详细描述问题，包括操作步骤、预期结果和实际结果等</div>
-              </div>
-
-              <!-- 联系方式 -->
-              <div class="form-group">
-                <label class="form-label">联系方式</label>
-                <input
-                  v-model="formData.contact"
-                  type="text"
-                  class="form-input"
-                  placeholder="邮箱或手机号（选填，方便我们联系您）"
-                />
-                <div class="form-hint">填写联系方式后，我们会在处理完成后及时通知您</div>
-              </div>
-
-              <!-- 截图上传 -->
-              <div class="form-group">
-                <label class="form-label">相关截图</label>
-                <div class="upload-section">
-                  <input
-                    type="file"
-                    ref="fileInput"
-                    accept="image/*"
-                    @change="handleFileChange"
-                    class="file-input"
-                  />
-                  <button type="button" class="upload-button" @click="triggerFileInput">
-                    选择图片
-                  </button>
-                  <div v-if="selectedFile" class="file-info">
-                    <span>{{ selectedFile.name }}</span>
-                    <button type="button" class="remove-file" @click="removeFile">×</button>
-                  </div>
+                <button type="button" class="btn secondary" @click="triggerFileInput">
+                  选择图片
+                </button>
+                <div v-if="selectedFile" class="file-pill">
+                  <i class="fas fa-paperclip"></i>
+                  <span class="file-name">{{ selectedFile.name }}</span>
+                  <button type="button" class="file-remove" @click="removeFile" aria-label="移除文件">×</button>
                 </div>
-                <div class="form-hint">支持 JPG、PNG 格式，大小不超过 5MB</div>
               </div>
+              <div class="hint">支持 JPG、PNG 格式，大小不超过 5MB</div>
+            </div>
 
-              <!-- 提交按钮 -->
-              <div class="form-actions">
-                <button type="submit" class="submit-button" :disabled="submitting">
-                  <span v-if="submitting">提交中...</span>
-                  <span v-else>提交反馈</span>
-                </button>
-                <button type="button" class="reset-button" @click="handleReset" :disabled="submitting">
-                  重置
-                </button>
-              </div>
-            </form>
-          </div>
+            <div class="actions">
+              <button type="submit" class="btn" :disabled="submitting">
+                <span v-if="submitting">提交中...</span>
+                <span v-else>提交反馈</span>
+              </button>
+              <button type="button" class="btn secondary" @click="handleReset" :disabled="submitting">
+                重置
+              </button>
+            </div>
+          </form>
         </div>
 
-        <!-- 我的反馈记录 -->
-        <div class="my-feedback-section" v-if="userStore.isLoggedIn">
-          <h2 class="section-title">我的反馈记录</h2>
-          <div class="feedback-list">
-            <div v-if="myFeedbacks.length === 0" class="empty-state">
-              <p>暂无反馈记录</p>
+        <div class="panel side-panel" v-if="userStore.isLoggedIn">
+          <div class="panel-head">
+            <h2>我的反馈</h2>
+            <p>仅展示最近提交的反馈记录</p>
+          </div>
+
+          <div class="list">
+            <div v-if="myFeedbacks.length === 0" class="empty">
+              暂无反馈记录
             </div>
-            <div
-              v-for="(feedback, index) in myFeedbacks"
-              :key="index"
-              class="feedback-item"
-            >
-              <div class="feedback-header">
-                <span class="feedback-type">{{ getFeedbackTypeLabel(feedback.feedbackType) }}</span>
-                <span class="feedback-status">{{ feedback.status }}</span>
+
+            <div v-for="(feedback, index) in myFeedbacks" :key="index" class="item">
+              <div class="item-top">
+                <span class="badge">{{ getFeedbackTypeLabel(feedback.feedbackType) }}</span>
+                <span class="status">{{ feedback.status }}</span>
               </div>
-              <h4 class="feedback-title">{{ feedback.title }}</h4>
-              <p class="feedback-content">{{ feedback.content }}</p>
-              <div class="feedback-meta">
-                <span class="feedback-time">{{ formatDate(feedback.submitTime) }}</span>
-              </div>
+              <div class="item-title">{{ feedback.title }}</div>
+              <div class="item-content">{{ feedback.content }}</div>
+              <div class="item-meta">{{ formatDate(feedback.submitTime) }}</div>
             </div>
           </div>
         </div>
+      </section>
 
-        <!-- 提交成功提示 -->
-        <div v-if="submitSuccess" class="success-message">
-          <div class="success-icon">✓</div>
-          <p>反馈提交成功！我们会尽快处理您的反馈。</p>
+      <div v-if="submitSuccess" class="toast" role="status" aria-live="polite">
+        <div class="toast-icon"><i class="fas fa-check"></i></div>
+        <div class="toast-text">
+          <div class="toast-title">提交成功</div>
+          <div class="toast-desc">我们会尽快处理您的反馈。</div>
         </div>
       </div>
-    </div>
+    </main>
 
-    <!-- 页脚 -->
     <AppFooter />
   </div>
 </template>
@@ -296,327 +324,401 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.common-page {
+.feedback-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: linear-gradient(135deg, #fdfbff 0%, #f7f0ff 25%, #fdf3f7 60%, #ffffff 100%);
+  color: #111827;
 }
 
-.page-content {
+.feedback-main {
   flex: 1;
-  padding: 2rem 0;
-  background: #f8f9fa;
+  padding: 26px 0 60px;
 }
 
-.content-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 0 2rem;
+.hero {
+  max-width: 1200px;
+  margin: 0 auto 18px;
+  padding: 0 24px;
 }
 
-/* 页面标题区域 */
-.page-header {
-  text-align: center;
-  margin-bottom: 3rem;
-  padding-top: 2rem;
+.hero-inner {
+  border-radius: 20px;
+  padding: 20px 22px 16px;
+  background: linear-gradient(135deg, rgba(255, 64, 129, 0.06), rgba(63, 81, 181, 0.07));
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.35);
 }
 
-.page-title {
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 1rem;
+.hero-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
 }
 
-.page-subtitle {
-  font-size: 1.1rem;
-  color: #666;
+.breadcrumb {
+  margin: 0 0 6px;
+  font-size: 13px;
+  color: #9e9eaa;
 }
 
-/* 反馈表单 */
-.feedback-form-section {
-  margin-bottom: 3rem;
+.title {
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 800;
+  color: #233145;
 }
 
-.form-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 2.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #5f6473;
 }
 
-.form-group {
-  margin-bottom: 2rem;
+.hero-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
-.form-label {
-  display: block;
-  font-size: 1rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 0.8rem;
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(209, 213, 219, 0.8);
+  background: rgba(255, 255, 255, 0.85);
+  color: #374151;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 650;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.06s ease;
 }
 
-.required {
-  color: #e91e63;
+.chip:hover {
+  border-color: rgba(255, 75, 139, 0.45);
+  background: rgba(255, 247, 251, 0.9);
 }
 
-.form-input,
-.form-select,
-.form-textarea {
-  width: 100%;
-  padding: 0.8rem 1rem;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.3s;
+.quick-tips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
 }
 
-.form-input:focus,
-.form-select:focus,
-.form-textarea:focus {
-  border-color: #e91e63;
+.tip {
+  display: flex;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(10px);
 }
 
-.form-textarea {
-  resize: vertical;
-  min-height: 150px;
-}
-
-.form-hint {
-  font-size: 0.85rem;
-  color: #999;
-  margin-top: 0.5rem;
-}
-
-/* 文件上传 */
-.upload-section {
+.tip-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #ffebf3, #ffe4ff);
+  color: #ff4b8b;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
+}
+
+.tip-title {
+  font-size: 14px;
+  font-weight: 850;
+  color: #111827;
+  margin-bottom: 2px;
+}
+
+.tip-desc {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.shell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 18px;
+  align-items: start;
+}
+
+.panel {
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(10px);
+  padding: 16px;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+  margin-bottom: 12px;
+}
+
+.panel-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #111827;
+}
+
+.panel-head p {
+  margin: 0;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.req {
+  color: #ff4b8b;
+  font-weight: 900;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.control {
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px 12px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  font-family: inherit;
+}
+
+.control:focus {
+  border-color: rgba(255, 75, 139, 0.65);
+  box-shadow: 0 0 0 3px rgba(255, 75, 139, 0.12);
+}
+
+.hint {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.upload {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .file-input {
   display: none;
 }
 
-.upload-button {
-  padding: 0.8rem 1.5rem;
-  background: #f0f0f0;
-  color: #333;
-  border: 2px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.upload-button:hover {
-  background: #e0e0e0;
-  border-color: #e91e63;
-}
-
-.file-info {
-  display: flex;
+.file-pill {
+  display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: #f8f9fa;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  color: #666;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(248, 250, 252, 0.8);
+  font-size: 12px;
+  color: #6b7280;
 }
 
-.remove-file {
-  background: none;
+.file-remove {
   border: none;
-  color: #e91e63;
-  font-size: 1.5rem;
+  background: transparent;
+  color: #ff4b8b;
+  font-size: 18px;
   cursor: pointer;
-  padding: 0;
-  width: 24px;
-  height: 24px;
+  line-height: 1;
+  padding: 0 4px;
+}
+
+.actions {
   display: flex;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.btn {
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #ff4b8b, #ff7ab2);
+  color: #fff;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 
-/* 表单操作按钮 */
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
+.btn.secondary {
+  background: rgba(255, 255, 255, 0.9);
+  color: #111827;
+  border: 1px solid rgba(148, 163, 184, 0.55);
 }
 
-.submit-button,
-.reset-button {
-  flex: 1;
-  padding: 1rem 2rem;
-  border: none;
-  border-radius: 25px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.submit-button {
-  background: #e91e63;
-  color: #fff;
-}
-
-.submit-button:hover:not(:disabled) {
-  background: #c2185b;
-}
-
-.submit-button:disabled {
-  background: #ccc;
-  cursor: not-allowed;
-}
-
-.reset-button {
-  background: #f0f0f0;
-  color: #666;
-}
-
-.reset-button:hover:not(:disabled) {
-  background: #e0e0e0;
-}
-
-.reset-button:disabled {
-  cursor: not-allowed;
-}
-
-/* 我的反馈记录 */
-.my-feedback-section {
-  margin-bottom: 3rem;
-}
-
-.section-title {
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 2rem;
-}
-
-.feedback-list {
+.list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 12px;
 }
 
-.feedback-item {
-  background: #fff;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.empty {
+  padding: 18px;
+  color: #6b7280;
+  font-size: 13px;
+  border-radius: 14px;
+  border: 1px dashed rgba(148, 163, 184, 0.5);
+  background: rgba(255, 255, 255, 0.6);
 }
 
-.feedback-header {
+.item {
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(255, 255, 255, 0.75);
+  padding: 12px;
+}
+
+.item-top {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
 }
 
-.feedback-type {
-  padding: 0.3rem 0.8rem;
-  background: #e91e63;
-  color: #fff;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: bold;
+.badge {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 75, 139, 0.10);
+  color: #ff4b8b;
+  border: 1px solid rgba(255, 75, 139, 0.18);
+  font-weight: 850;
 }
 
-.feedback-status {
-  padding: 0.3rem 0.8rem;
-  background: #f0f0f0;
-  color: #666;
-  border-radius: 12px;
-  font-size: 0.85rem;
+.status {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+  color: #6b7280;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  font-weight: 700;
 }
 
-.feedback-title {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 0.8rem;
+.item-title {
+  font-size: 14px;
+  font-weight: 850;
+  color: #111827;
+  margin-bottom: 6px;
 }
 
-.feedback-content {
-  font-size: 0.95rem;
-  color: #666;
-  line-height: 1.6;
-  margin-bottom: 1rem;
+.item-content {
+  font-size: 13px;
+  color: #4b5563;
+  line-height: 1.75;
+  margin-bottom: 8px;
 }
 
-.feedback-meta {
-  font-size: 0.85rem;
-  color: #999;
+.item-meta {
+  font-size: 12px;
+  color: #9ca3af;
 }
 
-.empty-state {
-  text-align: center;
-  padding: 3rem;
-  color: #999;
-}
-
-/* 成功提示 */
-.success-message {
+.toast {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #fff;
-  border-radius: 12px;
-  padding: 2rem 3rem;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  text-align: center;
-  z-index: 1000;
+  right: 18px;
+  bottom: 18px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 18px 46px rgba(15, 23, 42, 0.16);
+  backdrop-filter: blur(10px);
+  z-index: 1100;
 }
 
-.success-icon {
-  width: 60px;
-  height: 60px;
-  background: #4caf50;
-  color: #fff;
-  border-radius: 50%;
+.toast-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2rem;
-  font-weight: bold;
-  margin: 0 auto 1rem;
+  border: 1px solid rgba(34, 197, 94, 0.25);
 }
 
-.success-message p {
-  font-size: 1.1rem;
-  color: #333;
+.toast-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: #111827;
 }
 
-/* 响应式设计 */
+.toast-desc {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+@media (max-width: 1000px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
-  .content-container {
-    padding: 0 1rem;
+  .feedback-main {
+    padding: 18px 0 46px;
   }
 
-  .page-title {
-    font-size: 2rem;
+  .hero,
+  .shell {
+    padding: 0 16px;
   }
 
-  .form-card {
-    padding: 1.5rem;
+  .title {
+    font-size: 24px;
   }
 
-  .form-actions {
+  .actions {
     flex-direction: column;
-  }
-
-  .upload-section {
-    flex-direction: column;
-    align-items: flex-start;
   }
 }
 </style>

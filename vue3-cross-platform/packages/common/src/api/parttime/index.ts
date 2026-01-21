@@ -105,7 +105,13 @@ export function getParttimeList(params: ParttimeQueryParams = {}): Promise<{
   current?: number  // 兼容字段
   size: number
 }> {
-  return request.get('/api/parttime/list', { params }).then((res: any) => {
+  // 将前端的 pageSize 转换为后端期望的 size 参数
+  const backendParams: any = { ...params }
+  if (backendParams.pageSize !== undefined) {
+    backendParams.size = backendParams.pageSize
+    delete backendParams.pageSize
+  }
+  return request.get('/api/parttime/list', { params: backendParams }).then((res: any) => {
     // 适配后端返回格式：list -> records, page -> current
     return {
       records: res.list || res.records || [],
