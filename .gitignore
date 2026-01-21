@@ -1,0 +1,30 @@
+node_modules/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+.env
+.env.local
+*.log
+dist/
+build/
+out/
+.cache/
+.tmp/
+*.swp
+*~
+
+# Cursor/IDE 临时目录
+.cursor/
+**/.cursor/
+
+# 过程记录/测试报告（如不需要纳入版本管理）
+**/*SUMMARY*.md
+**/*REPORT*.md
+
+# 测试目录（如你确定不保留测试）
+**/src/test/
